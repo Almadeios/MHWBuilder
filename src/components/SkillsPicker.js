@@ -42,7 +42,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
 
     const combinedSkills = () => {
         const combo = Object.entries({ ...SKILLS, ...SET_SKILLS, ...GROUP_SKILLS })
-            .filter(x => !INTERNAL_BLACKMAP[x[0]] && (!x[1].type || x[1].type === "armor")).map(y => {
+            .filter(x => !INTERNAL_BLACKMAP[x[0]]).map(y => {
             const x = y[1];
             const isAGroupSkill = isGroupSkill(x);
             const isASetSkill = isSetSkill(x);
@@ -66,7 +66,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
                 maxLevel: x.levels?.length || 1,
                 icon: iconName
             };
-        }).sort((a, b) => a.displayName - b.displayName);
+        }).sort((a, b) => a.displayName.localeCompare(b.displayName));
         return combo;
     };
 

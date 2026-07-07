@@ -19,7 +19,7 @@ import ArrowLeft from '@mui/icons-material/ArrowBackIos';
 import Delete from '@mui/icons-material/DeleteForever';
 import styled from "styled-components";
 import { getSearchParameters, isEmpty } from "../util/tools";
-import { Button } from "@mui/material";
+import { Button, Checkbox, FormControlLabel, MenuItem, TextField } from "@mui/material";
 import Results from "./Results";
 import { DEBUG } from "../util/constants";
 import { useStorage } from "../hooks/StorageContext";
@@ -39,8 +39,17 @@ const LoadingBar = styled(LinearProgress)`
     margin-top: 1em;
 `;
 
+const WEAPON_SLOT_OPTIONS = [];
+for (let a = 0; a <= 3; a++) {
+    for (let b = 0; b <= a; b++) {
+        for (let c = 0; c <= b; c++) {
+            WEAPON_SLOT_OPTIONS.push([a, b, c]);
+        }
+    }
+}
+
 const Search = () => {
-    const { fields, updateField, updateMultipleFields } = useStorage();
+    const { fields, updateField, updateMultipleFields, setSwapTab } = useStorage();
     const [results, setResults] = useState([]);
     const [moreResults, setMoreResults] = useState({}); // skill name: level
     const [showMore, setShowMore] = useState(false);
@@ -105,6 +114,11 @@ const Search = () => {
             setSkills: justSetSkills,
             groupSkills: justGroupSkills,
             slotFilters: fields.slotFilters,
+            weaponSlots: fields.weaponSlots,
+            setSkillBonus: fields.setSkillBonus,
+            groupSkillBonus: fields.groupSkillBonus,
+            customTalismans: fields.customTalismans,
+            useOnlyOwnedTalismans: fields.useOnlyOwnedTalismans,
             mandatoryArmor: fields.mandatoryArmor,
             blacklistedArmor: fields.blacklistedArmor,
             blacklistedArmorTypes: fields.blacklistedArmorTypes,
@@ -135,6 +149,11 @@ const Search = () => {
             [...params.blacklistedArmor].sort().join("."),
             [...params.blacklistedArmorTypes].sort().join("."),
             [...params.mandatoryArmor].sort().join("."),
+            [...params.weaponSlots].sort().join("."),
+            params.setSkillBonus,
+            params.groupSkillBonus,
+            JSON.stringify(params.customTalismans),
+            params.useOnlyOwnedTalismans,
             Object.entries(params.decoMods).map(x => `${x[0]}-${x[1]}`).sort().join(".")
         ].join(",");
         let fromTheSto = localStorage.getItem('paramStr');
@@ -183,6 +202,19 @@ const Search = () => {
         const tempSlotFilters = { ...fields.slotFilters };
         tempSlotFilters[slot] = level;
         updateField('slotFilters', tempSlotFilters);
+    };
+
+    const updateWeaponSlots = value => {
+        const slots = value.split("-").map(Number).filter(Boolean).sort((a, b) => b - a);
+        updateField('weaponSlots', slots);
+    };
+
+    const updateSetSkillBonus = value => {
+        updateField('setSkillBonus', value);
+    };
+
+    const updateGroupSkillBonus = value => {
+        updateField('groupSkillBonus', value);
     };
 
     const removeSkill = skillName => {
@@ -309,6 +341,44 @@ const Search = () => {
         </div>;
     };
 
+    const renderWeaponSlots = () => {
+        const value = [0, 0, 0];
+        (fields.weaponSlots || []).forEach((slot, index) => {
+            value[index] = slot;
+        });
+        const slotValue = value.join("-");
+
+        return <TextField
+            select
+            size="small"
+            label="Weapon Slots"
+            value={slotValue}
+            onChange={ev => updateWeaponSlots(ev.target.value)}
+            sx={{ minWidth: '130px' }}
+            title="Weapon decoration slots available on your weapon">
+            {WEAPON_SLOT_OPTIONS.map(option => {
+                const optionValue = option.join("-");
+                return <MenuItem key={optionValue} value={optionValue}>{optionValue}</MenuItem>;
+            })}
+        </TextField>;
+    };
+
+    const renderSkillBonusSelect = (label, value, update, options) => {
+        return <TextField
+            select
+            size="small"
+            label={label}
+            value={value || ''}
+            onChange={ev => update(ev.target.value)}
+            sx={{ minWidth: '190px' }}
+            title={`Adds 1 point toward the selected ${label.toLowerCase()} requirement`}>
+            <MenuItem value="">None</MenuItem>
+            {Object.keys(options).sort().map(name => {
+                return <MenuItem key={name} value={name}>{name}</MenuItem>;
+            })}
+        </TextField>;
+    };
+
     const renderMoreResults = () => {
         const time = elapsedSeconds > -1 ? `(${elapsedSeconds.toFixed(2)} seconds)` : '';
 
@@ -395,8 +465,16 @@ const Search = () => {
                 showGroupSkillNames={fields.showGroupSkillNames}
                 chosenSkillNames={Object.keys(fields.skills)} />
             <div className="button-holder">
+                {renderWeaponSlots()}
+                {renderSkillBonusSelect(
+                    'Group Skill +1', fields.groupSkillBonus, updateGroupSkillBonus, GROUP_SKILLS
+                )}
+                {renderSkillBonusSelect(
+                    'Set Bonus +1', fields.setSkillBonus, updateSetSkillBonus, SET_SKILLS
+                )}
                 <Button variant="contained" disabled={isGenerating} onClick={getResults}>Search</Button>
                 <Button variant="outlined" disabled={isGenerating} onClick={() => getMoreSkills()}>More Skills</Button>
+                <Button variant="outlined" disabled={isGenerating} onClick={() => setSwapTab(3)}>Charm Creator</Button>
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
                     cancelledRef.current = true;
                 }}>Cancel</Button>}

@@ -1,0 +1,1867 @@
+﻿{
+    "templates":  [
+                      {
+                          "rarity":  "RARE[5]",
+                          "skillGroups":  [
+                                              1,
+                                              6,
+                                              6
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[5]",
+                          "skillGroups":  [
+                                              1,
+                                              7
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[5]",
+                          "skillGroups":  [
+                                              1,
+                                              8,
+                                              6
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[5]",
+                          "skillGroups":  [
+                                              1,
+                                              8,
+                                              8
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[5]",
+                          "skillGroups":  [
+                                              1,
+                                              9
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[5]",
+                          "skillGroups":  [
+                                              1,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              1,
+                                              1,
+                                              7
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              1,
+                                              1,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              2,
+                                              6,
+                                              6
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              2,
+                                              8,
+                                              6
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              2,
+                                              8,
+                                              8
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              2,
+                                              9
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[6]",
+                          "skillGroups":  [
+                                              2,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 2,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              2,
+                                              1,
+                                              7
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              2,
+                                              1,
+                                              8
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ],
+                                             [
+                                                 3,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              2,
+                                              1,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              3,
+                                              6,
+                                              5
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              3,
+                                              7
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              3,
+                                              8,
+                                              5
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              3,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[7]",
+                          "skillGroups":  [
+                                              4,
+                                              1,
+                                              1
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 1,
+                                                 0
+                                             ],
+                                             [
+                                                 1,
+                                                 1
+                                             ],
+                                             [
+                                                 2,
+                                                 0
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              2,
+                                              1,
+                                              7
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              2,
+                                              1,
+                                              8
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              2,
+                                              1,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              3,
+                                              6,
+                                              5
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              3,
+                                              7
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              3,
+                                              8,
+                                              5
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              3,
+                                              10
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      },
+                      {
+                          "rarity":  "RARE[8]",
+                          "skillGroups":  [
+                                              4,
+                                              1,
+                                              1
+                                          ],
+                          "slotCombos":  [
+                                             [
+                                                 "W1",
+                                                 0
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1
+                                             ],
+                                             [
+                                                 "W1",
+                                                 1,
+                                                 1
+                                             ]
+                                         ]
+                      }
+                  ],
+    "groups":  {
+                   "1":  [
+                             {
+                                 "skill":  "Artillery",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Attack Boost",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Ballistics",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Blast Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Bludgeoner",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Charge Master",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Critical Draw",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Critical Element",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Critical Eye",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Critical Status",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Dragon Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Fire Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Focus",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Guard",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Guard Up",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Handicraft",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Horn Maestro",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Ice Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Load Shells",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Mind\u0027s Eye",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Offensive Guard",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Opening Shot",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Paralysis Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Poison Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Power Prolonger",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Protective Polish",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Punishing Draw",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Rapid Morph",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Razor Sharp",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Sleep Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Slugger",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Special Ammo Boost",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Speed Sharpening",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Stamina Thief",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Tetrad Shot",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Thunder Attack",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Water Attack",
+                                 "maxLevel":  1
+                             }
+                         ],
+                   "2":  [
+                             {
+                                 "skill":  "Airborne",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Artillery",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Attack Boost",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Ballistics",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Blast Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Blast Functionality",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Bludgeoner",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Charge Master",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Charge Up",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Critical Draw",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Critical Element",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Critical Eye",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Critical Status",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Dragon Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Exhaust Functionality",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Fire Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Focus",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Guard",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Guard Up",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Handicraft",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Horn Maestro",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Ice Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Load Shells",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Mind\u0027s Eye",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Offensive Guard",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Opening Shot",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Paralysis Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Poison Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Poison Duration Up",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Poison Functionality",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Power Prolonger",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Protective Polish",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Punishing Draw",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Rapid Morph",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Razor Sharp",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Sleep Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Slugger",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Special Ammo Boost",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Speed Sharpening",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Stamina Thief",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Tetrad Shot",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Thunder Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Water Attack",
+                                 "maxLevel":  2
+                             }
+                         ],
+                   "3":  [
+                             {
+                                 "skill":  "Artillery",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Attack Boost",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Ballistics",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Blast Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Bludgeoner",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Charge Master",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Critical Draw",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Critical Element",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Critical Eye",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Critical Status",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Dragon Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Fire Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Focus",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Guard",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Guard Up",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Handicraft",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Ice Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Master\u0027s Touch",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Mind\u0027s Eye",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Normal Shots",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Offensive Guard",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Opening Shot",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Para Functionality",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Paralysis Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Piercing Shots",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Poison Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Power Prolonger",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Protective Polish",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Punishing Draw",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Rapid Fire Up",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Rapid Morph",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Razor Sharp",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Sleep Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Sleep Functionality",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Slugger",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Spread/Power Shots",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Stamina Thief",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Tetrad Shot",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Thunder Attack",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Water Attack",
+                                 "maxLevel":  3
+                             }
+                         ],
+                   "4":  [
+                             {
+                                 "skill":  "Attack Boost",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Ballistics",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Blast Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Critical Boost",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Critical Element",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Critical Eye",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Dragon Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Fire Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Guard",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Guard Up",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Handicraft",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Ice Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Opening Shot",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Paralysis Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Poison Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Protective Polish",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Razor Sharp",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Sleep Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Tetrad Shot",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Thunder Attack",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Water Attack",
+                                 "maxLevel":  2
+                             }
+                         ],
+                   "5":  [
+                             {
+                                 "skill":  "Adaptability",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Antivirus",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Aquatic/Oilsilt Mobility",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Bind Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Blast Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Bleeding Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Bombardier",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Botanist",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Constitution",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Defense Boost",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Divine Blessing",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Dragon Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Fire Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Flinch Free",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Free Meal",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Geologist",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Hunger Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Ice Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Intimidator",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Iron Skin",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Item Prolonger",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Marathon Runner",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Paralysis Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Poison Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Quick Sheathe",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Recovery Speed",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Recovery Up",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Sleep Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Speed Eating",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Stench Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Stun Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Survival Expert",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Thunder Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Tremor Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Water Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Wide-Range",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Windproof",
+                                 "maxLevel":  1
+                             }
+                         ],
+                   "6":  [
+                             {
+                                 "skill":  "Adaptability",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Antivirus",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Aquatic/Oilsilt Mobility",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Bind Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Blast Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Bleeding Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Bombardier",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Botanist",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Constitution",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Defense Boost",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Divine Blessing",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Dragon Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Fire Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Flinch Free",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Free Meal",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Geologist",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Hunger Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Ice Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Intimidator",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Iron Skin",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Item Prolonger",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Marathon Runner",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Paralysis Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Poison Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Quick Sheathe",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Recovery Speed",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Recovery Up",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Sleep Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Speed Eating",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Stench Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Stun Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Survival Expert",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Thunder Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Tremor Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Water Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Wide-Range",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Windproof",
+                                 "maxLevel":  2
+                             }
+                         ],
+                   "7":  [
+                             {
+                                 "skill":  "Antivirus",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Bind Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Blast Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Bleeding Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Bombardier",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Botanist",
+                                 "maxLevel":  4
+                             },
+                             {
+                                 "skill":  "Constitution",
+                                 "maxLevel":  4
+                             },
+                             {
+                                 "skill":  "Defense Boost",
+                                 "maxLevel":  4
+                             },
+                             {
+                                 "skill":  "Divine Blessing",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Dragon Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Fire Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Flinch Free",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Free Meal",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Geologist",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Hunger Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Ice Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Intimidator",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Iron Skin",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Item Prolonger",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Marathon Runner",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Paralysis Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Poison Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Quick Sheathe",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Recovery Speed",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Recovery Up",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Sleep Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Speed Eating",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Stun Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Survival Expert",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Thunder Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Tremor Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Water Resistance",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Wide-Range",
+                                 "maxLevel":  4
+                             },
+                             {
+                                 "skill":  "Windproof",
+                                 "maxLevel":  3
+                             }
+                         ],
+                   "8":  [
+                             {
+                                 "skill":  "Ambush",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Blight Resistance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Coalescence",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Counterstrike",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Earplugs",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Evade Extender",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Evade Window",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Heroics",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Maximum Might",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Mushroomancer",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Partbreaker",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Peak Performance",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Resentment",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Stamina Surge",
+                                 "maxLevel":  1
+                             },
+                             {
+                                 "skill":  "Tool Specialist",
+                                 "maxLevel":  2
+                             }
+                         ],
+                   "9":  [
+                             {
+                                 "skill":  "Ambush",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Blight Resistance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Coalescence",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Counterstrike",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Earplugs",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Evade Extender",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Evade Window",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Heroics",
+                                 "maxLevel":  3
+                             },
+                             {
+                                 "skill":  "Maximum Might",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Mushroomancer",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Partbreaker",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Peak Performance",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Resentment",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Stamina Surge",
+                                 "maxLevel":  2
+                             },
+                             {
+                                 "skill":  "Tool Specialist",
+                                 "maxLevel":  3
+                             }
+                         ],
+                   "10":  [
+                              {
+                                  "skill":  "Adrenaline Rush",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Agitator",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Burst",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Convert Element",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Elemental Absorption",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Flayer",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Foray",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Latent Power",
+                                  "maxLevel":  1
+                              },
+                              {
+                                  "skill":  "Weakness Exploit",
+                                  "maxLevel":  1
+                              }
+                          ]
+               }
+}

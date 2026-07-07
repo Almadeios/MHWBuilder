@@ -33,6 +33,7 @@ const ARMOR_FIELDS = {
     RESISTS: 5,
     RANK: 6,
     SET_SKILLS: 7,
+    WEAPON_SLOTS: 8,
 };
 
 export const _x = {
@@ -44,4 +45,5 @@ export const _x = {
     resists: a => a[ARMOR_FIELDS.RESISTS],
     rank: a => a[ARMOR_FIELDS.RANK],
     setSkills: a => a[ARMOR_FIELDS.SET_SKILLS],
+    weaponSlots: a => a[ARMOR_FIELDS.WEAPON_SLOTS] || [],
 };

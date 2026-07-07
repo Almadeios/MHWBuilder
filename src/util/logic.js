@@ -19,6 +19,7 @@ import { allTests } from "../test/tests";
 import { getArmorTypeList, isGroupSkillName, isSetSkillName, stringToId } from "./util";
 import INTERNAL_BLACKLIST from '../data/internal-blacklist.json';
 import { _x } from "./armorAccessor";
+import { generateTalismans } from "./talismanGenerator";
 
 const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, true]));
 
@@ -32,12 +33,34 @@ export let freeTwo = [];
 export let freeOne = [];
 export let cached;
 
+const customTalismansToCompact = customTalismans => {
+    return Object.fromEntries((customTalismans || []).map((talisman, index) => {
+        const name = talisman.name || `Custom Talisman ${index + 1}`;
+        return [name, [
+            "talisman",
+            talisman.skills || {},
+            [],
+            talisman.slots || [],
+            0,
+            [0, 0, 0, 0, 0],
+            "high",
+            [],
+            talisman.weaponSlots || []
+        ]];
+    }));
+};
+
 export const getBestArmor = (
     skills, setSkills = {}, groupSkills = {},
     mandatoryPieceNames = [],
     blacklistedArmor = [],
     blacklistedArmorTypes = [],
     dontUseDecos = false,
+    weaponSlots = [],
+    setSkillBonus = '',
+    groupSkillBonus = '',
+    customTalismans = [],
+    useOnlyOwnedTalismans = false,
     rank = "high"
 ) => {
     // const fullDataFile = getJsonFromType("armor");
@@ -63,27 +86,27 @@ export const getBestArmor = (
             !blacklistedArmorTypes.includes(v[0]) && !blacklistedArmor.includes(k))
     );
 
-    const bestTalismans = Object.fromEntries(Object.entries(TALISMANS)
+    const customTalismanMap = customTalismansToCompact(customTalismans);
+    const generatedTalismans = useOnlyOwnedTalismans ? {} : generateTalismans(skills);
+    const talismans = {
+        ...TALISMANS,
+        ...generatedTalismans,
+        ...customTalismanMap
+    };
+
+    const bestTalismans = Object.fromEntries(Object.entries(talismans)
         .filter(([k, v]) => !blacklistedArmor.includes(k) &&
-            (!mandatory[_x.type[v]] && hasNeededSkill(_x.skills(v), skills) || k === mandatory[_x.type(v)]))
-        .sort((a, b) => Object.values(b[1][1])[0] - Object.values(a[1][1])[0])
+            (!mandatory[_x.type(v)] && hasNeededSkill(_x.skills(v), skills) || k === mandatory[_x.type(v)]))
+        .sort((a, b) => (Object.values(b[1][1])[0] || 0) - (Object.values(a[1][1])[0] || 0))
     );
 
     const topTalis = {};
     if (!blacklistedArmorTypes.includes("talisman")) {
-        const topTalisLevels = {};
         for (const [talisName, talisData] of Object.entries(bestTalismans)) {
             const sks = talisData[1];
 
-            // for talismans that only have 1 skill, it's easy
-            // but multiple skills...
             if (Object.keys(sks).length > 0) {
-                for (const [skName, skLevel] of Object.entries(sks)) {
-                    if (skLevel > (topTalisLevels[skName] || 0)) {
-                        topTalis[talisName] = talisData;
-                        topTalisLevels[skName] = skLevel;
-                    }
-                }
+                topTalis[talisName] = talisData;
             }
         }
     }
@@ -267,6 +290,9 @@ export const getBestArmor = (
         );
         bareMinimum[cat] = sorted;
     }
+    bareMinimum.weaponSlots = weaponSlots;
+    bareMinimum.setSkillBonus = setSkillBonus;
+    bareMinimum.groupSkillBonus = groupSkillBonus;
 
     if (DEBUG && CHOSEN_ARMOR_DEBUG) {
         const debugOutput = [];
@@ -286,6 +312,7 @@ export const getBestArmor = (
         }
 
         for (const [category, data] of Object.entries(bareMinimum)) {
+            if (category === "weaponSlots") { continue; }
             debugOutput.push(category.toUpperCase()); // Print category name
 
             for (const [aName, aData] of Object.entries(data)) {
@@ -316,9 +343,12 @@ export const getBestArmor = (
     return bareMinimum;
 };
 
-export const armorCombo = (head, chest, arms, waist, legs, talisman) => {
+export const armorCombo = (
+    head, chest, arms, waist, legs, talisman,
+    weaponSlots = [], setSkillBonus = '', groupSkillBonus = ''
+) => {
     const armorSkills = [head.data[1], chest.data[1], arms.data[1], waist.data[1], legs.data[1], talisman.data[1]];
-    const armorSlots = [head.data[3], chest.data[3], arms.data[3], waist.data[3], legs.data[3]];
+    const armorSlots = [head.data[3], chest.data[3], arms.data[3], waist.data[3], legs.data[3], talisman.data[3]];
 
     // Merging dictionaries
     const result = {};
@@ -332,6 +362,7 @@ export const armorCombo = (head, chest, arms, waist, legs, talisman) => {
 
     // Flattening slots list
     armorSlots.forEach(slotList => {
+        if (!slotList) { return; }
         slots.push(...slotList);
     });
 
@@ -350,8 +381,8 @@ export const armorCombo = (head, chest, arms, waist, legs, talisman) => {
         ..._x.groupSkills(arms.data), ..._x.groupSkills(waist.data),
         ..._x.groupSkills(legs.data)
     ];
-    const setSkills = {};
-    const groupSkills = {};
+    const setSkills = setSkillBonus ? { [setSkillBonus]: 1 } : {};
+    const groupSkills = groupSkillBonus ? { [groupSkillBonus]: 1 } : {};
 
     armorSetNames.forEach(setName => {
         setSkills[setName] = (setSkills[setName] || 0) + 1;
@@ -365,13 +396,14 @@ export const armorCombo = (head, chest, arms, waist, legs, talisman) => {
         names: [head.name, chest.name, arms.name, waist.name, legs.name, talisman.name],
         skills: skillTotals,
         slots: slots,
+        weaponSlots: [...weaponSlots, ..._x.weaponSlots(talisman.data)],
         setSkills: setSkills,
         groupSkills: groupSkills,
         defense: [head.data[4], chest.data[4], arms.data[4], waist.data[4], legs.data[4]]
     };
 };
 
-const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, startingSkills) => {
+const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, weaponSlotsAvailable, startingSkills) => {
     if (!decos || Object.keys(decos).length === 0) { return null; }
 
     // Clone and adjust required skills
@@ -394,6 +426,7 @@ const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, startingS
 
     // Sort slots in ascending order to fill smallest first
     const slotPool = [...slotsAvailable].sort((a, b) => a - b);
+    const weaponSlotPool = [...weaponSlotsAvailable].sort((a, b) => a - b);
 
     // Sort decorations: prioritize highest total skill points, then smaller slot size
     const sortedDecos = Object.entries(decos).sort((a, b) => {
@@ -419,14 +452,15 @@ const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, startingS
                 if ((usedDecosCount[decoName] || 0) >= (decoInventory[decoName] || 0)) { continue; }
 
                 // Try to find the smallest slot that fits
-                for (let i = 0; i < slotPool.length; i++) {
-                    const slotSize = slotPool[i];
+                const availablePool = decoType === "weapon" ? weaponSlotPool : slotPool;
+                for (let i = 0; i < availablePool.length; i++) {
+                    const slotSize = availablePool[i];
                     if (slotSize >= decoSlot) {
                         // Use this decoration
                         usedDecos.push(decoName);
                         usedDecosCount[decoName] = (usedDecosCount[decoName] || 0) + 1;
                         usedSlots.push(slotSize);
-                        slotPool.splice(i, 1);
+                        availablePool.splice(i, 1);
 
                         remaining -= decoSkills[skill];
                         foundMatch = true;
@@ -443,7 +477,8 @@ const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, startingS
 
     return {
         decoNames: usedDecos,
-        freeSlots: slotPool
+        freeSlots: slotPool,
+        freeWeaponSlots: weaponSlotPool
     };
 };
 
@@ -565,10 +600,10 @@ const rollCombosDfs = async(
     const requiredSetPoints = {};
     const requiredGroupPoints = {};
     for (const [name, level] of Object.entries(setSkills)) {
-        requiredSetPoints[name] = level * 2;
+        requiredSetPoints[name] = Math.max(0, level * 2 - (gear.setSkillBonus === name ? 1 : 0));
     }
     for (const name of Object.keys(groupSkills)) {
-        requiredGroupPoints[name] = 3;
+        requiredGroupPoints[name] = Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0));
     }
 
     let counter = 1, inc = 1, allCounter = 0;
@@ -583,7 +618,10 @@ const rollCombosDfs = async(
                 formatArmorC(currentArmor.arms),
                 formatArmorC(currentArmor.waist),
                 formatArmorC(currentArmor.legs),
-                formatArmorC(currentArmor.talisman)
+                formatArmorC(currentArmor.talisman),
+                gear.weaponSlots,
+                gear.setSkillBonus,
+                gear.groupSkillBonus
             );
 
             const result = test(fullSet, gear.decos, desiredSkills);
@@ -647,14 +685,14 @@ const rollCombosDfs = async(
             // Prune early based on set/group skill future feasibility
             const remainingSlots = armorSlots.length - (index + 1);
             for (const skill of Object.keys(setSkills)) {
-                const needed = setSkills[skill] * 2 - (setCounts[skill] || 0);
+                const needed = requiredSetPoints[skill] - (setCounts[skill] || 0);
                 if (needed > remainingSlots) {
                     shouldContinue = false;
                     break;
                 }
             }
             for (const skill of Object.keys(groupSkills)) {
-                const needed = 3 - (groupCounts[skill] || 0);
+                const needed = requiredGroupPoints[skill] - (groupCounts[skill] || 0);
                 if (needed > remainingSlots) {
                     shouldContinue = false;
                     break;
@@ -730,6 +768,18 @@ const rollCombos = async(gear, skills, setSkills, groupSkills, limit, findOne = 
 
     const setSkillsCheck = new Set(Object.keys(setSkills));
     const groupSkillsCheck = new Set(Object.keys(groupSkills));
+    const requiredSetPoints = Object.fromEntries(
+        Object.entries(setSkills).map(([name, level]) => [
+            name,
+            Math.max(0, level * 2 - (gear.setSkillBonus === name ? 1 : 0))
+        ])
+    );
+    const requiredGroupPoints = Object.fromEntries(
+        Object.keys(groupSkills).map(name => [
+            name,
+            Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0))
+        ])
+    );
 
     // Use cartesianProduct to generate all combinations in the same order as Python's itertools.product
     const allCombos = cartesianProduct(headList, chestList, armsList, waistList, legsList, talismanList);
@@ -770,16 +820,21 @@ const rollCombos = async(gear, skills, setSkills, groupSkills, limit, findOne = 
                 }
             }
 
-            if ([...setSkillsCheck].some(skill => (piecesFromSet[skill] || 0) < setSkills[skill] * 2)) {
+            if ([...setSkillsCheck].some(skill => (piecesFromSet[skill] || 0) < requiredSetPoints[skill])) {
                 continue;
             }
 
-            if ([...groupSkillsCheck].some(skill => (piecesFromGroup[skill] || 0) < 3)) {
+            if ([...groupSkillsCheck].some(skill => (piecesFromGroup[skill] || 0) < requiredGroupPoints[skill])) {
                 continue;
             }
         }
 
-        const testSet = armorCombo(...combo.map(piece => formatArmorC(piece)));
+        const testSet = armorCombo(
+            ...combo.map(piece => formatArmorC(piece)),
+            gear.weaponSlots,
+            gear.setSkillBonus,
+            gear.groupSkillBonus
+        );
 
         const result = test(testSet, gear.decos, skills);
         if (result) {
@@ -814,11 +869,14 @@ export const test = (armorSet, decos, desiredSkills) => {
             setSkills: armorSet.setSkills,
             groupSkills: armorSet.groupSkills,
             freeSlots: armorSet.slots,
+            freeWeaponSlots: armorSet.weaponSlots,
             // defense: armorSet.defense
         };
     }
 
-    const decosUsed = getDecosToFulfillSkills(decos, desiredSkills, armorSet.slots, armorSet.skills);
+    const decosUsed = getDecosToFulfillSkills(
+        decos, desiredSkills, armorSet.slots, armorSet.weaponSlots, armorSet.skills
+    );
 
     if (decosUsed) {
         const decosSkillsMap = getDecoSkillsFromNames(decosUsed.decoNames);
@@ -832,6 +890,7 @@ export const test = (armorSet, decos, desiredSkills) => {
             setSkills: armorSet.setSkills,
             groupSkills: armorSet.groupSkills,
             freeSlots: decosUsed.freeSlots,
+            freeWeaponSlots: decosUsed.freeWeaponSlots,
             // defense: armorSet.defense
         };
     }
@@ -996,7 +1055,8 @@ export const search = async parameters => {
     const gear = speed(
         getBestArmor, params.skills, params.setSkills, params.groupSkills,
         params.mandatoryArmor, params.blacklistedArmor, params.blacklistedArmorTypes,
-        params.dontUseDecos
+        params.dontUseDecos, params.weaponSlots, params.setSkillBonus, params.groupSkillBonus,
+        params.customTalismans, params.useOnlyOwnedTalismans
     );
 
     decoInventory = { ...DECO_INVENTORY };

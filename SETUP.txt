@@ -5,3 +5,8 @@ then to update the data
 python misc\jsoner.py 
 
 python misc\tasks.py
+
+npm install
+
+npm start
+

@@ -6,6 +6,7 @@ import Search from "./components/Search";
 import CustomTabPanel from "./components/CustomTabPanel";
 import SavedSets from "./components/SavedSets";
 import DecoInventory from "./components/DecoInventory";
+import CharmCreator from "./components/CharmCreator";
 import Settings from "./components/Settings";
 import { DEBUG } from "./util/constants";
 import { runAllTests } from "./util/logic";
@@ -45,7 +46,8 @@ const App = () => {
     "Search": 0,
     "Saved Sets": 1,
     "Decorations": 2,
-    "Settings": 3
+    "Charm Creator": 3,
+    "Settings": 4
   };
 
   const renderTab = (name, index) => {
@@ -63,7 +65,8 @@ const App = () => {
         <SavedSets />
       </CustomTabPanel>
       <CustomTabPanel value={tab} index={2}><DecoInventory /></CustomTabPanel>
-      <CustomTabPanel value={tab} index={3}><Settings /></CustomTabPanel>
+      <CustomTabPanel value={tab} index={3}><CharmCreator /></CustomTabPanel>
+      <CustomTabPanel value={tab} index={4}><Settings /></CustomTabPanel>
     </div>
   );
 };

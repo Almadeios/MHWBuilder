@@ -14,6 +14,11 @@ const DEFAULTS = {
     // search parameters
     skills: {},
     slotFilters: {},
+    weaponSlots: [],
+    setSkillBonus: '',
+    groupSkillBonus: '',
+    customTalismans: [],
+    useOnlyOwnedTalismans: false,
     decoInventory: {},
     mandatoryArmor: ['', '', '', '', '', ''],
     blacklistedArmor: [],
