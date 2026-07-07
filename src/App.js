@@ -13,7 +13,7 @@ import { useStorage } from "./hooks/StorageContext";
 // import { compareArmor } from "./util/kiranico";
 
 const App = () => {
-  const { fields, swapTab, setSwapTab } = useStorage();
+  const { swapTab, setSwapTab } = useStorage();
   const [tab, setTab] = useState(0);
 
   useEffect(() => {
@@ -38,11 +38,6 @@ const App = () => {
   };
 
   const handleTabChange = (event, newValue) => {
-    if (newValue === "external") {
-      window.open(source, '_blank');
-      return;
-    }
-
     setTab(newValue);
   };
 
@@ -57,16 +52,11 @@ const App = () => {
     return <Tab key={name} label={name} {...tabProps(index)} />;
   };
 
-  const source = "https://github.com/cecilbowen/mhwilds-set-search";
-  const github = <img className="github" src={`images/github.png`} style={{ width: '14px', height: '14px' }} />;
   return (
     <div className="App">
       <Tabs value={tab} onChange={handleTabChange} aria-label="tabs" variant="scrollable"
         allowScrollButtonsMobile className="tab-root">
         {Object.entries(tabs).map(([name, index]) => renderTab(name, index))}
-        {!fields.hideSource && <Tab label={"Source Code"} icon={github} iconPosition="start"
-          sx={{ color: '#873777', minHeight: 'unset' }}
-          value="external" onClick={e => e.preventDefault()} />}
       </Tabs>
       <CustomTabPanel value={tab} index={0}><Search /></CustomTabPanel>
       <CustomTabPanel value={tab} index={1}>

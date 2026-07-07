@@ -1,91 +1,113 @@
 {
-    "Afi Top Alpha": {
-        "defense": 36,
-        "description": "Flamefete Ticket chest armor. It's adorned with fiery designs that stand out in the midsummer heat, enlivening the festivities.",
-        "dragonResistance": 2,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [
-            "Flamefete Prayer"
-        ],
-        "skills": {
-            "Burst": 1,
-            "Heroics": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Ajarakan Mail": {
-        "defense": 24,
-        "description": "Ajarakan chest armor. The heat of its flames warns prey of their final immolation.",
+    "Hope Mail": {
+        "defense": 2,
+        "description": "Armor crafted specifically for members of the expedition. An all-seasons design for any clime.",
         "dragonResistance": 0,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Fortifying Pelt"
-        ],
-        "iceResistance": -2,
+        "fireResistance": 1,
+        "groupSkill": [],
+        "iceResistance": 0,
         "rank": "low",
-        "rarity": 3,
+        "rarity": 1,
         "setSkill": [],
         "skills": {
-            "Partbreaker": 1
+            "Divine Blessing": 1
         },
         "slots": [],
         "thunderResistance": 1,
         "type": "chest",
-        "waterResistance": -3
+        "waterResistance": 0
     },
-    "Ajarakan Mail Alpha": {
-        "defense": 48,
-        "description": "Ajarakan chest armor. The heat of its flames warns prey of their final immolation.",
+    "Leather Vest": {
+        "defense": 2,
+        "description": "Simple chest armor reinforced with monster hide. A design that maximizes wearability.",
         "dragonResistance": 0,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Fortifying Pelt"
-        ],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 6,
+        "fireResistance": 2,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 1,
         "setSkill": [],
         "skills": {
-            "Blast Resistance": 1,
-            "Resentment": 2
+            "Botanist": 1
         },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 1,
+        "slots": [],
+        "thunderResistance": 0,
         "type": "chest",
-        "waterResistance": -3
+        "waterResistance": 0
     },
-    "Ajarakan Mail Beta": {
-        "defense": 48,
-        "description": "Ajarakan chest armor. The heat of its flames warns prey of their final immolation.",
+    "Chainmail Vest": {
+        "defense": 2,
+        "description": "Chest armor made of woven chain links. Tried and true, it offers solid, functional defense.",
         "dragonResistance": 0,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Alluring Pelt"
-        ],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 6,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 1,
         "setSkill": [],
         "skills": {
-            "Resentment": 2
+            "Geologist": 1
         },
-        "slots": [
-            2
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Bone Mail": {
+        "defense": 4,
+        "description": "Traditional chest armor with a unique plating of intricately pieced together monster bones.",
+        "dragonResistance": 2,
+        "fireResistance": 2,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 1,
+        "setSkill": [],
+        "skills": {
+            "Marathon Runner": 1
+        },
+        "slots": [],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Chatacabra Mail": {
+        "defense": 6,
+        "description": "Chatacabra chest armor. Equipped with generous elastic cushioning in the collar.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Flexible Leathercraft"
         ],
-        "thunderResistance": 1,
+        "iceResistance": -1,
+        "rank": "low",
+        "rarity": 1,
+        "setSkill": [],
+        "skills": {
+            "Speed Eating": 1
+        },
+        "slots": [],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Quematrice Mail": {
+        "defense": 6,
+        "description": "Quematrice chest armor. The design may look ceremonial, but it offers ample protection.",
+        "dragonResistance": 0,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": -1,
+        "rank": "low",
+        "rarity": 1,
+        "setSkill": [],
+        "skills": {
+            "Fire Resistance": 1
+        },
+        "slots": [],
+        "thunderResistance": 0,
         "type": "chest",
         "waterResistance": -3
     },
@@ -107,146 +129,62 @@
         "type": "chest",
         "waterResistance": 1
     },
-    "Alloy Mail Alpha": {
-        "defense": 32,
-        "description": "Chest armor crafted from quality ore. Made with a logical, no-frills construction that puts mobility first.",
-        "dragonResistance": 1,
+    "Vespoid Mail": {
+        "defense": 4,
+        "description": "Vespoid chest armor. Its arcane build provides formidable resistance to physical attacks.",
+        "dragonResistance": 2,
         "fireResistance": -2,
-        "groupSkill": [],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 5,
+        "groupSkill": [
+            "Neopteron Alert"
+        ],
+        "iceResistance": 1,
+        "rank": "low",
+        "rarity": 1,
         "setSkill": [],
         "skills": {
-            "Flinch Free": 2
+            "Survival Expert": 1
         },
-        "slots": [
-            1
-        ],
-        "thunderResistance": -2,
+        "slots": [],
+        "thunderResistance": 1,
         "type": "chest",
         "waterResistance": 1
     },
-    "Arkvulcan Mail Alpha": {
-        "defense": 66,
-        "description": "Chest armor made from Arkveld spoils. The knight fearlessly broke the will of every adversary.",
-        "dragonResistance": -3,
-        "fireResistance": 2,
+    "Barina Mail": {
+        "defense": 8,
+        "description": "Lala Barina chest armor. It may look like normal clothing, but it's just as hardy as armor.",
+        "dragonResistance": 3,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Neopteron Alert"
+        ],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 1,
+        "setSkill": [],
+        "skills": {
+            "Paralysis Resistance": 1
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Conga Mail": {
+        "defense": 8,
+        "description": "Chest armor made from Congalala materials. The shocks of monster fur help hunters keep it wild.",
+        "dragonResistance": 2,
+        "fireResistance": -3,
         "groupSkill": [
             "Fortifying Pelt"
         ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Arkveld's Hunger"
-        ],
-        "skills": {
-            "Elemental Absorption": 1,
-            "Weakness Exploit": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Arkvulcan Mail Beta": {
-        "defense": 66,
-        "description": "Chest armor made from Arkveld spoils. The knight fearlessly broke the will of every adversary.",
-        "dragonResistance": -3,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Alluring Pelt"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Arkveld's Hunger"
-        ],
-        "skills": {
-            "Weakness Exploit": 1
-        },
-        "slots": [
-            3,
-            2
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Arkvulcan Mail Gamma": {
-        "defense": 0,
-        "description": "[no gear description in database]",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Lord's Soul"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 1,
-        "setSkill": [
-            "Arkveld's Hunger"
-        ],
-        "skills": {
-            "Blight Resistance": 1,
-            "Convert Element": 3
-        },
-        "slots": [
-            3,
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Artian Mail Alpha": {
-        "defense": 44,
-        "description": "Chest armor made from eldritch scraps, which even the Smithy struggled with.",
-        "dragonResistance": 3,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Guardian's Protection"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 6,
+        "iceResistance": -1,
+        "rank": "low",
+        "rarity": 2,
         "setSkill": [],
         "skills": {
-            "Adaptability": 1,
-            "Flayer": 1
+            "Mushroomancer": 1
         },
-        "slots": [
-            2,
-            1,
-            1
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Azuz Apron Alpha": {
-        "defense": 44,
-        "description": "Chest armor worn in the village of the Everforge. Large medallions denoting mastery are sewn on as reinforcement. ",
-        "dragonResistance": 1,
-        "fireResistance": 4,
-        "groupSkill": [
-            "Imparted Wisdom"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Heroics": 3
-        },
-        "slots": [
-            1,
-            1
-        ],
+        "slots": [],
         "thunderResistance": 1,
         "type": "chest",
         "waterResistance": 1
@@ -268,6 +206,884 @@
         },
         "slots": [],
         "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Doshaguma Mail": {
+        "defense": 16,
+        "description": "Doshaguma chest armor. The lush shocks of fur function as a robust defensive layer.",
+        "dragonResistance": 4,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Fortifying Pelt"
+        ],
+        "iceResistance": -1,
+        "rank": "low",
+        "rarity": 2,
+        "setSkill": [
+            "Doshaguma's Might"
+        ],
+        "skills": {
+            "Free Meal": 1
+        },
+        "slots": [],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Ingot Mail": {
+        "defense": 16,
+        "description": "Chest armor crafted from brilliant golden ore. Its color and design are both highly pleasing.",
+        "dragonResistance": 0,
+        "fireResistance": -2,
+        "groupSkill": [],
+        "iceResistance": -1,
+        "rank": "low",
+        "rarity": 3,
+        "setSkill": [],
+        "skills": {
+            "Windproof": 1
+        },
+        "slots": [],
+        "thunderResistance": 3,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Kranodath Mail": {
+        "defense": 16,
+        "description": "Kranodath chest armor. What armor enthusiast could resist such ornate plating?",
+        "dragonResistance": 0,
+        "fireResistance": 4,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": -2,
+        "rank": "low",
+        "rarity": 3,
+        "setSkill": [],
+        "skills": {
+            "Flinch Free": 2
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Rompopolo Mail": {
+        "defense": 18,
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that\u2014supposedly\u2014never leaks.",
+        "dragonResistance": 1,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Flexible Leathercraft"
+        ],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 3,
+        "setSkill": [],
+        "skills": {
+            "Wide-Range": 1
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Nerscylla Mail": {
+        "defense": 20,
+        "description": "Chest armor made from Nerscylla materials. Advanced engineering makes it feel impossibly light.",
+        "dragonResistance": 2,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Neopteron Alert"
+        ],
+        "iceResistance": 1,
+        "rank": "low",
+        "rarity": 3,
+        "setSkill": [],
+        "skills": {
+            "Bind Resistance": 1,
+            "Poison Resistance": 1
+        },
+        "slots": [],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Hirabami Mail": {
+        "defense": 22,
+        "description": "Chest armor made from Hirabami spoils. The style is inspired by the gallant warriors of a foreign land.",
+        "dragonResistance": 0,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": 3,
+        "rank": "low",
+        "rarity": 3,
+        "setSkill": [],
+        "skills": {
+            "Evade Window": 1,
+            "Recovery Speed": 1
+        },
+        "slots": [],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Ajarakan Mail": {
+        "defense": 24,
+        "description": "Ajarakan chest armor. The heat of its flames warns prey of their final immolation.",
+        "dragonResistance": 0,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Fortifying Pelt"
+        ],
+        "iceResistance": -2,
+        "rank": "low",
+        "rarity": 3,
+        "setSkill": [],
+        "skills": {
+            "Partbreaker": 1
+        },
+        "slots": [],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Duna Wildmail": {
+        "defense": 26,
+        "description": "Uth Duna chest armor. The tightly fitted scales make the wearer feel as if they are one with nature.",
+        "dragonResistance": 0,
+        "fireResistance": -1,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Uth Duna's Cover"
+        ],
+        "skills": {
+            "Peak Performance": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 4
+    },
+    "Rey Sandmail": {
+        "defense": 26,
+        "description": "Rey Dau chest armor. Its carapace has been meticulously paneled into a bastion of defense.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": -3,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Rey Dau's Voltage"
+        ],
+        "skills": {
+            "Constitution": 1
+        },
+        "slots": [],
+        "thunderResistance": 4,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Udra Miremail": {
+        "defense": 26,
+        "description": "Nu Udra chest armor. As if a curse manifested, tentacles drape down to form a haunting cape.",
+        "dragonResistance": 0,
+        "fireResistance": 5,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": 1,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Nu Udra's Mutiny"
+        ],
+        "skills": {
+            "Resentment": 1,
+            "Speed Eating": 1
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -4
+    },
+    "G Doshaguma Mail": {
+        "defense": 26,
+        "description": "Chest armor made from Guardian Doshaguma spoils. It instills a new vitality and sense of purpose.",
+        "dragonResistance": 2,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Guardian's Pulse"
+        ],
+        "iceResistance": -2,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Doshaguma's Might"
+        ],
+        "skills": {
+            "Heroics": 1,
+            "Iron Skin": 1
+        },
+        "slots": [],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "G Rathalos Mail": {
+        "defense": 26,
+        "description": "Chest armor made from Guardian Rathalos spoils. It instills a new vitality and sense of purpose.",
+        "dragonResistance": -5,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Guardian's Pulse"
+        ],
+        "iceResistance": 1,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Rathalos's Flare"
+        ],
+        "skills": {
+            "Intimidator": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "G Ebony Mail": {
+        "defense": 26,
+        "description": "Chest armor made from Guardian Ebony Odogaron spoils. It instills a new vitality and sense of purpose.",
+        "dragonResistance": 4,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Guardian's Pulse"
+        ],
+        "iceResistance": -2,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Ebony Odogaron's Power"
+        ],
+        "skills": {
+            "Bleeding Resistance": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Xu Wu Mail": {
+        "defense": 26,
+        "description": "Xu Wu chest armor. The long scarf can be used as protective gear and multi-purpose rope.",
+        "dragonResistance": 2,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Flexible Leathercraft"
+        ],
+        "iceResistance": -3,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [],
+        "skills": {
+            "Stamina Surge": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "G Arkveld Mail": {
+        "defense": 30,
+        "description": "Guardian Arkveld chest armor. It beckons forth a shudder of indescribable power.",
+        "dragonResistance": -4,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Guardian's Pulse"
+        ],
+        "iceResistance": 0,
+        "rank": "low",
+        "rarity": 4,
+        "setSkill": [
+            "Guardian Arkveld's Vitality"
+        ],
+        "skills": {
+            "Blight Resistance": 1,
+            "Flayer": 1
+        },
+        "slots": [],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Hope Mail Alpha": {
+        "defense": 26,
+        "description": "Armor crafted specifically for members of the expedition. An all-seasons design for any clime.",
+        "dragonResistance": 0,
+        "fireResistance": 1,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Poison Resistance": 1
+        },
+        "slots": [
+            1,
+            1
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Leather Mail Alpha": {
+        "defense": 26,
+        "description": "Simple chest armor reinforced with monster hide. A design that maximizes wearability.",
+        "dragonResistance": 0,
+        "fireResistance": 2,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Botanist": 1,
+            "Item Prolonger": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Chainmail Armor Alpha": {
+        "defense": 26,
+        "description": "Chest armor made of woven chain links. Tried and true, it offers solid, functional defense.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Geologist": 1,
+            "Ice Resistance": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Bone Mail Alpha": {
+        "defense": 32,
+        "description": "Traditional chest armor with a unique plating of intricately pieced together monster bones.",
+        "dragonResistance": 2,
+        "fireResistance": 2,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Marathon Runner": 1,
+            "Stun Resistance": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Alloy Mail Alpha": {
+        "defense": 32,
+        "description": "Chest armor crafted from quality ore. Made with a logical, no-frills construction that puts mobility first.",
+        "dragonResistance": 1,
+        "fireResistance": -2,
+        "groupSkill": [],
+        "iceResistance": -2,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Flinch Free": 2
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Vespoid Mail Alpha": {
+        "defense": 32,
+        "description": "Vespoid chest armor. Its arcane build provides formidable resistance to physical attacks.",
+        "dragonResistance": 2,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Neopteron Alert"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Evade Window": 1,
+            "Survival Expert": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Vespoid Mail Beta": {
+        "defense": 32,
+        "description": "Vespoid chest armor. Its arcane build provides formidable resistance to physical attacks.",
+        "dragonResistance": 2,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Neopteron Camouflage"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Survival Expert": 1
+        },
+        "slots": [
+            1,
+            1,
+            1
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Kranodath Mail Alpha": {
+        "defense": 32,
+        "description": "Kranodath chest armor. What armor enthusiast could resist such ornate plating?",
+        "dragonResistance": 0,
+        "fireResistance": 4,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": -2,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Flinch Free": 2,
+            "Partbreaker": 1
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Kranodath Mail Beta": {
+        "defense": 32,
+        "description": "Kranodath chest armor. What armor enthusiast could resist such ornate plating?",
+        "dragonResistance": 0,
+        "fireResistance": 4,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": -2,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Flinch Free": 2
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Kut-Ku Mail Alpha": {
+        "defense": 36,
+        "description": "Chest armor made from Yian Kut-Ku materials. Its unique color evokes thoughts of a foreign land.",
+        "dragonResistance": 2,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": -4,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Agitator": 1,
+            "Fire Resistance": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Kut-Ku Mail Beta": {
+        "defense": 36,
+        "description": "Chest armor made from Yian Kut-Ku materials. Its unique color evokes thoughts of a foreign land.",
+        "dragonResistance": 2,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": -4,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Agitator": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Chatacabra Mail Alpha": {
+        "defense": 36,
+        "description": "Chatacabra chest armor. Equipped with generous elastic cushioning in the collar.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Flexible Leathercraft"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Speed Eating": 1,
+            "Weakness Exploit": 1
+        },
+        "slots": [],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Chatacabra Mail Beta": {
+        "defense": 36,
+        "description": "Chatacabra chest armor. Equipped with generous elastic cushioning in the collar.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Buttery Leathercraft"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Speed Eating": 1
+        },
+        "slots": [
+            1,
+            1,
+            1
+        ],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Quematrice Mail Alpha": {
+        "defense": 36,
+        "description": "Quematrice chest armor. The design may look ceremonial, but it offers ample protection.",
+        "dragonResistance": 0,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Fire Resistance": 1,
+            "Latent Power": 1
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Quematrice Mail Beta": {
+        "defense": 36,
+        "description": "Quematrice chest armor. The design may look ceremonial, but it offers ample protection.",
+        "dragonResistance": 0,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Latent Power": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Barina Mail Alpha": {
+        "defense": 36,
+        "description": "Lala Barina chest armor. It may look like normal clothing, but it's just as hardy as armor.",
+        "dragonResistance": 3,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Neopteron Alert"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Evade Window": 1,
+            "Recovery Up": 2
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Barina Mail Beta": {
+        "defense": 36,
+        "description": "Lala Barina chest armor. It may look like normal clothing, but it's just as hardy as armor.",
+        "dragonResistance": 3,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Neopteron Camouflage"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Evade Window": 1,
+            "Recovery Up": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Conga Mail Alpha": {
+        "defense": 36,
+        "description": "Chest armor made from Congalala materials. The shocks of monster fur help hunters keep it wild.",
+        "dragonResistance": 2,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Fortifying Pelt"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Burst": 1,
+            "Intimidator": 2
+        },
+        "slots": [],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Conga Mail Beta": {
+        "defense": 36,
+        "description": "Chest armor made from Congalala materials. The shocks of monster fur help hunters keep it wild.",
+        "dragonResistance": 2,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Alluring Pelt"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Intimidator": 2
+        },
+        "slots": [
+            1,
+            1,
+            1
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Rompopolo Mail Alpha": {
+        "defense": 36,
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that\u2014supposedly\u2014never leaks.",
+        "dragonResistance": 1,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Flexible Leathercraft"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Poison Resistance": 2,
+            "Wide-Range": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Rompopolo Mail Beta": {
+        "defense": 36,
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that\u2014supposedly\u2014never leaks.",
+        "dragonResistance": 1,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Buttery Leathercraft"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Poison Resistance": 2
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Gypceros Mail Alpha": {
+        "defense": 36,
+        "description": "Chest armor made from Gypceros materials. Its elastic qualities provide reliable impact resistance.",
+        "dragonResistance": 1,
+        "fireResistance": -4,
+        "groupSkill": [
+            "Flexible Leathercraft"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Poison Resistance": 1,
+            "Stamina Surge": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 4,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Gypceros Mail Beta": {
+        "defense": 36,
+        "description": "Chest armor made from Gypceros materials. Its elastic qualities provide reliable impact resistance.",
+        "dragonResistance": 1,
+        "fireResistance": -4,
+        "groupSkill": [
+            "Buttery Leathercraft"
+        ],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Stamina Surge": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 4,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Nerscylla Mail Alpha": {
+        "defense": 38,
+        "description": "Chest armor made from Nerscylla materials. Advanced engineering makes it feel impossibly light.",
+        "dragonResistance": 2,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Neopteron Alert"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Ambush": 1,
+            "Weakness Exploit": 1
+        },
+        "slots": [],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Nerscylla Mail Beta": {
+        "defense": 38,
+        "description": "Chest armor made from Nerscylla materials. Advanced engineering makes it feel impossibly light.",
+        "dragonResistance": 2,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Neopteron Camouflage"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Ambush": 1
+        },
+        "slots": [
+            1,
+            1,
+            1
+        ],
+        "thunderResistance": -2,
         "type": "chest",
         "waterResistance": 2
     },
@@ -318,604 +1134,44 @@
         "type": "chest",
         "waterResistance": 2
     },
-    "Bale Cuirass Alpha": {
-        "defense": 68,
-        "description": "Chest armor worn by a dark knight. Shadowy proof of those who persist despite losing their honor.",
-        "dragonResistance": 3,
-        "fireResistance": 2,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Soul of the Dark Knight"
-        ],
-        "skills": {
-            "Latent Power": 2,
-            "Quick Sheathe": 2
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Barina Mail": {
-        "defense": 8,
-        "description": "Lala Barina chest armor. It may look like normal clothing, but it's just as hardy as armor.",
-        "dragonResistance": 3,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Neopteron Alert"
-        ],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Paralysis Resistance": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Barina Mail Alpha": {
-        "defense": 36,
-        "description": "Lala Barina chest armor. It may look like normal clothing, but it's just as hardy as armor.",
-        "dragonResistance": 3,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Neopteron Alert"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Evade Window": 1,
-            "Recovery Up": 2
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Barina Mail Beta": {
-        "defense": 36,
-        "description": "Lala Barina chest armor. It may look like normal clothing, but it's just as hardy as armor.",
-        "dragonResistance": 3,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Neopteron Camouflage"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Evade Window": 1,
-            "Recovery Up": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Battle Mail Alpha": {
-        "defense": 44,
-        "description": "Chest armor designed for seasoned hunters. Stylish, useful, and solid protection\u2014it checks all the boxes.",
+    "Hirabami Mail Alpha": {
+        "defense": 38,
+        "description": "Chest armor made from Hirabami spoils. The style is inspired by the gallant warriors of a foreign land.",
         "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Imparted Wisdom"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Hunger Resistance": 3,
-            "Sleep Resistance": 2
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": -1
-    },
-    "Blango Mail Alpha": {
-        "defense": 48,
-        "description": "Chest armor made of Blangonga materials. It has a distinct, eastern feel to it.",
-        "dragonResistance": 0,
-        "fireResistance": -4,
-        "groupSkill": [
-            "Fortifying Pelt"
-        ],
-        "iceResistance": 4,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Blangonga's Spirit"
-        ],
-        "skills": {
-            "Agitator": 2,
-            "Item Prolonger": 2
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Blango Mail Beta": {
-        "defense": 48,
-        "description": "Chest armor made of Blangonga materials. It has a distinct, eastern feel to it.",
-        "dragonResistance": 0,
-        "fireResistance": -4,
-        "groupSkill": [
-            "Alluring Pelt"
-        ],
-        "iceResistance": 4,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Blangonga's Spirit"
-        ],
-        "skills": {
-            "Agitator": 2
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Blossom Vest Alpha": {
-        "defense": 36,
-        "description": "Blossom Ticket chest armor. The flower brooch adds a snazzy touch.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Paralysis Resistance": 1
-        },
-        "slots": [
-            2,
-            1,
-            1
-        ],
-        "thunderResistance": 4,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Bone Mail": {
-        "defense": 4,
-        "description": "Traditional chest armor with a unique plating of intricately pieced together monster bones.",
-        "dragonResistance": 2,
-        "fireResistance": 2,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Marathon Runner": 1
-        },
-        "slots": [],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Bone Mail Alpha": {
-        "defense": 32,
-        "description": "Traditional chest armor with a unique plating of intricately pieced together monster bones.",
-        "dragonResistance": 2,
-        "fireResistance": 2,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Marathon Runner": 1,
-            "Stun Resistance": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Butterfly Thorax Alpha": {
-        "defense": 44,
-        "description": "Dazzling armor made from insect parts. The wearer's every movement exudes elegance.",
-        "dragonResistance": 2,
-        "fireResistance": -1,
-        "groupSkill": [
-            "Imparted Wisdom"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Constitution": 1,
-            "Evade Extender": 1,
-            "Evade Window": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": -1
-    },
-    "Ceremonial Mail Alpha": {
-        "defense": 36,
-        "description": "Lumenhymn Ticket chest armor. Dazzling to behold, and yet warm with the splendor of winter.",
-        "dragonResistance": 2,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": -3,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [
-            "Lumenhymn Prayer"
-        ],
-        "skills": {
-            "Agitator": 1,
-            "Convert Element": 1,
-            "Dragon Resistance": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Chainmail Armor Alpha": {
-        "defense": 26,
-        "description": "Chest armor made of woven chain links. Tried and true, it offers solid, functional defense.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Geologist": 1,
-            "Ice Resistance": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Chainmail Vest": {
-        "defense": 2,
-        "description": "Chest armor made of woven chain links. Tried and true, it offers solid, functional defense.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Geologist": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Chatacabra Mail": {
-        "defense": 6,
-        "description": "Chatacabra chest armor. Equipped with generous elastic cushioning in the collar.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Flexible Leathercraft"
-        ],
-        "iceResistance": -1,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Speed Eating": 1
-        },
-        "slots": [],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Chatacabra Mail Alpha": {
-        "defense": 36,
-        "description": "Chatacabra chest armor. Equipped with generous elastic cushioning in the collar.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Flexible Leathercraft"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Speed Eating": 1,
-            "Weakness Exploit": 1
-        },
-        "slots": [],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Chatacabra Mail Beta": {
-        "defense": 36,
-        "description": "Chatacabra chest armor. Equipped with generous elastic cushioning in the collar.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Buttery Leathercraft"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Speed Eating": 1
-        },
-        "slots": [
-            1,
-            1,
-            1
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Clerk Suit Alpha": {
-        "defense": 48,
-        "description": "Grand Hub handler chest armor. A manifestation of the desire to fill the Grand Hub with color.",
-        "dragonResistance": 2,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Glory's Favor"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Divine Blessing": 1,
-            "Survival Expert": 2
-        },
-        "slots": [
-            2,
-            1
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Commission Mail Alpha": {
-        "defense": 44,
-        "description": "Chest armor worn by hunters on an expedition to the New World. Sturdily made.",
-        "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Agitator": 1,
-            "Divine Blessing": 2
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Conga Mail": {
-        "defense": 8,
-        "description": "Chest armor made from Congalala materials. The shocks of monster fur help hunters keep it wild.",
-        "dragonResistance": 2,
         "fireResistance": -3,
         "groupSkill": [
-            "Fortifying Pelt"
-        ],
-        "iceResistance": -1,
-        "rank": "low",
-        "rarity": 2,
-        "setSkill": [],
-        "skills": {
-            "Mushroomancer": 1
-        },
-        "slots": [],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Conga Mail Alpha": {
-        "defense": 36,
-        "description": "Chest armor made from Congalala materials. The shocks of monster fur help hunters keep it wild.",
-        "dragonResistance": 2,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Fortifying Pelt"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Burst": 1,
-            "Intimidator": 2
-        },
-        "slots": [],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Conga Mail Beta": {
-        "defense": 36,
-        "description": "Chest armor made from Congalala materials. The shocks of monster fur help hunters keep it wild.",
-        "dragonResistance": 2,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Alluring Pelt"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Intimidator": 2
-        },
-        "slots": [
-            1,
-            1,
-            1
-        ],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Dahaad Shardmail Alpha": {
-        "defense": 60,
-        "description": "Jin Dahaad chest armor. The layered plates repel all pain and nurture an icy vengeance.",
-        "dragonResistance": -1,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Jin Dahaad's Revolt"
-        ],
-        "skills": {
-            "Adaptability": 1,
-            "Bind Resistance": 2
-        },
-        "slots": [
-            3,
-            1
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Dahaad Shardmail Beta": {
-        "defense": 60,
-        "description": "Jin Dahaad chest armor. The layered plates repel all pain and nurture an icy vengeance.",
-        "dragonResistance": -1,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Lord's Fury"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Jin Dahaad's Revolt"
-        ],
-        "skills": {
-            "Adaptability": 1,
-            "Bind Resistance": 1
-        },
-        "slots": [
-            3,
-            2
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Dahaad Shardmail Gamma": {
-        "defense": 68,
-        "description": "Chest armor made from special Jin Dahaad materials. The shining white polyplating evokes the valor of the Arch-tempered.",
-        "dragonResistance": -1,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Lord's Soul"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Jin Dahaad's Revolt"
-        ],
-        "skills": {
-            "Agitator": 2
-        },
-        "slots": [
-            2,
-            2
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Damascus Mail Alpha": {
-        "defense": 56,
-        "description": "Steel chest armor capable of stopping a thousand arrows as it leads the wearer to glory.",
-        "dragonResistance": 0,
-        "fireResistance": 4,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [],
-        "skills": {
-            "Recovery Up": 2,
-            "Wide-Range": 1
-        },
-        "slots": [
-            2,
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Death Stench Muscle Alpha": {
-        "defense": 44,
-        "description": "Armor said to bring death. Unworldly light and penetratingly cold.",
-        "dragonResistance": 4,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Imparted Wisdom"
+            "Scaling Prowess"
         ],
         "iceResistance": 3,
         "rank": "high",
-        "rarity": 6,
+        "rarity": 5,
         "setSkill": [],
         "skills": {
-            "Ambush": 1,
-            "Resentment": 1
+            "Evade Window": 1,
+            "Ice Resistance": 2
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Hirabami Mail Beta": {
+        "defense": 38,
+        "description": "Chest armor made from Hirabami spoils. The style is inspired by the gallant warriors of a foreign land.",
+        "dragonResistance": 0,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": 3,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Evade Window": 1,
+            "Ice Resistance": 1
         },
         "slots": [
             2
@@ -924,96 +1180,122 @@
         "type": "chest",
         "waterResistance": 2
     },
-    "Demon Garb Alpha": {
-        "defense": 48,
-        "description": "Garb worn by a demon of combat who bears the weight of heaven on his back. (Full Armor Set)",
-        "dragonResistance": 3,
-        "fireResistance": 3,
+    "Rathian Mail Alpha": {
+        "defense": 38,
+        "description": "Worthy of the Queen of the Land's name, common metals cannot pierce this Rathian chest armor.",
+        "dragonResistance": -3,
+        "fireResistance": 2,
         "groupSkill": [
-            "Master of the Fist"
+            "Scaling Prowess"
         ],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Heroics": 3
-        },
-        "slots": [
-            3,
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Diver's Suit Alpha": {
-        "defense": 36,
-        "description": "Diving Ticket chest armor. Swimwear made with materials that fit tight to the body to ensure swimming is never a drag.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 1,
+        "iceResistance": 0,
         "rank": "high",
         "rarity": 5,
         "setSkill": [],
         "skills": {
-            "Hunger Resistance": 2,
-            "Leap of Faith": 1
+            "Foray": 2
+        },
+        "slots": [],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Rathian Mail Beta": {
+        "defense": 38,
+        "description": "Worthy of the Queen of the Land's name, common metals cannot pierce this Rathian chest armor.",
+        "dragonResistance": -3,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [],
+        "skills": {
+            "Foray": 1
         },
         "slots": [
             1,
+            1,
             1
         ],
-        "thunderResistance": 1,
+        "thunderResistance": -2,
         "type": "chest",
-        "waterResistance": 4
+        "waterResistance": 0
     },
-    "Dober Mail Alpha": {
-        "defense": 56,
-        "description": "Chest armor fashioned from obsidian bone of unknown provenance. It resembles an all-powerful monster.",
-        "dragonResistance": 4,
+    "Ingot Mail Alpha": {
+        "defense": 44,
+        "description": "Chest armor crafted from brilliant golden ore. Its color and design are both highly pleasing.",
+        "dragonResistance": 0,
         "fireResistance": -2,
         "groupSkill": [],
         "iceResistance": -1,
         "rank": "high",
-        "rarity": 7,
+        "rarity": 6,
         "setSkill": [],
         "skills": {
-            "Constitution": 1,
-            "Marathon Runner": 1
+            "Resentment": 1,
+            "Windproof": 1
         },
         "slots": [
-            3,
-            2
+            1,
+            1
         ],
-        "thunderResistance": -1,
+        "thunderResistance": 3,
         "type": "chest",
         "waterResistance": 0
     },
-    "Doshaguma Mail": {
-        "defense": 16,
-        "description": "Doshaguma chest armor. The lush shocks of fur function as a robust defensive layer.",
-        "dragonResistance": 4,
-        "fireResistance": -3,
+    "G Fulgur Mail Alpha": {
+        "defense": 48,
+        "description": "Chest armor made from Guardian Fulgur Anjanath spoils. It instills a new vitality and sense of purpose.",
+        "dragonResistance": -2,
+        "fireResistance": -1,
         "groupSkill": [
-            "Fortifying Pelt"
+            "Guardian's Pulse"
         ],
-        "iceResistance": -1,
-        "rank": "low",
-        "rarity": 2,
+        "iceResistance": -3,
+        "rank": "high",
+        "rarity": 6,
         "setSkill": [
-            "Doshaguma's Might"
+            "Fulgur Anjanath's Will"
         ],
         "skills": {
-            "Free Meal": 1
+            "Coalescence": 1,
+            "Maximum Might": 1
         },
-        "slots": [],
-        "thunderResistance": -1,
+        "slots": [
+            2
+        ],
+        "thunderResistance": 2,
         "type": "chest",
-        "waterResistance": 2
+        "waterResistance": -1
+    },
+    "G Fulgur Mail Beta": {
+        "defense": 48,
+        "description": "Chest armor made from Guardian Fulgur Anjanath spoils. It instills a new vitality and sense of purpose.",
+        "dragonResistance": -2,
+        "fireResistance": -1,
+        "groupSkill": [
+            "Guardian's Protection"
+        ],
+        "iceResistance": -3,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [
+            "Fulgur Anjanath's Will"
+        ],
+        "skills": {
+            "Maximum Might": 1
+        },
+        "slots": [
+            2,
+            1,
+            1
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": -1
     },
     "Doshaguma Mail Alpha": {
         "defense": 48,
@@ -1062,223 +1344,6 @@
             1,
             1
         ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Dreamwalker Mail Alpha": {
-        "defense": 36,
-        "description": "Dreamspell Ticket chest armor. With accents resembling restraints, it exudes nobility even in the cool autumn mist.",
-        "dragonResistance": 2,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [
-            "Dreamspell Prayer"
-        ],
-        "skills": {
-            "Flayer": 1,
-            "Sleep Resistance": 1,
-            "Wide-Range": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Duna Wildmail": {
-        "defense": 26,
-        "description": "Uth Duna chest armor. The tightly fitted scales make the wearer feel as if they are one with nature.",
-        "dragonResistance": 0,
-        "fireResistance": -1,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 4,
-        "setSkill": [
-            "Uth Duna's Cover"
-        ],
-        "skills": {
-            "Peak Performance": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 4
-    },
-    "Duna Wildmail Alpha": {
-        "defense": 60,
-        "description": "Uth Duna chest armor. The tightly fitted scales make the wearer feel as if they are one with nature.",
-        "dragonResistance": 0,
-        "fireResistance": -1,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Uth Duna's Cover"
-        ],
-        "skills": {
-            "Aquatic/Oilsilt Mobility": 1,
-            "Tool Specialist": 2
-        },
-        "slots": [
-            3
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 4
-    },
-    "Duna Wildmail Beta": {
-        "defense": 60,
-        "description": "Uth Duna chest armor. The tightly fitted scales make the wearer feel as if they are one with nature.",
-        "dragonResistance": 0,
-        "fireResistance": -1,
-        "groupSkill": [
-            "Lord's Fury"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Uth Duna's Cover"
-        ],
-        "skills": {
-            "Tool Specialist": 2
-        },
-        "slots": [
-            3,
-            1
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 4
-    },
-    "Duna Wildmail Gamma": {
-        "defense": 68,
-        "description": "Chest armor made from special Uth Duna materials. The vibrant scales evoke the valor of the Arch-tempered.",
-        "dragonResistance": 0,
-        "fireResistance": -1,
-        "groupSkill": [
-            "Lord's Soul"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Uth Duna's Cover"
-        ],
-        "skills": {
-            "Earplugs": 2,
-            "Peak Performance": 3
-        },
-        "slots": [],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 4
-    },
-    "G Arkveld Mail": {
-        "defense": 30,
-        "description": "Guardian Arkveld chest armor. It beckons forth a shudder of indescribable power.",
-        "dragonResistance": -4,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Guardian's Pulse"
-        ],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 4,
-        "setSkill": [
-            "Guardian Arkveld's Vitality"
-        ],
-        "skills": {
-            "Blight Resistance": 1,
-            "Flayer": 1
-        },
-        "slots": [],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "G Arkveld Mail Alpha": {
-        "defense": 66,
-        "description": "Guardian Arkveld chest armor. It beckons forth a shudder of indescribable power.",
-        "dragonResistance": -4,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Guardian's Pulse"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Guardian Arkveld's Vitality"
-        ],
-        "skills": {
-            "Blight Resistance": 2,
-            "Flayer": 2
-        },
-        "slots": [],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "G Arkveld Mail Beta": {
-        "defense": 66,
-        "description": "Guardian Arkveld chest armor. It beckons forth a shudder of indescribable power.",
-        "dragonResistance": -4,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Guardian's Protection"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Guardian Arkveld's Vitality"
-        ],
-        "skills": {
-            "Blight Resistance": 2,
-            "Flayer": 1
-        },
-        "slots": [
-            3
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "G Doshaguma Mail": {
-        "defense": 26,
-        "description": "Chest armor made from Guardian Doshaguma spoils. It instills a new vitality and sense of purpose.",
-        "dragonResistance": 2,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Guardian's Pulse"
-        ],
-        "iceResistance": -2,
-        "rank": "low",
-        "rarity": 4,
-        "setSkill": [
-            "Doshaguma's Might"
-        ],
-        "skills": {
-            "Heroics": 1,
-            "Iron Skin": 1
-        },
-        "slots": [],
         "thunderResistance": -1,
         "type": "chest",
         "waterResistance": 2
@@ -1334,27 +1399,48 @@
         "type": "chest",
         "waterResistance": 2
     },
-    "G Ebony Mail": {
-        "defense": 26,
-        "description": "Chest armor made from Guardian Ebony Odogaron spoils. It instills a new vitality and sense of purpose.",
-        "dragonResistance": 4,
-        "fireResistance": -2,
+    "Ajarakan Mail Alpha": {
+        "defense": 48,
+        "description": "Ajarakan chest armor. The heat of its flames warns prey of their final immolation.",
+        "dragonResistance": 0,
+        "fireResistance": 3,
         "groupSkill": [
-            "Guardian's Pulse"
+            "Fortifying Pelt"
         ],
         "iceResistance": -2,
-        "rank": "low",
-        "rarity": 4,
-        "setSkill": [
-            "Ebony Odogaron's Power"
-        ],
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
         "skills": {
-            "Bleeding Resistance": 1
+            "Blast Resistance": 1,
+            "Resentment": 2
         },
         "slots": [
             1
         ],
-        "thunderResistance": -2,
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Ajarakan Mail Beta": {
+        "defense": 48,
+        "description": "Ajarakan chest armor. The heat of its flames warns prey of their final immolation.",
+        "dragonResistance": 0,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Alluring Pelt"
+        ],
+        "iceResistance": -2,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Resentment": 2
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 1,
         "type": "chest",
         "waterResistance": -3
     },
@@ -1408,75 +1494,98 @@
         "type": "chest",
         "waterResistance": -3
     },
-    "G Fulgur Mail Alpha": {
+    "Xu Wu Mail Alpha": {
         "defense": 48,
-        "description": "Chest armor made from Guardian Fulgur Anjanath spoils. It instills a new vitality and sense of purpose.",
-        "dragonResistance": -2,
-        "fireResistance": -1,
+        "description": "Xu Wu chest armor. The long scarf can be used as protective gear and multi-purpose rope.",
+        "dragonResistance": 2,
+        "fireResistance": 1,
         "groupSkill": [
-            "Guardian's Pulse"
+            "Flexible Leathercraft"
         ],
         "iceResistance": -3,
         "rank": "high",
         "rarity": 6,
         "setSkill": [
-            "Fulgur Anjanath's Will"
+            "Xu Wu's Vigor"
         ],
         "skills": {
-            "Coalescence": 1,
-            "Maximum Might": 1
+            "Ambush": 1,
+            "Heroics": 3
         },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 2,
+        "slots": [],
+        "thunderResistance": 1,
         "type": "chest",
-        "waterResistance": -1
+        "waterResistance": 1
     },
-    "G Fulgur Mail Beta": {
+    "Xu Wu Mail Beta": {
         "defense": 48,
-        "description": "Chest armor made from Guardian Fulgur Anjanath spoils. It instills a new vitality and sense of purpose.",
-        "dragonResistance": -2,
-        "fireResistance": -1,
+        "description": "Xu Wu chest armor. The long scarf can be used as protective gear and multi-purpose rope.",
+        "dragonResistance": 2,
+        "fireResistance": 1,
         "groupSkill": [
-            "Guardian's Protection"
+            "Buttery Leathercraft"
         ],
         "iceResistance": -3,
         "rank": "high",
         "rarity": 6,
         "setSkill": [
-            "Fulgur Anjanath's Will"
+            "Xu Wu's Vigor"
         ],
         "skills": {
-            "Maximum Might": 1
+            "Heroics": 3
         },
         "slots": [
-            2,
             1,
             1
         ],
-        "thunderResistance": 2,
+        "thunderResistance": 1,
         "type": "chest",
-        "waterResistance": -1
+        "waterResistance": 1
     },
-    "G Rathalos Mail": {
-        "defense": 26,
-        "description": "Chest armor made from Guardian Rathalos spoils. It instills a new vitality and sense of purpose.",
-        "dragonResistance": -5,
+    "Rathalos Mail Alpha": {
+        "defense": 48,
+        "description": "Chest armor made of Rathalos parts. Carved from the King of the Skies, it boasts overwhelming defense.",
+        "dragonResistance": -3,
         "fireResistance": 3,
         "groupSkill": [
-            "Guardian's Pulse"
+            "Scaling Prowess"
         ],
         "iceResistance": 1,
-        "rank": "low",
-        "rarity": 4,
+        "rank": "high",
+        "rarity": 6,
         "setSkill": [
             "Rathalos's Flare"
         ],
         "skills": {
-            "Intimidator": 1
+            "Adrenaline Rush": 2,
+            "Constitution": 1
         },
         "slots": [
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Rathalos Mail Beta": {
+        "defense": 48,
+        "description": "Chest armor made of Rathalos parts. Carved from the King of the Skies, it boasts overwhelming defense.",
+        "dragonResistance": -3,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [
+            "Rathalos's Flare"
+        ],
+        "skills": {
+            "Adrenaline Rush": 2
+        },
+        "slots": [
+            1,
             1
         ],
         "thunderResistance": -2,
@@ -1533,133 +1642,6 @@
         "type": "chest",
         "waterResistance": 1
     },
-    "Gelidron Backpack Alpha": {
-        "defense": 66,
-        "description": "A highly elastic Gelidron-shaped backpack that grants impressive storage capacity. Opens via the mouth, obviously.",
-        "dragonResistance": 0,
-        "fireResistance": 4,
-        "groupSkill": [
-            "Flexible Leathercraft"
-        ],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [],
-        "skills": {
-            "Free Meal": 2,
-            "Hunger Resistance": 2,
-            "Speed Eating": 1
-        },
-        "slots": [
-            3,
-            1
-        ],
-        "thunderResistance": -4,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Gogmazios Mail Alpha": {
-        "defense": 68,
-        "description": "Gogmazios chest armor. Like a chthonian messenger, it spreads its fell burden across the world.",
-        "dragonResistance": -5,
-        "fireResistance": -4,
-        "groupSkill": [],
-        "iceResistance": 3,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Xu Wu's Vigor",
-            "Gogmapocalypse"
-        ],
-        "skills": {
-            "Adrenaline Rush": 2,
-            "Aquatic/Oilsilt Mobility": 1,
-            "Speed Eating": 2
-        },
-        "slots": [
-            3,
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Gogmazios Mail Beta": {
-        "defense": 68,
-        "description": "Gogmazios chest armor. Like a chthonian messenger, it spreads its fell burden across the world.",
-        "dragonResistance": -5,
-        "fireResistance": -4,
-        "groupSkill": [],
-        "iceResistance": 3,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Rathalos's Flare",
-            "Guardian Arkveld's Vitality"
-        ],
-        "skills": {
-            "Adrenaline Rush": 2,
-            "Aquatic/Oilsilt Mobility": 1,
-            "Speed Eating": 2
-        },
-        "slots": [
-            3,
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Gore Mail Alpha": {
-        "defense": 60,
-        "description": "Chest armor made from Gore Magala spoils. Its agonizing miasma sends prey screaming to the netherworld.",
-        "dragonResistance": -1,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Gore Magala's Tyranny"
-        ],
-        "skills": {
-            "Antivirus": 1,
-            "Evade Window": 2
-        },
-        "slots": [
-            3
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Gore Mail Beta": {
-        "defense": 60,
-        "description": "Chest armor made from Gore Magala spoils. Its agonizing miasma sends prey screaming to the netherworld.",
-        "dragonResistance": -1,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Scale Layering"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Gore Magala's Tyranny"
-        ],
-        "skills": {
-            "Evade Window": 2
-        },
-        "slots": [
-            3,
-            1
-        ],
-        "thunderResistance": -1,
-        "type": "chest",
-        "waterResistance": 3
-    },
     "Gravios Mail Alpha": {
         "defense": 52,
         "description": "Chest armor made from Gravios parts. Striking it is more likely to hurt the attacker.",
@@ -1712,6 +1694,705 @@
         "type": "chest",
         "waterResistance": -3
     },
+    "Blango Mail Alpha": {
+        "defense": 48,
+        "description": "Chest armor made of Blangonga materials. It has a distinct, eastern feel to it.",
+        "dragonResistance": 0,
+        "fireResistance": -4,
+        "groupSkill": [
+            "Fortifying Pelt"
+        ],
+        "iceResistance": 4,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [
+            "Blangonga's Spirit"
+        ],
+        "skills": {
+            "Agitator": 2,
+            "Item Prolonger": 2
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Blango Mail Beta": {
+        "defense": 48,
+        "description": "Chest armor made of Blangonga materials. It has a distinct, eastern feel to it.",
+        "dragonResistance": 0,
+        "fireResistance": -4,
+        "groupSkill": [
+            "Alluring Pelt"
+        ],
+        "iceResistance": 4,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [
+            "Blangonga's Spirit"
+        ],
+        "skills": {
+            "Agitator": 2
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Commission Mail Alpha": {
+        "defense": 44,
+        "description": "Chest armor worn by hunters on an expedition to the New World. Sturdily made.",
+        "dragonResistance": 0,
+        "fireResistance": 2,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Agitator": 1,
+            "Divine Blessing": 2
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Kunafa Cloak Alpha": {
+        "defense": 44,
+        "description": "A cloak worn for generations in the Windsong Village, notable for the Seikret feathers woven into it.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Free Meal": 2,
+            "Palico Rally": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 4,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Azuz Apron Alpha": {
+        "defense": 44,
+        "description": "Chest armor worn in the village of the Everforge. Large medallions denoting mastery are sewn on as reinforcement. ",
+        "dragonResistance": 1,
+        "fireResistance": 4,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Heroics": 3
+        },
+        "slots": [
+            1,
+            1
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Sild Coat Alpha": {
+        "defense": 44,
+        "description": "A coat worn in the Keepers' Vigil. Thick, but also extremely light so as not to impede their daily work.",
+        "dragonResistance": 4,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Wide-Range": 4
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 1,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Death Stench Muscle Alpha": {
+        "defense": 44,
+        "description": "Armor said to bring death. Unworldly light and penetratingly cold.",
+        "dragonResistance": 4,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 3,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Ambush": 1,
+            "Resentment": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Butterfly Thorax Alpha": {
+        "defense": 44,
+        "description": "Dazzling armor made from insect parts. The wearer's every movement exudes elegance.",
+        "dragonResistance": 2,
+        "fireResistance": -1,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Constitution": 1,
+            "Evade Extender": 1,
+            "Evade Window": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": -1
+    },
+    "King Beetle Thorax Alpha": {
+        "defense": 44,
+        "description": "Chest armor so tough it's hard to believe that it's made from insect parts.",
+        "dragonResistance": 2,
+        "fireResistance": -1,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Foray": 1,
+            "Heroics": 1,
+            "Paralysis Resistance": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": -1
+    },
+    "High Metal Mail Alpha": {
+        "defense": 44,
+        "description": "Armor made from a generous portion of ore. Can repel even the fiercest blows.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 3,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Iron Skin": 3,
+            "Partbreaker": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": -1
+    },
+    "Battle Mail Alpha": {
+        "defense": 44,
+        "description": "Chest armor designed for seasoned hunters. Stylish, useful, and solid protection\u2014it checks all the boxes.",
+        "dragonResistance": 0,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Hunger Resistance": 3,
+            "Sleep Resistance": 2
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": -1
+    },
+    "Melahoa Jacket Alpha": {
+        "defense": 44,
+        "description": "Fragrant chest armor that brings tears to the wearer's eyes as they cannot help remembering the past.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Imparted Wisdom"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Tool Specialist": 3
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 3,
+        "type": "chest",
+        "waterResistance": 1
+    },
+    "Artian Mail Alpha": {
+        "defense": 44,
+        "description": "Chest armor made from eldritch scraps, which even the Smithy struggled with.",
+        "dragonResistance": 3,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Guardian's Protection"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Adaptability": 1,
+            "Flayer": 1
+        },
+        "slots": [
+            2,
+            1,
+            1
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Dober Mail Alpha": {
+        "defense": 56,
+        "description": "Chest armor fashioned from obsidian bone of unknown provenance. It resembles an all-powerful monster.",
+        "dragonResistance": 4,
+        "fireResistance": -2,
+        "groupSkill": [],
+        "iceResistance": -1,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [],
+        "skills": {
+            "Constitution": 1,
+            "Marathon Runner": 1
+        },
+        "slots": [
+            3,
+            2
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Damascus Mail Alpha": {
+        "defense": 56,
+        "description": "Steel chest armor capable of stopping a thousand arrows as it leads the wearer to glory.",
+        "dragonResistance": 0,
+        "fireResistance": 4,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [],
+        "skills": {
+            "Recovery Up": 2,
+            "Wide-Range": 1
+        },
+        "slots": [
+            2,
+            2
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Dahaad Shardmail Alpha": {
+        "defense": 60,
+        "description": "Jin Dahaad chest armor. The layered plates repel all pain and nurture an icy vengeance.",
+        "dragonResistance": -1,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Jin Dahaad's Revolt"
+        ],
+        "skills": {
+            "Adaptability": 1,
+            "Bind Resistance": 2
+        },
+        "slots": [
+            3,
+            1
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Dahaad Shardmail Beta": {
+        "defense": 60,
+        "description": "Jin Dahaad chest armor. The layered plates repel all pain and nurture an icy vengeance.",
+        "dragonResistance": -1,
+        "fireResistance": -3,
+        "groupSkill": [
+            "Lord's Fury"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Jin Dahaad's Revolt"
+        ],
+        "skills": {
+            "Adaptability": 1,
+            "Bind Resistance": 1
+        },
+        "slots": [
+            3,
+            2
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Duna Wildmail Alpha": {
+        "defense": 60,
+        "description": "Uth Duna chest armor. The tightly fitted scales make the wearer feel as if they are one with nature.",
+        "dragonResistance": 0,
+        "fireResistance": -1,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Uth Duna's Cover"
+        ],
+        "skills": {
+            "Aquatic/Oilsilt Mobility": 1,
+            "Tool Specialist": 2
+        },
+        "slots": [
+            3
+        ],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 4
+    },
+    "Duna Wildmail Beta": {
+        "defense": 60,
+        "description": "Uth Duna chest armor. The tightly fitted scales make the wearer feel as if they are one with nature.",
+        "dragonResistance": 0,
+        "fireResistance": -1,
+        "groupSkill": [
+            "Lord's Fury"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Uth Duna's Cover"
+        ],
+        "skills": {
+            "Tool Specialist": 2
+        },
+        "slots": [
+            3,
+            1
+        ],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 4
+    },
+    "Rey Sandmail Alpha": {
+        "defense": 60,
+        "description": "Rey Dau chest armor. Its carapace has been meticulously paneled into a bastion of defense.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": -3,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Rey Dau's Voltage"
+        ],
+        "skills": {
+            "Maximum Might": 2,
+            "Stamina Surge": 1
+        },
+        "slots": [
+            1,
+            1
+        ],
+        "thunderResistance": 4,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Rey Sandmail Beta": {
+        "defense": 60,
+        "description": "Rey Dau chest armor. Its carapace has been meticulously paneled into a bastion of defense.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [
+            "Lord's Fury"
+        ],
+        "iceResistance": -3,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Rey Dau's Voltage"
+        ],
+        "skills": {
+            "Maximum Might": 1,
+            "Stamina Surge": 1
+        },
+        "slots": [
+            2,
+            1,
+            1
+        ],
+        "thunderResistance": 4,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Udra Miremail Alpha": {
+        "defense": 60,
+        "description": "Nu Udra chest armor. As if a curse manifested, tentacles drape down to form a haunting cape.",
+        "dragonResistance": 0,
+        "fireResistance": 5,
+        "groupSkill": [
+            "Lord's Favor"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Nu Udra's Mutiny"
+        ],
+        "skills": {
+            "Burst": 1,
+            "Resentment": 1
+        },
+        "slots": [
+            1,
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -4
+    },
+    "Udra Miremail Beta": {
+        "defense": 60,
+        "description": "Nu Udra chest armor. As if a curse manifested, tentacles drape down to form a haunting cape.",
+        "dragonResistance": 0,
+        "fireResistance": 5,
+        "groupSkill": [
+            "Lord's Fury"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Nu Udra's Mutiny"
+        ],
+        "skills": {
+            "Resentment": 1
+        },
+        "slots": [
+            3,
+            1,
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -4
+    },
+    "Gore Mail Alpha": {
+        "defense": 60,
+        "description": "Chest armor made from Gore Magala spoils. Its agonizing miasma sends prey screaming to the netherworld.",
+        "dragonResistance": -1,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Scaling Prowess"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Gore Magala's Tyranny"
+        ],
+        "skills": {
+            "Antivirus": 1,
+            "Evade Window": 2
+        },
+        "slots": [
+            3
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Gore Mail Beta": {
+        "defense": 60,
+        "description": "Chest armor made from Gore Magala spoils. Its agonizing miasma sends prey screaming to the netherworld.",
+        "dragonResistance": -1,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Scale Layering"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [
+            "Gore Magala's Tyranny"
+        ],
+        "skills": {
+            "Evade Window": 2
+        },
+        "slots": [
+            3,
+            1
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 3
+    },
+    "Arkvulcan Mail Alpha": {
+        "defense": 66,
+        "description": "Chest armor made from Arkveld spoils. The knight fearlessly broke the will of every adversary.",
+        "dragonResistance": -3,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Fortifying Pelt"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Arkveld's Hunger"
+        ],
+        "skills": {
+            "Elemental Absorption": 1,
+            "Weakness Exploit": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Arkvulcan Mail Beta": {
+        "defense": 66,
+        "description": "Chest armor made from Arkveld spoils. The knight fearlessly broke the will of every adversary.",
+        "dragonResistance": -3,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Alluring Pelt"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Arkveld's Hunger"
+        ],
+        "skills": {
+            "Weakness Exploit": 1
+        },
+        "slots": [
+            3,
+            2
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "G Arkveld Mail Alpha": {
+        "defense": 66,
+        "description": "Guardian Arkveld chest armor. It beckons forth a shudder of indescribable power.",
+        "dragonResistance": -4,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Guardian's Pulse"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Guardian Arkveld's Vitality"
+        ],
+        "skills": {
+            "Blight Resistance": 2,
+            "Flayer": 2
+        },
+        "slots": [],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "G Arkveld Mail Beta": {
+        "defense": 66,
+        "description": "Guardian Arkveld chest armor. It beckons forth a shudder of indescribable power.",
+        "dragonResistance": -4,
+        "fireResistance": 2,
+        "groupSkill": [
+            "Guardian's Protection"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Guardian Arkveld's Vitality"
+        ],
+        "skills": {
+            "Blight Resistance": 2,
+            "Flayer": 1
+        },
+        "slots": [
+            3
+        ],
+        "thunderResistance": -1,
+        "type": "chest",
+        "waterResistance": 0
+    },
     "Guild Ace Mail Alpha": {
         "defense": 60,
         "description": "Chest armor worn by an Astrum Unit hunter. Looks plain, but is quite bespoke on closer inspection.",
@@ -1758,416 +2439,129 @@
         "type": "chest",
         "waterResistance": 0
     },
-    "Gypceros Mail Alpha": {
-        "defense": 36,
-        "description": "Chest armor made from Gypceros materials. Its elastic qualities provide reliable impact resistance.",
-        "dragonResistance": 1,
-        "fireResistance": -4,
-        "groupSkill": [
-            "Flexible Leathercraft"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Poison Resistance": 1,
-            "Stamina Surge": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 4,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Gypceros Mail Beta": {
-        "defense": 36,
-        "description": "Chest armor made from Gypceros materials. Its elastic qualities provide reliable impact resistance.",
-        "dragonResistance": 1,
-        "fireResistance": -4,
-        "groupSkill": [
-            "Buttery Leathercraft"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Stamina Surge": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 4,
-        "type": "chest",
-        "waterResistance": 3
-    },
-    "Harvest Tronco Alpha": {
-        "defense": 36,
-        "description": "Harvest Ticket chest armor. Said to dispel fear and draw out hidden power from within.",
-        "dragonResistance": 1,
-        "fireResistance": 4,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Mushroomancer": 2,
-            "Resentment": 1
-        },
-        "slots": [],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Hawkheart Jacket Alpha": {
+    "Clerk Suit Alpha": {
         "defense": 48,
-        "description": "A jacket harboring Gemma's adventurous spirit. Wearing it serves as a gentle reminder that she'll always have your back.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Constitution": 4,
-            "Quick Sheathe": 2
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "High Metal Mail Alpha": {
-        "defense": 44,
-        "description": "Armor made from a generous portion of ore. Can repel even the fiercest blows.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Imparted Wisdom"
-        ],
-        "iceResistance": 3,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Iron Skin": 3,
-            "Partbreaker": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": -1
-    },
-    "Hirabami Mail": {
-        "defense": 22,
-        "description": "Chest armor made from Hirabami spoils. The style is inspired by the gallant warriors of a foreign land.",
-        "dragonResistance": 0,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": 3,
-        "rank": "low",
-        "rarity": 3,
-        "setSkill": [],
-        "skills": {
-            "Evade Window": 1,
-            "Recovery Speed": 1
-        },
-        "slots": [],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Hirabami Mail Alpha": {
-        "defense": 38,
-        "description": "Chest armor made from Hirabami spoils. The style is inspired by the gallant warriors of a foreign land.",
-        "dragonResistance": 0,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": 3,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Evade Window": 1,
-            "Ice Resistance": 2
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Hirabami Mail Beta": {
-        "defense": 38,
-        "description": "Chest armor made from Hirabami spoils. The style is inspired by the gallant warriors of a foreign land.",
-        "dragonResistance": 0,
-        "fireResistance": -3,
-        "groupSkill": [
-            "Scale Layering"
-        ],
-        "iceResistance": 3,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Evade Window": 1,
-            "Ice Resistance": 1
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Hope Mail": {
-        "defense": 2,
-        "description": "Armor crafted specifically for members of the expedition. An all-seasons design for any clime.",
-        "dragonResistance": 0,
-        "fireResistance": 1,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Divine Blessing": 1
-        },
-        "slots": [],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Hope Mail Alpha": {
-        "defense": 26,
-        "description": "Armor crafted specifically for members of the expedition. An all-seasons design for any clime.",
-        "dragonResistance": 0,
-        "fireResistance": 1,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Poison Resistance": 1
-        },
-        "slots": [
-            1,
-            1
-        ],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Ingot Mail": {
-        "defense": 16,
-        "description": "Chest armor crafted from brilliant golden ore. Its color and design are both highly pleasing.",
-        "dragonResistance": 0,
-        "fireResistance": -2,
-        "groupSkill": [],
-        "iceResistance": -1,
-        "rank": "low",
-        "rarity": 3,
-        "setSkill": [],
-        "skills": {
-            "Windproof": 1
-        },
-        "slots": [],
-        "thunderResistance": 3,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Ingot Mail Alpha": {
-        "defense": 44,
-        "description": "Chest armor crafted from brilliant golden ore. Its color and design are both highly pleasing.",
-        "dragonResistance": 0,
-        "fireResistance": -2,
-        "groupSkill": [],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Resentment": 1,
-            "Windproof": 1
-        },
-        "slots": [
-            1,
-            1
-        ],
-        "thunderResistance": 3,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "King Beetle Thorax Alpha": {
-        "defense": 44,
-        "description": "Chest armor so tough it's hard to believe that it's made from insect parts.",
+        "description": "Grand Hub handler chest armor. A manifestation of the desire to fill the Grand Hub with color.",
         "dragonResistance": 2,
-        "fireResistance": -1,
+        "fireResistance": 2,
         "groupSkill": [
-            "Imparted Wisdom"
+            "Glory's Favor"
         ],
-        "iceResistance": 0,
+        "iceResistance": 2,
         "rank": "high",
         "rarity": 6,
         "setSkill": [],
         "skills": {
-            "Foray": 1,
-            "Heroics": 1,
-            "Paralysis Resistance": 1
+            "Divine Blessing": 1,
+            "Survival Expert": 2
         },
         "slots": [
-            2
+            2,
+            1
         ],
         "thunderResistance": 2,
         "type": "chest",
-        "waterResistance": -1
+        "waterResistance": 2
     },
-    "Kranodath Mail": {
-        "defense": 16,
-        "description": "Kranodath chest armor. What armor enthusiast could resist such ornate plating?",
-        "dragonResistance": 0,
-        "fireResistance": 4,
+    "Mizutsune Mail Alpha": {
+        "defense": 48,
+        "description": "Mizutsune chest armor. A piece of wedding attire that took a holy maiden 100 nights to sew.",
+        "dragonResistance": -1,
+        "fireResistance": 0,
         "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": -2,
-        "rank": "low",
-        "rarity": 3,
-        "setSkill": [],
-        "skills": {
-            "Flinch Free": 2
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Kranodath Mail Alpha": {
-        "defense": 32,
-        "description": "Kranodath chest armor. What armor enthusiast could resist such ornate plating?",
-        "dragonResistance": 0,
-        "fireResistance": 4,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Flinch Free": 2,
-            "Partbreaker": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Kranodath Mail Beta": {
-        "defense": 32,
-        "description": "Kranodath chest armor. What armor enthusiast could resist such ornate plating?",
-        "dragonResistance": 0,
-        "fireResistance": 4,
-        "groupSkill": [
-            "Scale Layering"
-        ],
-        "iceResistance": -2,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Flinch Free": 2
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Kunafa Cloak Alpha": {
-        "defense": 44,
-        "description": "A cloak worn for generations in the Windsong Village, notable for the Seikret feathers woven into it.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Imparted Wisdom"
+            "Fortifying Pelt"
         ],
         "iceResistance": 1,
         "rank": "high",
         "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Free Meal": 2,
-            "Palico Rally": 1
-        },
-        "slots": [
-            2
+        "setSkill": [
+            "Mizutsune's Prowess"
         ],
-        "thunderResistance": 4,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Kut-Ku Mail Alpha": {
-        "defense": 36,
-        "description": "Chest armor made from Yian Kut-Ku materials. Its unique color evokes thoughts of a foreign land.",
-        "dragonResistance": 2,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": -4,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
         "skills": {
-            "Agitator": 1,
-            "Fire Resistance": 1
+            "Burst": 2,
+            "Constitution": 1
         },
         "slots": [
             1
         ],
-        "thunderResistance": -2,
+        "thunderResistance": -3,
         "type": "chest",
-        "waterResistance": 0
+        "waterResistance": 2
     },
-    "Kut-Ku Mail Beta": {
-        "defense": 36,
-        "description": "Chest armor made from Yian Kut-Ku materials. Its unique color evokes thoughts of a foreign land.",
-        "dragonResistance": 2,
-        "fireResistance": 3,
+    "Mizutsune Mail Beta": {
+        "defense": 48,
+        "description": "Mizutsune chest armor. A piece of wedding attire that took a holy maiden 100 nights to sew.",
+        "dragonResistance": -1,
+        "fireResistance": 0,
         "groupSkill": [
-            "Scale Layering"
+            "Alluring Pelt"
         ],
-        "iceResistance": -4,
+        "iceResistance": 1,
         "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
+        "rarity": 6,
+        "setSkill": [
+            "Mizutsune's Prowess"
+        ],
         "skills": {
-            "Agitator": 1
+            "Burst": 1,
+            "Constitution": 1
         },
         "slots": [
+            2,
             2
         ],
-        "thunderResistance": -2,
+        "thunderResistance": -3,
         "type": "chest",
-        "waterResistance": 0
+        "waterResistance": 2
+    },
+    "Numinous Shroud Alpha": {
+        "defense": 68,
+        "description": "Chest armor imbued with Zoh Shia's soul. Restrains the impulse to crush everything in its path.",
+        "dragonResistance": -4,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Guardian's Pulse"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Zoh Shia's Pulse"
+        ],
+        "skills": {
+            "Agitator": 2,
+            "Counterstrike": 1
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Numinous Shroud Beta": {
+        "defense": 68,
+        "description": "Chest armor imbued with Zoh Shia's soul. Restrains the impulse to crush everything in its path.",
+        "dragonResistance": -4,
+        "fireResistance": -2,
+        "groupSkill": [
+            "Guardian's Protection"
+        ],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Zoh Shia's Pulse"
+        ],
+        "skills": {
+            "Agitator": 2
+        },
+        "slots": [
+            3
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": 2
     },
     "Lagiacrus Mail Alpha": {
         "defense": 64,
@@ -2223,457 +2617,6 @@
         "type": "chest",
         "waterResistance": 2
     },
-    "Leather Mail Alpha": {
-        "defense": 26,
-        "description": "Simple chest armor reinforced with monster hide. A design that maximizes wearability.",
-        "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Botanist": 1,
-            "Item Prolonger": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Leather Vest": {
-        "defense": 2,
-        "description": "Simple chest armor reinforced with monster hide. A design that maximizes wearability.",
-        "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Botanist": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Melahoa Jacket Alpha": {
-        "defense": 44,
-        "description": "Fragrant chest armor that brings tears to the wearer's eyes as they cannot help remembering the past.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Imparted Wisdom"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Tool Specialist": 3
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 3,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Mizutsune Mail Alpha": {
-        "defense": 48,
-        "description": "Mizutsune chest armor. A piece of wedding attire that took a holy maiden 100 nights to sew.",
-        "dragonResistance": -1,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Fortifying Pelt"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Mizutsune's Prowess"
-        ],
-        "skills": {
-            "Burst": 2,
-            "Constitution": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Mizutsune Mail Beta": {
-        "defense": 48,
-        "description": "Mizutsune chest armor. A piece of wedding attire that took a holy maiden 100 nights to sew.",
-        "dragonResistance": -1,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Alluring Pelt"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Mizutsune's Prowess"
-        ],
-        "skills": {
-            "Burst": 1,
-            "Constitution": 1
-        },
-        "slots": [
-            2,
-            2
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Nerscylla Mail": {
-        "defense": 20,
-        "description": "Chest armor made from Nerscylla materials. Advanced engineering makes it feel impossibly light.",
-        "dragonResistance": 2,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Neopteron Alert"
-        ],
-        "iceResistance": 1,
-        "rank": "low",
-        "rarity": 3,
-        "setSkill": [],
-        "skills": {
-            "Bind Resistance": 1,
-            "Poison Resistance": 1
-        },
-        "slots": [],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Nerscylla Mail Alpha": {
-        "defense": 38,
-        "description": "Chest armor made from Nerscylla materials. Advanced engineering makes it feel impossibly light.",
-        "dragonResistance": 2,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Neopteron Alert"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Ambush": 1,
-            "Weakness Exploit": 1
-        },
-        "slots": [],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Nerscylla Mail Beta": {
-        "defense": 38,
-        "description": "Chest armor made from Nerscylla materials. Advanced engineering makes it feel impossibly light.",
-        "dragonResistance": 2,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Neopteron Camouflage"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Ambush": 1
-        },
-        "slots": [
-            1,
-            1,
-            1
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Numinous Shroud Alpha": {
-        "defense": 68,
-        "description": "Chest armor imbued with Zoh Shia's soul. Restrains the impulse to crush everything in its path.",
-        "dragonResistance": -4,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Guardian's Pulse"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Zoh Shia's Pulse"
-        ],
-        "skills": {
-            "Agitator": 2,
-            "Counterstrike": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Numinous Shroud Beta": {
-        "defense": 68,
-        "description": "Chest armor imbued with Zoh Shia's soul. Restrains the impulse to crush everything in its path.",
-        "dragonResistance": -4,
-        "fireResistance": -2,
-        "groupSkill": [
-            "Guardian's Protection"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Zoh Shia's Pulse"
-        ],
-        "skills": {
-            "Agitator": 2
-        },
-        "slots": [
-            3
-        ],
-        "thunderResistance": 2,
-        "type": "chest",
-        "waterResistance": 2
-    },
-    "Omega Suit Alpha": {
-        "defense": 68,
-        "description": "Chest armor fashioned after the apex of autonomous weaponry. No worthy opponent has been found.",
-        "dragonResistance": -2,
-        "fireResistance": 3,
-        "groupSkill": [],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [
-            "Omega Resonance"
-        ],
-        "skills": {
-            "Partbreaker": 2
-        },
-        "slots": [
-            3,
-            2
-        ],
-        "thunderResistance": -3,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Orion Vest Alpha": {
-        "defense": 66,
-        "description": "Orion Ticket chest armor that affords warmth, protection, and a feeling of comfort and security.",
-        "dragonResistance": 1,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 4,
-        "rank": "high",
-        "rarity": 8,
-        "setSkill": [],
-        "skills": {
-            "Recovery Up": 1,
-            "Windproof": 2
-        },
-        "slots": [
-            2,
-            2,
-            2
-        ],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Pinion Necklace Alpha": {
-        "defense": 60,
-        "description": "A necklace made with a single, beautiful feather. Like the bird in the expedition's emblem, it serves as a guide to hunters.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [],
-        "skills": {
-            "Agitator": 1,
-            "Heroics": 2
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Quematrice Mail": {
-        "defense": 6,
-        "description": "Quematrice chest armor. The design may look ceremonial, but it offers ample protection.",
-        "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": -1,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
-        "skills": {
-            "Fire Resistance": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Quematrice Mail Alpha": {
-        "defense": 36,
-        "description": "Quematrice chest armor. The design may look ceremonial, but it offers ample protection.",
-        "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Fire Resistance": 1,
-            "Latent Power": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Quematrice Mail Beta": {
-        "defense": 36,
-        "description": "Quematrice chest armor. The design may look ceremonial, but it offers ample protection.",
-        "dragonResistance": 0,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Scale Layering"
-        ],
-        "iceResistance": -1,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Latent Power": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Rathalos Mail Alpha": {
-        "defense": 48,
-        "description": "Chest armor made of Rathalos parts. Carved from the King of the Skies, it boasts overwhelming defense.",
-        "dragonResistance": -3,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Rathalos's Flare"
-        ],
-        "skills": {
-            "Adrenaline Rush": 2,
-            "Constitution": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Rathalos Mail Beta": {
-        "defense": 48,
-        "description": "Chest armor made of Rathalos parts. Carved from the King of the Skies, it boasts overwhelming defense.",
-        "dragonResistance": -3,
-        "fireResistance": 3,
-        "groupSkill": [
-            "Scale Layering"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Rathalos's Flare"
-        ],
-        "skills": {
-            "Adrenaline Rush": 2
-        },
-        "slots": [
-            1,
-            1
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Rathian Mail Alpha": {
-        "defense": 38,
-        "description": "Worthy of the Queen of the Land's name, common metals cannot pierce this Rathian chest armor.",
-        "dragonResistance": -3,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Scaling Prowess"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Foray": 2
-        },
-        "slots": [],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Rathian Mail Beta": {
-        "defense": 38,
-        "description": "Worthy of the Queen of the Land's name, common metals cannot pierce this Rathian chest armor.",
-        "dragonResistance": -3,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Scale Layering"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Foray": 1
-        },
-        "slots": [
-            1,
-            1,
-            1
-        ],
-        "thunderResistance": -2,
-        "type": "chest",
-        "waterResistance": 0
-    },
     "Regios Mail Alpha": {
         "defense": 64,
         "description": "Seregios chest armor. A shining army bearing a thousand souls emerges from the heated battle as victors.",
@@ -2726,80 +2669,57 @@
         "type": "chest",
         "waterResistance": 0
     },
-    "Rey Sandmail": {
-        "defense": 26,
-        "description": "Rey Dau chest armor. Its carapace has been meticulously paneled into a bastion of defense.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": -3,
-        "rank": "low",
-        "rarity": 4,
-        "setSkill": [
-            "Rey Dau's Voltage"
-        ],
-        "skills": {
-            "Constitution": 1
-        },
-        "slots": [],
-        "thunderResistance": 4,
-        "type": "chest",
-        "waterResistance": -2
-    },
-    "Rey Sandmail Alpha": {
-        "defense": 60,
-        "description": "Rey Dau chest armor. Its carapace has been meticulously paneled into a bastion of defense.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": -3,
+    "Gogmazios Mail Alpha": {
+        "defense": 68,
+        "description": "Gogmazios chest armor. Like a chthonian messenger, it spreads its fell burden across the world.",
+        "dragonResistance": -5,
+        "fireResistance": -4,
+        "groupSkill": [],
+        "iceResistance": 3,
         "rank": "high",
-        "rarity": 7,
+        "rarity": 8,
         "setSkill": [
-            "Rey Dau's Voltage"
+            "Gogmapocalypse",
+            "Xu Wu's Vigor"
         ],
         "skills": {
-            "Maximum Might": 2,
-            "Stamina Surge": 1
+            "Adrenaline Rush": 2,
+            "Aquatic/Oilsilt Mobility": 1,
+            "Speed Eating": 2
         },
         "slots": [
-            1,
-            1
+            3,
+            2
         ],
-        "thunderResistance": 4,
+        "thunderResistance": 0,
         "type": "chest",
-        "waterResistance": -2
+        "waterResistance": 3
     },
-    "Rey Sandmail Beta": {
-        "defense": 60,
-        "description": "Rey Dau chest armor. Its carapace has been meticulously paneled into a bastion of defense.",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Lord's Fury"
-        ],
-        "iceResistance": -3,
+    "Gogmazios Mail Beta": {
+        "defense": 68,
+        "description": "Gogmazios chest armor. Like a chthonian messenger, it spreads its fell burden across the world.",
+        "dragonResistance": -5,
+        "fireResistance": -4,
+        "groupSkill": [],
+        "iceResistance": 3,
         "rank": "high",
-        "rarity": 7,
+        "rarity": 8,
         "setSkill": [
-            "Rey Dau's Voltage"
+            "Gogmapocalypse",
+            "Rathalos's Flare"
         ],
         "skills": {
-            "Maximum Might": 1,
-            "Stamina Surge": 1
+            "Adrenaline Rush": 2,
+            "Aquatic/Oilsilt Mobility": 1,
+            "Speed Eating": 2
         },
         "slots": [
-            2,
-            1,
-            1
+            3,
+            2
         ],
-        "thunderResistance": 4,
+        "thunderResistance": 0,
         "type": "chest",
-        "waterResistance": -2
+        "waterResistance": 3
     },
     "Rey Sandmail Gamma": {
         "defense": 68,
@@ -2825,216 +2745,28 @@
         "type": "chest",
         "waterResistance": -2
     },
-    "Rompopolo Mail": {
-        "defense": 18,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that\u2014supposedly\u2014never leaks.",
-        "dragonResistance": 1,
-        "fireResistance": 0,
+    "Duna Wildmail Gamma": {
+        "defense": 68,
+        "description": "Chest armor made from special Uth Duna materials. The vibrant scales evoke the valor of the Arch-tempered.",
+        "dragonResistance": 0,
+        "fireResistance": -1,
         "groupSkill": [
-            "Flexible Leathercraft"
+            "Lord's Soul"
         ],
         "iceResistance": 0,
-        "rank": "low",
-        "rarity": 3,
-        "setSkill": [],
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Uth Duna's Cover"
+        ],
         "skills": {
-            "Wide-Range": 1
+            "Earplugs": 2,
+            "Peak Performance": 3
         },
         "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Rompopolo Mail Alpha": {
-        "defense": 36,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that\u2014supposedly\u2014never leaks.",
-        "dragonResistance": 1,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Flexible Leathercraft"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Poison Resistance": 2,
-            "Wide-Range": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Rompopolo Mail Beta": {
-        "defense": 36,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that\u2014supposedly\u2014never leaks.",
-        "dragonResistance": 1,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Buttery Leathercraft"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [],
-        "skills": {
-            "Poison Resistance": 2
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -3
-    },
-    "Sakuratide Robe Alpha": {
-        "defense": 36,
-        "description": "Blossomdance Ticket chest armor. It embodies the spirit of resplendent warriors from spring sunrises past.",
-        "dragonResistance": 2,
-        "fireResistance": 2,
-        "groupSkill": [
-            "Festival Spirit"
-        ],
-        "iceResistance": 2,
-        "rank": "high",
-        "rarity": 5,
-        "setSkill": [
-            "Blossomdance Prayer"
-        ],
-        "skills": {
-            "Foray": 1,
-            "Quick Sheathe": 1
-        },
-        "slots": [
-            2
-        ],
         "thunderResistance": -3,
         "type": "chest",
-        "waterResistance": 2
-    },
-    "Sild Coat Alpha": {
-        "defense": 44,
-        "description": "A coat worn in the Keepers' Vigil. Thick, but also extremely light so as not to impede their daily work.",
-        "dragonResistance": 4,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Imparted Wisdom"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [],
-        "skills": {
-            "Wide-Range": 4
-        },
-        "slots": [
-            2
-        ],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Sororal Coat Alpha": {
-        "defense": 0,
-        "description": "[no gear description in database]",
-        "dragonResistance": 0,
-        "fireResistance": 0,
-        "groupSkill": [
-            "Glory's Favor"
-        ],
-        "iceResistance": 0,
-        "rank": "high",
-        "rarity": 1,
-        "setSkill": [
-            "Gore Magala's Tyranny"
-        ],
-        "skills": {
-            "Burst": 1,
-            "Partbreaker": 1,
-            "Stamina Surge": 2
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": 0
-    },
-    "Udra Miremail": {
-        "defense": 26,
-        "description": "Nu Udra chest armor. As if a curse manifested, tentacles drape down to form a haunting cape.",
-        "dragonResistance": 0,
-        "fireResistance": 5,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": 1,
-        "rank": "low",
-        "rarity": 4,
-        "setSkill": [
-            "Nu Udra's Mutiny"
-        ],
-        "skills": {
-            "Resentment": 1,
-            "Speed Eating": 1
-        },
-        "slots": [],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -4
-    },
-    "Udra Miremail Alpha": {
-        "defense": 60,
-        "description": "Nu Udra chest armor. As if a curse manifested, tentacles drape down to form a haunting cape.",
-        "dragonResistance": 0,
-        "fireResistance": 5,
-        "groupSkill": [
-            "Lord's Favor"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Nu Udra's Mutiny"
-        ],
-        "skills": {
-            "Burst": 1,
-            "Resentment": 1
-        },
-        "slots": [
-            1,
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -4
-    },
-    "Udra Miremail Beta": {
-        "defense": 60,
-        "description": "Nu Udra chest armor. As if a curse manifested, tentacles drape down to form a haunting cape.",
-        "dragonResistance": 0,
-        "fireResistance": 5,
-        "groupSkill": [
-            "Lord's Fury"
-        ],
-        "iceResistance": 1,
-        "rank": "high",
-        "rarity": 7,
-        "setSkill": [
-            "Nu Udra's Mutiny"
-        ],
-        "skills": {
-            "Resentment": 1
-        },
-        "slots": [
-            3,
-            1,
-            1
-        ],
-        "thunderResistance": 0,
-        "type": "chest",
-        "waterResistance": -4
+        "waterResistance": 4
     },
     "Udra Miremail Gamma": {
         "defense": 68,
@@ -3061,141 +2793,359 @@
         "type": "chest",
         "waterResistance": -4
     },
-    "Vespoid Mail": {
-        "defense": 4,
-        "description": "Vespoid chest armor. Its arcane build provides formidable resistance to physical attacks.",
-        "dragonResistance": 2,
-        "fireResistance": -2,
+    "Dahaad Shardmail Gamma": {
+        "defense": 68,
+        "description": "Chest armor made from special Jin Dahaad materials. The shining white polyplating evokes the valor of the Arch-tempered.",
+        "dragonResistance": -1,
+        "fireResistance": -3,
         "groupSkill": [
-            "Neopteron Alert"
+            "Lord's Soul"
         ],
-        "iceResistance": 1,
-        "rank": "low",
-        "rarity": 1,
-        "setSkill": [],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Jin Dahaad's Revolt"
+        ],
         "skills": {
-            "Survival Expert": 1
+            "Agitator": 2
         },
-        "slots": [],
-        "thunderResistance": 1,
+        "slots": [
+            2,
+            2
+        ],
+        "thunderResistance": -1,
         "type": "chest",
-        "waterResistance": 1
+        "waterResistance": 2
     },
-    "Vespoid Mail Alpha": {
-        "defense": 32,
-        "description": "Vespoid chest armor. Its arcane build provides formidable resistance to physical attacks.",
+    "Sakuratide Robe Alpha": {
+        "defense": 36,
+        "description": "Blossomdance Ticket chest armor. It embodies the spirit of resplendent warriors from spring sunrises past.",
         "dragonResistance": 2,
-        "fireResistance": -2,
+        "fireResistance": 2,
         "groupSkill": [
-            "Neopteron Alert"
+            "Festival Spirit"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [
+            "Blossomdance Prayer"
+        ],
+        "skills": {
+            "Foray": 1,
+            "Quick Sheathe": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Blossom Vest Alpha": {
+        "defense": 36,
+        "description": "Blossom Ticket chest armor. The flower brooch adds a snazzy touch.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Festival Spirit"
         ],
         "iceResistance": 1,
         "rank": "high",
         "rarity": 5,
         "setSkill": [],
         "skills": {
-            "Evade Window": 1,
-            "Survival Expert": 1
+            "Paralysis Resistance": 1
         },
         "slots": [
+            2,
+            1,
             1
         ],
-        "thunderResistance": 1,
+        "thunderResistance": 4,
         "type": "chest",
         "waterResistance": 1
     },
-    "Vespoid Mail Beta": {
-        "defense": 32,
-        "description": "Vespoid chest armor. Its arcane build provides formidable resistance to physical attacks.",
+    "Afi Top Alpha": {
+        "defense": 36,
+        "description": "Flamefete Ticket chest armor. It's adorned with fiery designs that stand out in the midsummer heat, enlivening the festivities.",
         "dragonResistance": 2,
-        "fireResistance": -2,
+        "fireResistance": 2,
         "groupSkill": [
-            "Neopteron Camouflage"
+            "Festival Spirit"
+        ],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [
+            "Flamefete Prayer"
+        ],
+        "skills": {
+            "Burst": 1,
+            "Heroics": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": -3
+    },
+    "Diver's Suit Alpha": {
+        "defense": 36,
+        "description": "Diving Ticket chest armor. Swimwear made with materials that fit tight to the body to ensure swimming is never a drag.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Festival Spirit"
         ],
         "iceResistance": 1,
         "rank": "high",
         "rarity": 5,
         "setSkill": [],
         "skills": {
-            "Survival Expert": 1
+            "Hunger Resistance": 2,
+            "Leap of Faith": 1
         },
         "slots": [
-            1,
             1,
             1
         ],
         "thunderResistance": 1,
         "type": "chest",
-        "waterResistance": 1
+        "waterResistance": 4
     },
-    "Xu Wu Mail": {
-        "defense": 26,
-        "description": "Xu Wu chest armor. The long scarf can be used as protective gear and multi-purpose rope.",
+    "Dreamwalker Mail Alpha": {
+        "defense": 36,
+        "description": "Dreamspell Ticket chest armor. With accents resembling restraints, it exudes nobility even in the cool autumn mist.",
         "dragonResistance": 2,
-        "fireResistance": 1,
+        "fireResistance": -3,
         "groupSkill": [
-            "Flexible Leathercraft"
+            "Festival Spirit"
         ],
-        "iceResistance": -3,
-        "rank": "low",
-        "rarity": 4,
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 5,
+        "setSkill": [
+            "Dreamspell Prayer"
+        ],
+        "skills": {
+            "Flayer": 1,
+            "Sleep Resistance": 1,
+            "Wide-Range": 1
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Harvest Tronco Alpha": {
+        "defense": 36,
+        "description": "Harvest Ticket chest armor. Said to dispel fear and draw out hidden power from within.",
+        "dragonResistance": 1,
+        "fireResistance": 4,
+        "groupSkill": [
+            "Festival Spirit"
+        ],
+        "iceResistance": 1,
+        "rank": "high",
+        "rarity": 5,
         "setSkill": [],
         "skills": {
-            "Stamina Surge": 1
-        },
-        "slots": [
-            1
-        ],
-        "thunderResistance": 1,
-        "type": "chest",
-        "waterResistance": 1
-    },
-    "Xu Wu Mail Alpha": {
-        "defense": 48,
-        "description": "Xu Wu chest armor. The long scarf can be used as protective gear and multi-purpose rope.",
-        "dragonResistance": 2,
-        "fireResistance": 1,
-        "groupSkill": [
-            "Flexible Leathercraft"
-        ],
-        "iceResistance": -3,
-        "rank": "high",
-        "rarity": 6,
-        "setSkill": [
-            "Xu Wu's Vigor"
-        ],
-        "skills": {
-            "Ambush": 1,
-            "Heroics": 3
+            "Mushroomancer": 2,
+            "Resentment": 1
         },
         "slots": [],
         "thunderResistance": 1,
         "type": "chest",
         "waterResistance": 1
     },
-    "Xu Wu Mail Beta": {
-        "defense": 48,
-        "description": "Xu Wu chest armor. The long scarf can be used as protective gear and multi-purpose rope.",
+    "Ceremonial Mail Alpha": {
+        "defense": 36,
+        "description": "Lumenhymn Ticket chest armor. Dazzling to behold, and yet warm with the splendor of winter.",
         "dragonResistance": 2,
-        "fireResistance": 1,
+        "fireResistance": 2,
         "groupSkill": [
-            "Buttery Leathercraft"
+            "Festival Spirit"
         ],
         "iceResistance": -3,
         "rank": "high",
-        "rarity": 6,
+        "rarity": 5,
         "setSkill": [
-            "Xu Wu's Vigor"
+            "Lumenhymn Prayer"
         ],
         "skills": {
-            "Heroics": 3
+            "Agitator": 1,
+            "Convert Element": 1,
+            "Dragon Resistance": 1
         },
         "slots": [
-            1,
             1
+        ],
+        "thunderResistance": 2,
+        "type": "chest",
+        "waterResistance": 2
+    },
+    "Orion Vest Alpha": {
+        "defense": 66,
+        "description": "Orion Ticket chest armor that affords warmth, protection, and a feeling of comfort and security.",
+        "dragonResistance": 1,
+        "fireResistance": 1,
+        "groupSkill": [
+            "Festival Spirit"
+        ],
+        "iceResistance": 4,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [],
+        "skills": {
+            "Recovery Up": 1,
+            "Windproof": 2
+        },
+        "slots": [
+            2,
+            2,
+            2
         ],
         "thunderResistance": 1,
         "type": "chest",
         "waterResistance": 1
+    },
+    "Demon Garb Alpha": {
+        "defense": 48,
+        "description": "Garb worn by a demon of combat who bears the weight of heaven on his back. (Full Armor Set)",
+        "dragonResistance": 3,
+        "fireResistance": 3,
+        "groupSkill": [
+            "Master of the Fist"
+        ],
+        "iceResistance": -2,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Heroics": 3
+        },
+        "slots": [
+            3,
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": -2
+    },
+    "Bale Cuirass Alpha": {
+        "defense": 68,
+        "description": "Chest armor worn by a dark knight. Shadowy proof of those who persist despite losing their honor.",
+        "dragonResistance": 3,
+        "fireResistance": 2,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Soul of the Dark Knight"
+        ],
+        "skills": {
+            "Latent Power": 2,
+            "Quick Sheathe": 2
+        },
+        "slots": [
+            2
+        ],
+        "thunderResistance": -2,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Omega Suit Alpha": {
+        "defense": 68,
+        "description": "Chest armor fashioned after the apex of autonomous weaponry. No worthy opponent has been found.",
+        "dragonResistance": -2,
+        "fireResistance": 3,
+        "groupSkill": [],
+        "iceResistance": 2,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [
+            "Omega Resonance"
+        ],
+        "skills": {
+            "Partbreaker": 2
+        },
+        "slots": [
+            3,
+            2
+        ],
+        "thunderResistance": -3,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Pinion Necklace Alpha": {
+        "defense": 60,
+        "description": "A necklace made with a single, beautiful feather. Like the bird in the expedition's emblem, it serves as a guide to hunters.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 7,
+        "setSkill": [],
+        "skills": {
+            "Agitator": 1,
+            "Heroics": 2
+        },
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Hawkheart Jacket Alpha": {
+        "defense": 48,
+        "description": "A jacket harboring Gemma's adventurous spirit. Wearing it serves as a gentle reminder that she'll always have your back.",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 6,
+        "setSkill": [],
+        "skills": {
+            "Constitution": 4,
+            "Quick Sheathe": 2
+        },
+        "slots": [
+            1
+        ],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+    },
+    "Gelidron Backpack Alpha": {
+        "defense": 66,
+        "description": "A highly elastic Gelidron-shaped backpack that grants impressive storage capacity. Opens via the mouth, obviously.",
+        "dragonResistance": 0,
+        "fireResistance": 4,
+        "groupSkill": [
+            "Flexible Leathercraft"
+        ],
+        "iceResistance": -2,
+        "rank": "high",
+        "rarity": 8,
+        "setSkill": [],
+        "skills": {
+            "Free Meal": 2,
+            "Hunger Resistance": 2,
+            "Speed Eating": 1
+        },
+        "slots": [
+            3,
+            1
+        ],
+        "thunderResistance": -4,
+        "type": "chest",
+        "waterResistance": 2
     }
 }

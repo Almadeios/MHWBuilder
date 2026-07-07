@@ -34,7 +34,6 @@ const DEFAULTS = {
     updatedIds: undefined,
 
     // settings page
-    hideSource: false,
     showAll: true,
     showExtra: false,
     forceDesktop: false,

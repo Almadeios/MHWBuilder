@@ -10,7 +10,6 @@ import Remove from '@mui/icons-material/Remove';
 import { iconCommon } from './Results';
 import styled from 'styled-components';
 import Divider from '@mui/material/Divider';
-import PropTypes from 'prop-types';
 import { getJsonFromType } from '../util/tools';
 import { useStorage } from '../hooks/StorageContext';
 import { _x } from '../util/armorAccessor';
@@ -21,7 +20,7 @@ const RemoveIcon = styled(Remove)`
     color: crimson;
 `;
 
-const Settings = ({ onSourceChanged }) => {
+const Settings = () => {
     const { fields, updateField, pinArmor, excludeArmor } = useStorage();
     const types = getArmorTypeList();
 
@@ -69,11 +68,6 @@ const Settings = ({ onSourceChanged }) => {
 
     const toggleShowExtra = () => {
         updateField('showExtra', !fields.showExtra);
-    };
-
-    const toggleHideSource = () => {
-        updateField('hideSource', !fields.hideSource);
-        onSourceChanged?.();
     };
 
     const toggleForceDesktop = () => {
@@ -184,9 +178,6 @@ const Settings = ({ onSourceChanged }) => {
                     control={<Switch checked={fields.forceDesktop} />}
                     onChange={() => toggleForceDesktop()}
                     label={`Force desktop mode`} />
-                <FormControlLabel sx={{ marginLeft: '1em' }} control={<Switch checked={fields.hideSource} />}
-                    onChange={() => toggleHideSource()}
-                    label={`Hide source code tab`} />
             </div>
             <Divider component="div" />
 
@@ -218,8 +209,5 @@ const Settings = ({ onSourceChanged }) => {
             </Typography>
         </div>
     </div>;
-};
-Settings.propTypes = {
-    onSourceChanged: PropTypes.func,
 };
 export default Settings;

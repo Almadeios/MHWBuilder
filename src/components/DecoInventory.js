@@ -17,21 +17,34 @@ const DecoInventory = () => {
     const [found, setFound] = useState([]);
     const [started, setStarted] = useState(false); // lazy activate
 
+    const getInventoryAmount = name => {
+        const myDecos = fields.decoInventory || {};
+        if (myDecos[name] !== undefined) {
+            return myDecos[name];
+        }
+        return DECO_INVENTORY[name] ?? 99;
+    };
+
+    const getDecoSearchNames = name => [
+        getDecoDisplayName(name, false),
+        getDecoDisplayName(name, true),
+    ].map(x => x.toLowerCase());
+
+    const matchesSearch = name => {
+        if (!searchText) { return true; }
+        const needle = searchText.toLowerCase();
+        return getDecoSearchNames(name).some(x => x.includes(needle));
+    };
+
     const refreshDecos = () => {
         const myDecos = { ...fields.decoInventory };
         const communistDecos = [];
-        const armorDecos = Object.fromEntries(Object.entries(DECO_INVENTORY).filter(x => DECOS[x[0]][0] === "armor"));
 
         // modify deco inventory to reflect user-specified amounts
-        for (const [name, quantity] of Object.entries(armorDecos)) {
-            let amount = quantity;
-            if (myDecos[name] !== undefined) {
-                amount = myDecos[name];
-            }
-
+        for (const name of Object.keys(DECOS)) {
             communistDecos.push({
                 name,
-                amount,
+                amount: getInventoryAmount(name),
             });
         }
 
@@ -42,10 +55,8 @@ const DecoInventory = () => {
             }
         }
 
-        const foundNames = communistDecos.filter(
-            x => !searchText || getDecoDisplayName(x.name, fields.showDecoSkillNames)
-                .toLowerCase().includes(searchText.toLowerCase())
-        ).map(x => getDecoDisplayName(x.name, fields.showDecoSkillNames));
+        const foundNames = communistDecos.filter(x => matchesSearch(x.name))
+            .map(x => getDecoDisplayName(x.name, fields.showDecoSkillNames));
         communistDecos.sort((a, b) => nameSort(a, b, foundNames));
         setNamesModded(modded);
         setInventory(communistDecos);
@@ -77,16 +88,14 @@ const DecoInventory = () => {
         if (started) {
             const tempInventory = [...inventory];
 
-            const foundNames = tempInventory.filter(
-                x => !searchText || getDecoDisplayName(x.name, fields.showDecoSkillNames)
-                    .toLowerCase().includes(searchText.toLowerCase())
-            ).map(x => getDecoDisplayName(x.name, fields.showDecoSkillNames));
+            const foundNames = tempInventory.filter(x => matchesSearch(x.name))
+                .map(x => getDecoDisplayName(x.name, fields.showDecoSkillNames));
 
             tempInventory.sort((a, b) => nameSort(a, b, foundNames));
             setFound(foundNames);
             setInventory(tempInventory);
         }
-    }, [searchText]);
+    }, [searchText, fields.showDecoSkillNames]);
 
     const updateMod = (decoName, ev) => {
         let amount = parseInt(ev.target.value, 10);
@@ -113,8 +122,7 @@ const DecoInventory = () => {
     const empty = () => {
         const emptyInv = {};
         const tempInv = { ...DECO_INVENTORY };
-        for (const [decoName, amount] of Object.entries(tempInv)) {
-            if (DECOS[decoName][0] !== "armor") { continue; }
+        for (const decoName of Object.keys({ ...DECOS, ...tempInv })) {
             emptyInv[decoName] = 0;
         }
 
@@ -138,7 +146,7 @@ const DecoInventory = () => {
         const highlightClass = highlighted ? "highlighted dhigh" : "";
         const modClass = modded ? 'dmodded' : '';
 
-        const skillIcons = deco.skillNames.map(x => SKILLS[x].icon);
+        const skillIcons = deco.skillNames.map(x => SKILLS[x]?.icon).filter(Boolean);
         const singleIcon = skillIcons[0]; // todo: change this should armor decos ever have more than 1 skill each
 
         return <div key={deco.name} className={`deco dpad ${highlightClass}`} title={deco.altText}>
@@ -149,7 +157,7 @@ const DecoInventory = () => {
                     onBlur={ev => updateMod(decoRaw.name, ev)}
                     className={`deco-amount dinput ${modClass}`} defaultValue={amount} />
             </div>
-            <img className="deco-icon" src={`images/icons/${singleIcon}.png`} />
+            {singleIcon && <img className="deco-icon" src={`images/icons/${singleIcon}.png`} />}
         </div>;
     };
 
@@ -159,11 +167,11 @@ const DecoInventory = () => {
         </div>;
     };
 
-    const label = fields.showDecoSkillNames ? "Search decorations by skill name" : "Search decorations by name";
+    const label = "Search decorations by name or skill";
 
     return <div className="deco-inventory">
         <Typography sx={{ marginBottom: '8px', fontSize: '20px', fontWeight: 'bold', cursor: 'default' }}>
-            You can limit how many of each decoration the Search can use below.
+            You can limit how many of each decoration are available below.
         </Typography>
         <div style={{ display: "flex", flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
             <TextField id="deco-search" label={label} variant="outlined" size="small"

@@ -1,0 +1,7 @@
+python -m pip install requests beautifulsoup4
+
+then to update the data
+
+python misc\jsoner.py 
+
+python misc\tasks.py
