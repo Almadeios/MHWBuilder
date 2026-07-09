@@ -1,0 +1,11 @@
+{
+  "armor-ids": {
+    "Your Armor Name": 12345
+  },
+  "deco-ids": {
+    "Your Jewel Name": 54321
+  },
+  "skill-ids": {
+    "Your Skill Name": 999
+  }
+}

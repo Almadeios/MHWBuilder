@@ -701,7 +701,8 @@
             "Clerk Belt Alpha",
             "Clerk Shoes Alpha",
             "Gourmand's Earring Alpha",
-            "Earrings of Dedication Alpha"
+            "Earrings of Dedication Alpha",
+            "Sororal Earrings Alpha"
         ],
         "description": "Increases quest target rewards (no effect when joining mid-quest).",
         "effect": "Increases quest target rewards. (No effect when joining mid-quest.)",

@@ -1,0 +1,31 @@
+{
+  "head": {
+    "Arkvulcan Helm Gamma": ["head", {"Weakness Exploit": 3}, ["Lord's Soul"], [2,1], 68, [2,0,-1,0,-3], "high", ["Arkveld's Hunger"]],
+    "Azure Age Hair Alpha": ["head", {"Latent Power": 1, "Adrenaline Rush": 1, "Constitution": 2}, ["Fortifying Pelt"], [1,1,1], 66, [2,4,0,0,3], "high", ["Leviathan's Fury"]],
+    "Gala Suit Top Hat Alpha": ["head", {"Item Prolonger": 3, "Divine Blessing": 2 }, ["Festival Spirit"], [3,2], 66, [1,1,1,1,4], "high", []],
+    "Rompomask Alpha": ["head", { "Resentment": 5, "Counterstrike": 2 }, ["Buttery Leathercraft"], [], 66, [0,-3,0,0,1], "high", []]
+  },
+  "chest": {
+    "Arkvulcan Mail Gamma": ["chest", {"Convert Element": 3,"Blight Resistance": 1}, ["Lord's Soul"], [3,2], 68, [2,0,-1,0,-3], "high", ["Arkveld's Hunger"]],
+    "Azure Age Haori Alpha": ["chest", {"Latent Power": 1, "Adrenaline Rush": 1, "Quick Sheathe": 1}, ["Fortifying Pelt"], [3], 66, [2,4,0,0,3], "high", ["Leviathan's Fury"]],
+    "Gala Suit Jacket Alpha": ["chest", {"Coalescence": 2, "Divine Blessing": 1 }, ["Festival Spirit"], [2,1], 66, [1,1,1,1,4], "high", []]
+
+  },
+  "arms": {
+    "Arkvulcan Vambraces Gamma": ["arms", {"Weakness Exploit": 2, "Flayer": 2}, ["Lord's Soul"], [1,1], 68, [2,0,-1,0,-3], "high", ["Arkveld's Hunger"]],
+    "Azure Age Sleeve Alpha": ["arms", {"Latent Power": 1, "Adrenaline Rush": 1, "Constitution": 1}, ["Fortifying Pelt"], [3], 66, [2,4,0,0,3], "high", ["Leviathan's Fury"]],
+    "Gala Suit Cuffs Alpha": ["arms", {"Peak Performance": 2, "Maximum Might": 2 }, ["Festival Spirit"], [1,1], 66, [1,1,1,1,4], "high", []]
+
+  },
+  "waist": {
+    "Arkvulcan Coil Gamma": ["waist", {"Flayer": 2,"Elemental Absorption": 2}, ["Lord's Soul"], [2,1], 68, [2,0,-1,0,-3], "high", ["Arkveld's Hunger"]],
+    "Azure Age Obi Alpha": ["waist", {"Latent Power": 1, "Adrenaline Rush": 1, "Quick Sheathe": 2 }, ["Fortifying Pelt"], [2,1], 66, [2,4,0,0,3], "high", ["Leviathan's Fury"]],
+    "Gala Suit Tail Alpha": ["waist", {"Peak Performance": 2, "Coalescence": 1 }, ["Festival Spirit"], [3,1], 66, [1,1,1,1,4], "high", []]
+
+  },
+  "legs": {
+    "Arkvulcan Greaves Gamma": ["legs", {"Blight Resistance": 2,"Flayer": 2}, ["Lord's Soul"], [3,3], 68, [2,0,-1,0,-3], "high", ["Arkveld's Hunger"]],
+    "Azure Age Geta Alpha": ["legs", { "Latent Power": 1, "Adrenaline Rush": 1, "Constitution": 2 }, ["Fortifying Pelt"], [2,1], 66, [2,4,0,0,3], "high", ["Leviathan's Fury"]],
+    "Gala Suit Slacks Alpha": ["legs", {"Peak Performance": 1, "Maximum Might": 1 }, ["Festival Spirit"], [3,2,1], 66, [1,1,1,1,4], "high", []]
+  }
+}

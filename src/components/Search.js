@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import SkillsPicker from "../components/SkillsPicker";
-import { freeOne, freeThree, freeTwo, moreAndSpeed, searchAndSpeed } from "../util/logic";
+import { searchAndSpeed } from "../util/logic";
 import SKILLS from '../data/compact/skills.json';
 import GROUP_SKILLS from '../data/compact/group-skills.json';
 import SET_SKILLS from '../data/compact/set-skills.json';
@@ -18,11 +18,22 @@ import ArrowRight from '@mui/icons-material/ArrowForwardIos';
 import ArrowLeft from '@mui/icons-material/ArrowBackIos';
 import Delete from '@mui/icons-material/DeleteForever';
 import styled from "styled-components";
-import { getSearchParameters, isEmpty } from "../util/tools";
-import { Button, Checkbox, FormControlLabel, MenuItem, TextField } from "@mui/material";
+import { getInclusiveRemainingSlots, getSearchParameters, isEmpty } from "../util/tools";
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Button,
+    Checkbox,
+    FormControlLabel,
+    MenuItem,
+    TextField
+} from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Results from "./Results";
 import { DEBUG } from "../util/constants";
 import { useStorage } from "../hooks/StorageContext";
+import { filterConditionsForSkills, getConditionOptionsForSkills } from "../util/damageScoring";
 
 const ArrowL = styled(ArrowLeft)`
     width: 16px !important;
@@ -40,6 +51,21 @@ const LoadingBar = styled(LinearProgress)`
 `;
 
 const WEAPON_SLOT_OPTIONS = [];
+const SHARPNESS_OPTIONS = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'White', 'Purple'];
+const WEAPON_TYPE_OPTIONS = [
+    { value: 'other', label: 'Other' },
+    { value: 'great_sword_hunting_horn', label: 'GS / HH' },
+    { value: 'dual_blades', label: 'Dual Blades' },
+    { value: 'ranged', label: 'Ranged' }
+];
+const ELEMENT_OPTIONS = ['None', 'Fire', 'Water', 'Thunder', 'Ice', 'Dragon', 'Poison', 'Sleep', 'Paralysis', 'Blast'];
+const OPTIMIZATION_GOALS = [
+    { value: 'highest_dps', label: 'Highest DPS' },
+    { value: 'highest_raw', label: 'Highest Raw' },
+    { value: 'highest_element', label: 'Highest Element' },
+    { value: 'highest_affinity', label: 'Highest Affinity' },
+    { value: 'balanced', label: 'Balanced' }
+];
 for (let a = 0; a <= 3; a++) {
     for (let b = 0; b <= a; b++) {
         for (let c = 0; c <= b; c++) {
@@ -49,20 +75,22 @@ for (let a = 0; a <= 3; a++) {
 }
 
 const Search = () => {
-    const { fields, updateField, updateMultipleFields, setSwapTab } = useStorage();
+    const { fields, updateField, updateMultipleFields } = useStorage();
     const [results, setResults] = useState([]);
     const [moreResults, setMoreResults] = useState({}); // skill name: level
+    const [moreSlots, setMoreSlots] = useState({});
     const [showMore, setShowMore] = useState(false);
     const cancelledRef = useRef(false);
     const [elapsedSeconds, setElapsedSeconds] = useState(-1);
+    const [moreElapsedSeconds, setMoreElapsedSeconds] = useState(-1);
     const [loadProgress, setLoadProgress] = useState(0);
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showConditions, setShowConditions] = useState(false);
 
     useEffect(() => {
         if (!isEmpty(moreResults)) {
             setShowMore(true);
-            setResults([]);
         }
     }, [moreResults]);
 
@@ -72,21 +100,12 @@ const Search = () => {
         }
     }, [isGenerating]);
 
-    const addMoreSkill = (name, level) => {
-        if (level <= 0 || (fields.skills[name] || 0) >= level) {
-            return;
+    const prepareSearch = ({ resetElapsed = true } = {}) => {
+        if (resetElapsed) {
+            setElapsedSeconds(-1);
         }
-
-        setMoreResults(prev => {
-            const tMore = { ...prev };
-            tMore[name] = level;
-            return tMore;
-        });
-    };
-
-    const prepareSearch = () => {
-        setElapsedSeconds(-1);
         setMoreResults({});
+        setMoreSlots({});
         setIsGenerating(true);
 
         cancelledRef.current = false;
@@ -99,6 +118,7 @@ const Search = () => {
         const justGroupSkills = Object.fromEntries(
             Object.entries(fields.skills).filter(x => GROUP_SKILLS[x[0]]).map(x => [x[0], x[1]])
         );
+        const filteredConditions = filterConditionsForSkills(fields.conditions, fields.skills);
 
         if (DEBUG) {
             const wiki = generateWikiString(
@@ -112,9 +132,17 @@ const Search = () => {
         const params = getSearchParameters({
             skills: justSkills,
             setSkills: justSetSkills,
+            conditions: filteredConditions,
             groupSkills: justGroupSkills,
             slotFilters: fields.slotFilters,
             weaponSlots: fields.weaponSlots,
+            weaponBaseRaw: fields.weaponBaseRaw,
+            weaponBaseAffinity: fields.weaponBaseAffinity,
+            weaponType: fields.weaponType,
+            weaponElementType: fields.weaponElementType,
+            weaponElementValue: fields.weaponElementValue,
+            weaponSharpness: fields.weaponSharpness,
+            optimizationGoal: fields.optimizationGoal,
             setSkillBonus: fields.setSkillBonus,
             groupSkillBonus: fields.groupSkillBonus,
             customTalismans: fields.customTalismans,
@@ -150,6 +178,13 @@ const Search = () => {
             [...params.blacklistedArmorTypes].sort().join("."),
             [...params.mandatoryArmor].sort().join("."),
             [...params.weaponSlots].sort().join("."),
+            params.weaponBaseRaw,
+            params.weaponBaseAffinity,
+            params.weaponType,
+            params.weaponElementType,
+            params.weaponElementValue,
+            params.weaponSharpness,
+            params.optimizationGoal,
             params.setSkillBonus,
             params.groupSkillBonus,
             JSON.stringify(params.customTalismans),
@@ -166,6 +201,9 @@ const Search = () => {
         setShowMore(false);
         updateField('searchedSkills', fields.skills);
         updateField('lastParams', params);
+        // Find multiple results but cap at 20 valid builds
+        params.limit = 20;
+        params.findOne = false;
         // console.log('params', params);
         const cache = searchAndSpeed(params, same);
         cache.then(ret => {
@@ -178,18 +216,40 @@ const Search = () => {
     };
 
     const getMoreSkills = () => {
-        const params = prepareSearch();
-        params.priorResults = results;
-        params.exhaustive = true;
-        params.updateProgressFunc = setLoadProgress;
-        params.addMoreFunc = addMoreSkill;
+        const started = performance.now();
+        const nextMoreResults = {};
+        const nextMoreSlots = {};
+        const searchedSkills = fields.skills || {};
+        const slotFilters = fields.slotFilters || {};
 
-        const cache = moreAndSpeed(params);
-        cache.then(ret => {
-            setElapsedSeconds(ret.seconds);
-            // setMoreResults(ret.results);
-            setIsGenerating(false);
+        results.forEach(result => {
+            const skills = result.skills || {};
+            const setSkills = result.setSkills || {};
+            const groupSkills = result.groupSkills || {};
+            const resultSkills = {
+                ...skills,
+                ...setSkills,
+                ...groupSkills
+            };
+
+            Object.entries(resultSkills).forEach(([skillName, level]) => {
+                if (level > (searchedSkills[skillName] || 0)) {
+                    nextMoreResults[skillName] = Math.max(nextMoreResults[skillName] || 0, level);
+                }
+            });
+
+            const remainingSlots = getInclusiveRemainingSlots(result.freeSlots || [], slotFilters);
+            if (remainingSlots) {
+                [1, 2, 3].forEach(slotSize => {
+                    nextMoreSlots[slotSize] = Math.max(nextMoreSlots[slotSize] || 0, remainingSlots[slotSize] || 0);
+                });
+            }
         });
+
+        setMoreResults(nextMoreResults);
+        setMoreSlots(nextMoreSlots);
+        setMoreElapsedSeconds((performance.now() - started) / 1000);
+        setShowMore(true);
     };
 
     const addSkill = (skillName, level) => {
@@ -209,6 +269,11 @@ const Search = () => {
         updateField('weaponSlots', slots);
     };
 
+    const updateWeaponNumber = (field, value) => {
+        const parsed = Number(value);
+        updateField(field, Number.isFinite(parsed) ? parsed : 0);
+    };
+
     const updateSetSkillBonus = value => {
         updateField('setSkillBonus', value);
     };
@@ -217,10 +282,62 @@ const Search = () => {
         updateField('groupSkillBonus', value);
     };
 
+    const toggleCondition = conditionId => {
+        const nextConditions = { ...fields.conditions };
+        const currentValue = conditionId === 'wound' ?
+            Boolean(nextConditions.wound || nextConditions.weak_point_and_wound) :
+            Boolean(nextConditions[conditionId]);
+        nextConditions[conditionId] = !currentValue;
+        if (conditionId === 'wound') {
+            delete nextConditions.weak_point_and_wound;
+        }
+        updateField('conditions', nextConditions);
+    };
+
+    const isConditionChecked = conditionId => {
+        if (conditionId === 'wound') {
+            return Boolean(fields.conditions?.wound || fields.conditions?.weak_point_and_wound);
+        }
+
+        return Boolean(fields.conditions?.[conditionId]);
+    };
+
     const removeSkill = skillName => {
         const tempSkills = { ...fields.skills };
         delete tempSkills[skillName];
-        updateField('skills', tempSkills);
+        updateMultipleFields({
+            skills: tempSkills,
+            conditions: filterConditionsForSkills(fields.conditions, tempSkills)
+        });
+    };
+
+    const conditionOptions = getConditionOptionsForSkills(fields.skills);
+
+    const renderConditionsPanel = () => {
+        if (conditionOptions.length === 0) {
+            return null;
+        }
+
+        return <Accordion
+            expanded={showConditions}
+            onChange={() => setShowConditions(!showConditions)}
+            sx={{ marginTop: '0.75em' }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                Conditions
+            </AccordionSummary>
+            <AccordionDetails>
+                {conditionOptions.map(condition =>
+                    <FormControlLabel
+                        key={condition.id}
+                        control={<Checkbox
+                            checked={isConditionChecked(condition.id)}
+                            onChange={() => toggleCondition(condition.id)}
+                        />}
+                        label={condition.displayLabel}
+                    />
+                )}
+            </AccordionDetails>
+        </Accordion>;
     };
 
     const removeSlot = slotSize => {
@@ -363,6 +480,82 @@ const Search = () => {
         </TextField>;
     };
 
+    const renderWeaponInputs = () => {
+        return <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'flex-end' }}>
+            <TextField
+                select
+                size="small"
+                label="Goal"
+                value={fields.optimizationGoal || 'highest_dps'}
+                onChange={ev => updateField('optimizationGoal', ev.target.value)}
+                sx={{ minWidth: '150px' }}
+                title="How to rank the resulting builds"
+            >
+                {OPTIMIZATION_GOALS.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
+            </TextField>
+            <TextField
+                select
+                size="small"
+                label="Weapon Type"
+                value={fields.weaponType || 'other'}
+                onChange={ev => updateField('weaponType', ev.target.value)}
+                sx={{ minWidth: '125px' }}
+                title="Used for Burst raw and element values"
+            >
+                {WEAPON_TYPE_OPTIONS.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
+            </TextField>
+            <TextField
+                size="small"
+                label="Base Raw"
+                type="number"
+                value={fields.weaponBaseRaw ?? 0}
+                onChange={ev => updateWeaponNumber('weaponBaseRaw', ev.target.value)}
+                sx={{ minWidth: '110px' }}
+                title="Weapon base attack"
+            />
+            <TextField
+                size="small"
+                label="Base Affinity"
+                type="number"
+                value={fields.weaponBaseAffinity ?? 0}
+                onChange={ev => updateWeaponNumber('weaponBaseAffinity', ev.target.value)}
+                sx={{ minWidth: '125px' }}
+                title="Weapon base affinity"
+            />
+            <TextField
+                select
+                size="small"
+                label="Element"
+                value={fields.weaponElementType || 'None'}
+                onChange={ev => updateField('weaponElementType', ev.target.value)}
+                sx={{ minWidth: '110px' }}
+                title="Weapon element type"
+            >
+                {ELEMENT_OPTIONS.map(option => <MenuItem key={option} value={option}>{option}</MenuItem>)}
+            </TextField>
+            <TextField
+                size="small"
+                label="Element Value"
+                type="number"
+                value={fields.weaponElementValue ?? 0}
+                onChange={ev => updateWeaponNumber('weaponElementValue', ev.target.value)}
+                sx={{ minWidth: '120px' }}
+                title="Weapon element damage"
+            />
+            <TextField
+                select
+                size="small"
+                label="Sharpness"
+                value={fields.weaponSharpness || 'White'}
+                onChange={ev => updateField('weaponSharpness', ev.target.value)}
+                sx={{ minWidth: '110px' }}
+                title="Current sharpness color"
+            >
+                {SHARPNESS_OPTIONS.map(option => <MenuItem key={option} value={option}>{option}</MenuItem>)}
+            </TextField>
+        </div>;
+    };
+
     const renderSkillBonusSelect = (label, value, update, options) => {
         return <TextField
             select
@@ -380,16 +573,16 @@ const Search = () => {
     };
 
     const renderMoreResults = () => {
-        const time = elapsedSeconds > -1 ? `(${elapsedSeconds.toFixed(2)} seconds)` : '';
+        const time = moreElapsedSeconds > -1 ? `(${moreElapsedSeconds.toFixed(2)} seconds)` : '';
 
-        const displayStr = isEmpty(moreResults) ? `No more skills can be added to your search ${time}.` :
-            `Showing skills with the max levels of each that can be added to your search ` +
-            `parameters and still return results ${time}:`;
-
-        const freeSlots = {};
-        if (freeThree) { freeSlots[3] = freeThree; }
-        if (freeTwo) { freeSlots[2] = freeTwo; }
-        if (freeOne) { freeSlots[1] = freeOne; }
+        const freeSlots = Object.fromEntries(
+            Object.entries(moreSlots).filter(([, amount]) => amount > 0)
+        );
+        const hasMoreSkills = !isEmpty(moreResults);
+        const hasMoreSlots = !isEmpty(freeSlots);
+        const displayStr = hasMoreSkills || hasMoreSlots ?
+            `Extras already present in the current results ${time}:` :
+            `No extras found in the current results ${time}.`;
 
         return <div className="more-results">
             <div style={{ marginTop: '1em', marginBottom: '0.5em' }}>{displayStr}</div>
@@ -458,14 +651,16 @@ const Search = () => {
         </div>;
     };
 
-    return (
+return (
         <div className="search">
             {renderChosenSkills()}
             <SkillsPicker addSkill={addSkill} addSlotFilter={addSlotFilter}
                 showGroupSkillNames={fields.showGroupSkillNames}
                 chosenSkillNames={Object.keys(fields.skills)} />
-            <div className="button-holder">
+            {renderConditionsPanel()}
+            <div className="button-holder" style={{ alignItems: 'flex-end' }}>
                 {renderWeaponSlots()}
+                {renderWeaponInputs()}
                 {renderSkillBonusSelect(
                     'Group Skill +1', fields.groupSkillBonus, updateGroupSkillBonus, GROUP_SKILLS
                 )}
@@ -473,15 +668,14 @@ const Search = () => {
                     'Set Bonus +1', fields.setSkillBonus, updateSetSkillBonus, SET_SKILLS
                 )}
                 <Button variant="contained" disabled={isGenerating} onClick={getResults}>Search</Button>
-                <Button variant="outlined" disabled={isGenerating} onClick={() => getMoreSkills()}>More Skills</Button>
-                <Button variant="outlined" disabled={isGenerating} onClick={() => setSwapTab(3)}>Charm Creator</Button>
+                <Button variant="outlined" disabled={isGenerating} onClick={() => getMoreSkills()}>Extra Skills</Button>
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
                     cancelledRef.current = true;
                 }}>Cancel</Button>}
             </div>
             {isGenerating && <LoadingBar className="loading-bar" value={loadProgress}
                 variant={loadProgress ? 'determinate' : 'indeterminate'} />}
-            {!showMore && <Results results={results} elapsedSeconds={elapsedSeconds} />}
+            <Results results={results} elapsedSeconds={elapsedSeconds} />
             {showMore && renderMoreResults()}
         </div>
     );

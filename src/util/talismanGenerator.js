@@ -2,6 +2,9 @@ import RULES from "../data/talisman-generator/rules.json";
 import SKILL_DB from "../data/compact/skills.json";
 
 const MAX_GENERATED_PER_TEMPLATE = 250;
+const RARITY_CHARM_NAMES = {
+    'RARE[8]': 'Golden Age Charm'
+};
 
 const normalizeGroupId = groupId => String(groupId).trim();
 
@@ -40,19 +43,45 @@ const splitSlotCombo = combo => {
     };
 };
 
-const formatSlots = (armorSlots, weaponSlots) => {
-    const slots = [
-        ...weaponSlots.map(slot => `W${slot}`),
-        ...armorSlots.map(String)
-    ];
-    return slots.length ? slots.join("-") : "none";
+const getSlotComboPriority = combo => {
+    const { armorSlots, weaponSlots } = splitSlotCombo(combo);
+    const weaponPriority = weaponSlots.length ? 100 + weaponSlots.length : 0;
+    const armorPriority = armorSlots.length ? 10 + armorSlots.length : 0;
+    return weaponPriority + armorPriority;
 };
 
-const buildName = (rarity, skills, armorSlots, weaponSlots) => {
+export const formatSlots = (armorSlots = [], weaponSlots = []) => {
+    const armorCounts = { 3: 0, 2: 0, 1: 0 };
+    for (const slot of armorSlots) {
+        const normalized = Number(slot);
+        if (Number.isNaN(normalized)) { continue; }
+        if (normalized >= 3) {
+            armorCounts[3] += 1;
+        } else if (normalized === 2) {
+            armorCounts[2] += 1;
+        } else if (normalized === 1) {
+            armorCounts[1] += 1;
+        }
+    }
+
+    const slotIcons = [];
+    slotIcons.push(...Array(armorCounts[3]).fill('slot3'));
+    slotIcons.push(...Array(armorCounts[2]).fill('slot2'));
+    slotIcons.push(...Array(armorCounts[1]).fill('slot1'));
+
+    if (weaponSlots.length) {
+        slotIcons.push(...weaponSlots.map(slot => `W${slot}`));
+    }
+
+    return slotIcons.length ? slotIcons.join(' ') : 'none';
+};
+
+const buildName = (rarity, skills) => {
     const skillText = Object.entries(skills)
         .map(([name, level]) => `${name} ${level}`)
         .join(" / ");
-    return `${rarity} ${skillText} / slots ${formatSlots(armorSlots, weaponSlots)}`;
+    const baseName = RARITY_CHARM_NAMES[rarity] || rarity;
+    return `${baseName} ${skillText}`;
 };
 
 const chooseRelevantEntries = (entries, desiredSkills, usedSkills) => {
@@ -104,21 +133,23 @@ export const generateTalismans = desiredSkills => {
         const skillRolls = buildSkillRolls(groupIds, desiredSkills);
 
         for (const skills of skillRolls) {
-            for (const slotCombo of template.slotCombos || []) {
-                const { armorSlots, weaponSlots } = splitSlotCombo(slotCombo);
-                const name = buildName(template.rarity, skills, armorSlots, weaponSlots);
-                generated[name] = [
-                    "talisman",
-                    skills,
-                    [],
-                    armorSlots,
-                    0,
-                    [0, 0, 0, 0, 0],
-                    "high",
-                    [],
-                    weaponSlots
-                ];
-            }
+            const slotCombos = [...template.slotCombos || []].sort((a, b) => getSlotComboPriority(b) - getSlotComboPriority(a));
+            const name = buildName(template.rarity, skills);
+            const preferredCombo = slotCombos[0];
+            if (!preferredCombo) { continue; }
+
+            const { armorSlots, weaponSlots } = splitSlotCombo(preferredCombo);
+            generated[name] = [
+                "talisman",
+                skills,
+                [],
+                armorSlots,
+                0,
+                [0, 0, 0, 0, 0],
+                "high",
+                [],
+                weaponSlots
+            ];
         }
     }
 

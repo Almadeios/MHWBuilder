@@ -1,0 +1,80 @@
+[
+  {
+    "id": "monster_enraged",
+    "displayLabel": "Monster Enraged",
+    "category": "monster_state",
+    "default": false
+  },
+  {
+    "id": "weak_point",
+    "displayLabel": "Attacking Weak Point",
+    "category": "monster_state",
+    "default": false
+  },
+  {
+    "id": "wound",
+    "displayLabel": "Attacking Wound",
+    "category": "monster_state",
+    "default": false
+  },
+  {
+    "id": "full_health",
+    "displayLabel": "Full Health",
+    "category": "hunter_health",
+    "default": false
+  },
+  {
+    "id": "red_health",
+    "displayLabel": "Red / Recoverable Health",
+    "category": "hunter_health",
+    "default": false
+  },
+  {
+    "id": "full_stamina",
+    "displayLabel": "Full Stamina",
+    "category": "hunter_stamina",
+    "default": false
+  },
+  {
+    "id": "latent_power_active",
+    "displayLabel": "Latent Power Active",
+    "category": "skill_internal",
+    "default": false
+  },
+  {
+    "id": "frenzy_cured",
+    "displayLabel": "Frenzy Cured",
+    "category": "skill_internal",
+    "default": false
+  },
+  {
+    "id": "adrenaline_rush_active",
+    "displayLabel": "Adrenaline Rush Active",
+    "category": "skill_internal",
+    "default": false
+  },
+  {
+    "id": "counterstrike_active",
+    "displayLabel": "Counterstrike Active",
+    "category": "skill_internal",
+    "default": false
+  },
+  {
+    "id": "offensive_guard_active",
+    "displayLabel": "Offensive Guard Active",
+    "category": "skill_internal",
+    "default": false
+  },
+  {
+    "id": "burst_active",
+    "displayLabel": "Burst Active",
+    "category": "skill_internal",
+    "default": false
+  },
+  {
+    "id": "monster_poisoned_or_paralyzed",
+    "displayLabel": "Monster Poisoned or Paralyzed",
+    "category": "monster_state",
+    "default": false
+  }
+]

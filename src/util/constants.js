@@ -4,3 +4,6 @@ export const DFS_DEBUG = false;
 export const CHOSEN_ARMOR_DEBUG = false;
 export const SYNC = false;
 export const DFS = true;
+export const USE_NEW_ENGINE = false;
+export const OPTIMIZER_PROFILE = true;
+export const VALIDATE_NEW_ENGINE = false;

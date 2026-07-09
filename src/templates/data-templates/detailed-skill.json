@@ -1,0 +1,12 @@
+{
+  "Your Skill Name": {
+    "description": "Short description of the skill.",
+    "icon": "attack",
+    "levels": [
+      "Level 1 effect text",
+      "Level 2 effect text",
+      "Level 3 effect text"
+    ],
+    "type": "weapon"
+  }
+}

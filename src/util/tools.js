@@ -22,12 +22,21 @@ export const getSearchParameters = parameters => {
         blacklistedArmorTypes: parameters.blacklistedArmorTypes || [], // don't use thes armor types (head, chest, etc)
         dontUseDecos: parameters.dontUseDecos || false, // if true, excludes decorations from results
         weaponSlots: parameters.weaponSlots || [],
+        weaponBaseRaw: parameters.weaponBaseRaw || 0,
+        weaponBaseAffinity: parameters.weaponBaseAffinity || 0,
+        weaponType: parameters.weaponType || 'other',
+        weaponElementType: parameters.weaponElementType || 'None',
+        weaponElementValue: parameters.weaponElementValue || 0,
+        weaponSharpness: parameters.weaponSharpness || 'White',
+        optimizationGoal: parameters.optimizationGoal || 'highest_dps',
+        conditions: parameters.conditions || {},
         setSkillBonus: parameters.setSkillBonus || '',
         groupSkillBonus: parameters.groupSkillBonus || '',
         customTalismans: parameters.customTalismans || [],
         useOnlyOwnedTalismans: parameters.useOnlyOwnedTalismans || false,
         limit: parameters.limit || LIMIT, // amount of results to process
         findOne: parameters.findOne || false, // if true, stops at the first result
+        priorResults: parameters.priorResults || [],
         verifySlots: parameters.verifySlots || [], // runs a results test to see if x amount of 3, 2/3 and total slots are present
         updateProgressFunc: parameters.updateProgressFunc, // callback function to pass progress value to
         exhaustive: parameters.exhaustive || false,

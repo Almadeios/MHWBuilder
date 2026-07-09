@@ -608,11 +608,23 @@ export const getSkillPopup = skillName => {
     return `${skill.description}${levelsDesc}`;
 };
 
-export const getArmorFromNames = names => {
+export const getArmorFromNames = (names, talismanData = {}) => {
     const all = { ...allArmor(), ...TALISMANS };
     const ret = [];
 
     for (const name of names) {
+        const customData = talismanData[name] || talismanData[name.toLowerCase()];
+        if (customData) {
+            ret.push({
+                name,
+                rarity: customData.rarity || 7,
+                skills: customData.skills || customData[1] || {},
+                slots: customData.slots || customData[3] || [],
+                weaponSlots: customData.weaponSlots || customData[8] || []
+            });
+            continue;
+        }
+
         const found = all[name];
         if (!found) {
             ret.push({

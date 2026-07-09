@@ -1,0 +1,55 @@
+=== COMPARISON SUMMARY ===
+
+HEAD: Excel=162, App=160, Missing=7, Extra=5
+CHEST: Excel=140, App=137, Missing=7, Extra=4
+ARMS: Excel=134, App=132, Missing=6, Extra=4
+WAIST: Excel=136, App=134, Missing=6, Extra=4
+LEGS: Excel=137, App=135, Missing=6, Extra=4
+
+=== MISSING ARMORS BY SLOT ===
+
+
+HEAD (7 missing):
+  - Arkveld Helm Gamma
+  - Arkvulcan Helm Gamma
+  - Azure Age Hair Alpha
+  - Duna Helm
+  - Earring of Dedication Alpha
+  - Gala Suit Top Hat Alpha
+  - Rompomask Alpha
+
+CHEST (7 missing):
+  - Arkveld Mail Gamma
+  - Arkvulcan Mail Gamma
+  - Azure Age Haori Alpha
+  - Duna Mail
+  - Gala Suit Jacket Alpha
+  - Gelidron Backpack α
+  - Harvest Tronco α
+
+ARMS (6 missing):
+  - Arkveld Vambraces Gamma
+  - Arkvulcan Vambraces Gamma
+  - Azure Age Sleeve Alpha
+  - Duna Vambraces
+  - Gala Suit Cuffs Alpha
+  - Harvest Trama α
+
+WAIST (6 missing):
+  - Arkveld Coil Gamma
+  - Arkvulcan Coil Gamma
+  - Azure Age Obi Alpha
+  - Duna Coil
+  - Gala Suit Tail Alpha
+  - Harvest Hoja α
+
+LEGS (6 missing):
+  - Arkveld Greaves Gamma
+  - Arkvulcan Greaves Gamma
+  - Azure Age Geta Alpha
+  - Duna Greaves
+  - Gala Suit Slacks Alpha
+  - Harvest Raiz α
+
+
+TOTAL MISSING: 32

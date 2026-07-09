@@ -1,6 +1,5 @@
 import TALISMANS from "../data/compact/talisman.json";
 import DECO_INVENTORY from "../data/user/deco-inventory.json";
-import DECORATIONS from "../data/compact/decoration.json";
 import SKILL_DB from "../data/compact/skills.json";
 import SET_SKILL_DB from '../data/compact/set-skills.json';
 import GROUP_SKILL_DB from '../data/compact/group-skills.json';
@@ -15,21 +14,12 @@ import {
     isInSets, mergeSumMaps, slottageLengthCompare,
     slottageSizeCompare, speed, updateSkillPotential
 } from "./tools";
-import {
-    CHOSEN_ARMOR_DEBUG,
-    DEBUG,
-    DFS,
-    DFS_DEBUG,
-    OPTIMIZER_PROFILE,
-    USE_NEW_ENGINE,
-    VALIDATE_NEW_ENGINE
-} from "./constants";
+import { CHOSEN_ARMOR_DEBUG, DEBUG, DFS, DFS_DEBUG } from "./constants";
 import { allTests } from "../test/tests";
 import { getArmorTypeList, isGroupSkillName, isSetSkillName, stringToId } from "./util";
 import INTERNAL_BLACKLIST from '../data/internal-blacklist.json';
 import { _x } from "./armorAccessor";
 import { generateTalismans } from "./talismanGenerator";
-import { buildDamageProfile, rankBuildsByDamage } from "./damageScoring";
 
 const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, true]));
 
@@ -42,100 +32,6 @@ export let freeThree = [];
 export let freeTwo = [];
 export let freeOne = [];
 export let cached;
-export let lastOptimizerProfile = null;
-
-const searchCache = new Map();
-const MAX_SEARCH_CACHE_ENTRIES = 50;
-const SEARCH_CACHE_VERSION = 4;
-
-const normalizeQueryMap = value => {
-    return Object.entries(value || {})
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, level]) => `${key}:${level}`)
-        .join("|");
-};
-
-const normalizeList = value => {
-    return [...value || []].slice().sort().join(",");
-};
-
-const normalizeCustomTalismans = value => {
-    return (value || [])
-        .map(talisman => ({
-            name: talisman?.name || "",
-            skills: normalizeQueryMap(talisman?.skills || {}),
-            slots: normalizeList(talisman?.slots || []),
-            weaponSlots: normalizeList(talisman?.weaponSlots || [])
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-};
-
-export const buildSearchCacheKey = parameters => {
-    const params = parameters || {};
-    const normalizedParams = {
-        version: SEARCH_CACHE_VERSION,
-        skills: normalizeQueryMap(params.skills),
-        setSkills: normalizeQueryMap(params.setSkills),
-        groupSkills: normalizeQueryMap(params.groupSkills),
-        slotFilters: normalizeQueryMap(params.slotFilters),
-        weaponSlots: normalizeList(params.weaponSlots),
-        weaponBaseRaw: params.weaponBaseRaw || 0,
-        weaponBaseAffinity: params.weaponBaseAffinity || 0,
-        weaponType: params.weaponType || "other",
-        weaponElementType: params.weaponElementType || "None",
-        weaponElementValue: params.weaponElementValue || 0,
-        weaponSharpness: params.weaponSharpness || "White",
-        conditions: params.conditions || {},
-        optimizationGoal: params.optimizationGoal || 'highest_dps',
-        setSkillBonus: params.setSkillBonus || "",
-        groupSkillBonus: params.groupSkillBonus || "",
-        mandatoryArmor: normalizeList(params.mandatoryArmor),
-        blacklistedArmor: normalizeList(params.blacklistedArmor),
-        blacklistedArmorTypes: normalizeList(params.blacklistedArmorTypes),
-        customTalismans: JSON.stringify(normalizeCustomTalismans(params.customTalismans)),
-        useOnlyOwnedTalismans: Boolean(params.useOnlyOwnedTalismans),
-        dontUseDecos: Boolean(params.dontUseDecos),
-        decoMods: normalizeQueryMap(params.decoMods),
-        limit: params.limit ?? 20,
-        findOne: Boolean(params.findOne),
-        exhaustive: Boolean(params.exhaustive),
-        rank: params.rank || "high"
-    };
-
-    return JSON.stringify(normalizedParams);
-};
-
-const cacheSearchResult = (key, results) => {
-    if (searchCache.size >= MAX_SEARCH_CACHE_ENTRIES) {
-        const oldestKey = searchCache.keys().next().value;
-        searchCache.delete(oldestKey);
-    }
-
-    searchCache.set(key, results);
-};
-
-const createOptimizerProfile = engine => ({
-    engine,
-    runtimeMs: 0,
-    nodes: 0,
-    pruned: 0,
-    leaves: 0,
-    results: 0,
-    totalPossibleCombinations: 0
-});
-
-const finishOptimizerProfile = (profile, results) => {
-    profile.results = results.length;
-    profile.totalPossibleCombinations = totalPossibleCombinations;
-    lastOptimizerProfile = profile;
-    if (DEBUG && OPTIMIZER_PROFILE) {
-        console.log(
-            `[optimizer:${profile.engine}] ${profile.runtimeMs.toFixed(1)}ms, ` +
-            `${profile.nodes.toLocaleString()} nodes, ${profile.pruned.toLocaleString()} pruned, ` +
-            `${profile.leaves.toLocaleString()} leaves, ${profile.results.toLocaleString()} results`
-        );
-    }
-};
 
 const customTalismansToCompact = customTalismans => {
     return Object.fromEntries((customTalismans || []).map((talisman, index) => {
@@ -198,36 +94,24 @@ export const getBestArmor = (
         ...customTalismanMap
     };
 
-    const talismanSourcePriority = talismanName => {
-        if (customTalismanMap[talismanName]) { return 2; }
-        if (generatedTalismans[talismanName]) { return 1; }
-        return 0;
-    };
-
+    // Score talismans by slots + rarity (not by required skills)
     const scoreTalisman = talismanData => {
-        const talismanSkills = talismanData[1] || {};
-        const talismanArmorSlots = talismanData[3] || [];
-        const talismanWeaponSlots = talismanData[8] || [];
+        const armorSlots = talismanData[3] || [];
+        const weaponSlots = talismanData[8] || [];
         const rarity = talismanData[6] || "low";
-
-        const rarityScores = { low: 1, high: 3, master: 5 };
+        
+        const rarityScores = { "low": 1, "high": 3, "master": 5 };
         const rarityBonus = rarityScores[rarity] || 1;
-        const desiredSkillScore = Object.entries(skills).reduce((total, [skillName, targetLevel]) => {
-            const level = Math.min(talismanSkills[skillName] || 0, targetLevel);
-            return total + level * getSearchSkillWeight(skillName);
-        }, 0);
-
-        const totalSlots = (talismanArmorSlots?.length || 0) + (talismanWeaponSlots?.length || 0) * 1.5;
-        return desiredSkillScore * 10 + totalSlots + rarityBonus * 0.5;
+        
+        // Score: total slots + rarity bonus
+        const totalSlots = (armorSlots?.length || 0) + (weaponSlots?.length || 0) * 1.5;
+        return totalSlots + rarityBonus * 0.5;
     };
 
     const bestTalismans = Object.fromEntries(Object.entries(talismans)
-        .filter(([k, v]) => !blacklistedArmor.includes(k) &&
+        .filter(([k, v]) => !blacklistedArmor.includes(k) && 
             (!mandatory[_x.type(v)] || k === mandatory[_x.type(v)]))
-        .sort((a, b) => {
-            return scoreTalisman(b[1]) - scoreTalisman(a[1]) ||
-                talismanSourcePriority(b[0]) - talismanSourcePriority(a[0]);
-        })
+        .sort((a, b) => scoreTalisman(b[1]) - scoreTalisman(a[1]))
     );
 
     const topTalis = {};
@@ -530,135 +414,27 @@ export const armorCombo = (
     };
 };
 
-const getUsefulDecoPoints = (decoSkills, skillsNeeded) => {
-    return Object.entries(decoSkills).reduce((total, [skillName, level]) => {
-        return total + Math.min(level, Math.max(0, skillsNeeded[skillName] || 0));
-    }, 0);
-};
+const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, weaponSlotsAvailable, startingSkills) => {
+    if (!decos || Object.keys(decos).length === 0) { return null; }
 
-const getDecoFillStateKey = (skillsNeeded, slotPool, weaponSlotPool, usedDecosCount) => {
-    const needs = Object.entries(skillsNeeded)
-        .filter(([, level]) => level > 0)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([skillName, level]) => `${skillName}:${level}`)
-        .join("|");
-    const counts = Object.entries(usedDecosCount)
-        .filter(([, count]) => count > 0)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([decoName, count]) => `${decoName}:${count}`)
-        .join("|");
-
-    return `${needs}::a${slotPool.join(",")}::w${weaponSlotPool.join(",")}::${counts}`;
-};
-
-const getDecoCandidateList = decos => Object.entries(decos).map(([decoName, data]) => {
-    const [decoType, decoSkills, decoSlot] = data;
-    return { decoName, decoType, decoSkills, decoSlot };
-});
-
-const getDecosToFulfillSkillsSearch = (
-    decos, skillsNeeded, slotsAvailable, weaponSlotsAvailable, usedDecosCount = {}
-) => {
-    const candidates = getDecoCandidateList(decos);
-    const memo = new Set();
-    const maxDepth = slotsAvailable.length + weaponSlotsAvailable.length;
-
-    const visit = (remainingSkills, slotPool, weaponSlotPool, usedDecos, counts, depth) => {
-        const unmetSkills = Object.entries(remainingSkills).filter(([, level]) => level > 0);
-        if (!unmetSkills.length) {
-            return {
-                decoNames: usedDecos,
-                freeSlots: slotPool,
-                freeWeaponSlots: weaponSlotPool
-            };
-        }
-        if (depth >= maxDepth) { return null; }
-
-        const stateKey = getDecoFillStateKey(remainingSkills, slotPool, weaponSlotPool, counts);
-        if (memo.has(stateKey)) { return null; }
-        memo.add(stateKey);
-
-        const sortedUnmetSkills = unmetSkills
-            .map(([skillName, level]) => {
-                const availableOptions = candidates.filter(candidate => {
-                    if (!(skillName in candidate.decoSkills)) { return false; }
-                    if ((counts[candidate.decoName] || 0) >= (decoInventory[candidate.decoName] || 0)) { return false; }
-                    const pool = candidate.decoType === "weapon" ? weaponSlotPool : slotPool;
-                    return pool.some(slot => slot >= candidate.decoSlot);
-                }).length;
-                return { skillName, level, availableOptions };
-            })
-            .sort((a, b) => a.availableOptions - b.availableOptions || b.level - a.level);
-
-        const targetSkill = sortedUnmetSkills[0]?.skillName;
-        if (!targetSkill || sortedUnmetSkills[0].availableOptions === 0) { return null; }
-
-        const sortedCandidates = candidates
-            .filter(candidate => targetSkill in candidate.decoSkills)
-            .filter(candidate => (counts[candidate.decoName] || 0) < (decoInventory[candidate.decoName] || 0))
-            .map(candidate => ({
-                ...candidate,
-                usefulPoints: getUsefulDecoPoints(candidate.decoSkills, remainingSkills),
-                totalPoints: Object.values(candidate.decoSkills).reduce((sum, level) => sum + level, 0)
-            }))
-            .filter(candidate => candidate.usefulPoints > 0)
-            .sort((a, b) => {
-                if (b.usefulPoints !== a.usefulPoints) { return b.usefulPoints - a.usefulPoints; }
-                if (b.totalPoints !== a.totalPoints) { return b.totalPoints - a.totalPoints; }
-                return a.decoSlot - b.decoSlot;
-            });
-
-        for (const candidate of sortedCandidates) {
-            const pool = candidate.decoType === "weapon" ? weaponSlotPool : slotPool;
-            const slotIndexes = pool
-                .map((slot, index) => ({ slot, index }))
-                .filter(({ slot }) => slot >= candidate.decoSlot)
-                .sort((a, b) => a.slot - b.slot);
-
-            for (const { index } of slotIndexes) {
-                const nextSlots = [...slotPool];
-                const nextWeaponSlots = [...weaponSlotPool];
-                const targetPool = candidate.decoType === "weapon" ? nextWeaponSlots : nextSlots;
-                targetPool.splice(index, 1);
-
-                const nextSkills = { ...remainingSkills };
-                for (const [skillName, level] of Object.entries(candidate.decoSkills)) {
-                    if (nextSkills[skillName] === undefined) { continue; }
-                    nextSkills[skillName] = Math.max(0, nextSkills[skillName] - level);
-                }
-
-                const nextCounts = {
-                    ...counts,
-                    [candidate.decoName]: (counts[candidate.decoName] || 0) + 1
-                };
-                const result = visit(
-                    nextSkills,
-                    nextSlots,
-                    nextWeaponSlots,
-                    [...usedDecos, candidate.decoName],
-                    nextCounts,
-                    depth + 1
-                );
-                if (result) { return result; }
+    // Clone and adjust required skills
+    const skillsNeeded = { ...desiredSkills };
+    for (const skill in startingSkills) {
+        if (skillsNeeded[skill] !== undefined) {
+            skillsNeeded[skill] -= startingSkills[skill];
+            if (skillsNeeded[skill] <= 0) {
+                delete skillsNeeded[skill];
             }
         }
+    }
 
-        return null;
-    };
+    if (Object.keys(skillsNeeded).length === 0) {
+        return {
+            decoNames: [],
+            freeSlots: slotsAvailable
+        };
+    }
 
-    return visit(
-        skillsNeeded,
-        [...slotsAvailable].sort((a, b) => a - b),
-        [...weaponSlotsAvailable].sort((a, b) => a - b),
-        [],
-        usedDecosCount,
-        0
-    );
-};
-
-const getDecosToFulfillSkillsGreedy = (
-    decos, skillsNeeded, slotsAvailable, weaponSlotsAvailable, startingUsedDecosCount = {}
-) => {
     // Sort slots in ascending order to fill smallest first
     const slotPool = [...slotsAvailable].sort((a, b) => a - b);
     const weaponSlotPool = [...weaponSlotsAvailable].sort((a, b) => a - b);
@@ -674,7 +450,9 @@ const getDecosToFulfillSkillsGreedy = (
     });
 
     const usedDecos = [];
-    const usedDecosCount = { ...startingUsedDecosCount };
+    const usedDecosCount = {};
+    const usedSlots = [];
+
     for (const [skill, neededPoints] of Object.entries(skillsNeeded)) {
         let remaining = neededPoints;
         while (remaining > 0) {
@@ -692,6 +470,7 @@ const getDecosToFulfillSkillsGreedy = (
                         // Use this decoration
                         usedDecos.push(decoName);
                         usedDecosCount[decoName] = (usedDecosCount[decoName] || 0) + 1;
+                        usedSlots.push(slotSize);
                         availablePool.splice(i, 1);
 
                         remaining -= decoSkills[skill];
@@ -714,31 +493,6 @@ const getDecosToFulfillSkillsGreedy = (
     };
 };
 
-const getDecosToFulfillSkills = (decos, desiredSkills, slotsAvailable, weaponSlotsAvailable, startingSkills) => {
-    if (!decos || Object.keys(decos).length === 0) { return null; }
-
-    const skillsNeeded = { ...desiredSkills };
-    for (const skill in startingSkills) {
-        if (skillsNeeded[skill] !== undefined) {
-            skillsNeeded[skill] -= startingSkills[skill];
-            if (skillsNeeded[skill] <= 0) {
-                delete skillsNeeded[skill];
-            }
-        }
-    }
-
-    if (Object.keys(skillsNeeded).length === 0) {
-        return {
-            decoNames: [],
-            freeSlots: slotsAvailable,
-            freeWeaponSlots: weaponSlotsAvailable
-        };
-    }
-
-    return getDecosToFulfillSkillsGreedy(decos, skillsNeeded, slotsAvailable, weaponSlotsAvailable) ||
-        getDecosToFulfillSkillsSearch(decos, skillsNeeded, slotsAvailable, weaponSlotsAvailable);
-};
-
 // Re-orders display results to put some more desirable elements up front
 export const reorder = dataList => {
     // Attach original index to ensure stable sorting
@@ -759,9 +513,6 @@ export const reorder = dataList => {
         );
         data.skills = skills;
 
-        data.setSkillPoints = { ...data.setSkills };
-        data.groupSkillPoints = { ...data.groupSkills };
-
         // correct set skill levels
         const setSkills = Object.fromEntries(
             Object.entries(data.setSkills)
@@ -779,13 +530,9 @@ export const reorder = dataList => {
         data.groupSkills = groupSkills;
     }
 
-    const damnSort = [...indexedData].sort((a, b) => {
-        const damageCompare = (b.damageProfile?.expected_dps || 0) - (a.damageProfile?.expected_dps || 0);
-        if (damageCompare !== 0) {
-            return damageCompare;
-        }
-        return slottageSizeCompare(a.freeSlots, b.freeSlots); // Sort by biggest slot value
-    });
+    const damnSort = [...indexedData].sort((a, b) =>
+        slottageSizeCompare(a.freeSlots, b.freeSlots) // Sort by biggest slot value
+    );
 
     damnSort.forEach(d => d.slots.sort((a, b) => b - a));
 
@@ -793,11 +540,6 @@ export const reorder = dataList => {
     const bestPerThree = {}; // Tracks the best (longest) list per (numThrees, numTwos)
 
     const sortedDamnSort = damnSort.sort((a, b) => {
-        const damageCompare = (b.damageProfile?.expected_dps || 0) - (a.damageProfile?.expected_dps || 0);
-        if (damageCompare !== 0) {
-            return damageCompare;
-        }
-
         const aThrees = a.freeSlots.filter(y => y === 3).length;
         const bThrees = b.freeSlots.filter(y => y === 3).length;
 
@@ -831,11 +573,6 @@ export const reorder = dataList => {
     const longestSlots = [...indexedData]
         .filter(v => !excludeIds.has(v.id))
         .sort((a, b) => {
-            const damageCompare = (b.damageProfile?.expected_dps || 0) - (a.damageProfile?.expected_dps || 0);
-            if (damageCompare !== 0) {
-                return damageCompare;
-            }
-
             const aHasPriority = a.freeSlots.some(val => val === 2 || val === 3) ? a.freeSlots.length : 0;
             const bHasPriority = b.freeSlots.some(val => val === 2 || val === 3) ? b.freeSlots.length : 0;
 
@@ -850,261 +587,23 @@ export const reorder = dataList => {
     return [...pre, ...longestSlots];
 };
 
-const RAW_SEARCH_SKILL_WEIGHTS = {
-    'Attack Boost': 4,
-    Agitator: 4,
-    Burst: 4,
-    'Peak Performance': 3,
-    Resentment: 3,
-    'Adrenaline Rush': 3,
-    Counterstrike: 3,
-    Foray: 3,
-    'Offensive Guard': 3,
-    'Critical Eye': 2,
-    'Weakness Exploit': 2,
-    'Maximum Might': 2,
-    'Latent Power': 2,
-    'Critical Boost': 2
-};
-
-const getSearchSkillWeight = (skillName, optimizationGoal = 'highest_dps') => {
-    if (optimizationGoal === 'highest_raw' || optimizationGoal === 'highest_dps') {
-        return RAW_SEARCH_SKILL_WEIGHTS[skillName] || 1;
-    }
-
-    return 1;
-};
-
-const getDamageProfileForSkills = (skills, params) => buildDamageProfile({
-    skills,
-    conditions: params.conditions,
-    weaponBaseRaw: params.weaponBaseRaw,
-    weaponBaseAffinity: params.weaponBaseAffinity,
-    weaponType: params.weaponType,
-    weaponElementType: params.weaponElementType,
-    weaponElementValue: params.weaponElementValue,
-    weaponSharpness: params.weaponSharpness
-});
-
-const scoreSkillGain = (currentSkills, addedSkills, params) => {
-    const nextSkills = mergeSumMaps([currentSkills, addedSkills]);
-    const currentProfile = getDamageProfileForSkills(currentSkills, params);
-    const nextProfile = getDamageProfileForSkills(nextSkills, params);
-    const targetScore = Object.entries(addedSkills).reduce((total, [skillName, level]) => {
-        const targetLevel = params.skills?.[skillName] || 0;
-        const missingLevel = Math.max(0, targetLevel - (currentSkills[skillName] || 0));
-        return total + Math.min(level, missingLevel) * getSearchSkillWeight(skillName, params.optimizationGoal) * 1000;
-    }, 0);
-
-    return {
-        score: targetScore + Math.max(0, (nextProfile.expected_dps || 0) - (currentProfile.expected_dps || 0)),
-        nextSkills
-    };
-};
-
-const scoreSocketDamagePotential = (baseSkills, armorSlots = [], weaponSlots = [], params) => {
-    let currentSkills = { ...baseSkills };
-    let totalScore = 0;
-    const allSlots = [
-        ...armorSlots.map(slot => ({ type: 'armor', size: slot })),
-        ...weaponSlots.map(slot => ({ type: 'weapon', size: slot }))
-    ].sort((a, b) => a.size - b.size);
-
-    for (const slot of allSlots) {
-        let best = null;
-        for (const [decoName, decoData] of Object.entries(DECORATIONS)) {
-            const [decoType, decoSkills, decoSize] = decoData;
-            if (decoType !== slot.type || decoSize > slot.size || (decoInventory[decoName] || 0) <= 0) {
-                continue;
-            }
-
-            const scored = scoreSkillGain(currentSkills, decoSkills, params);
-            if (!best || scored.score > best.score) {
-                best = scored;
-            }
-        }
-
-        if (best && best.score > 0) {
-            totalScore += best.score;
-            currentSkills = best.nextSkills;
-        }
-    }
-
-    return totalScore;
-};
-
-const fillFreeSlotsWithDamageDecos = (roll, params) => {
-    if (params.dontUseDecos) { return roll; }
-
-    let currentSkills = { ...roll.skills };
-    const freeSlots = [...roll.freeSlots || []].sort((a, b) => a - b);
-    const freeWeaponSlots = [...roll.freeWeaponSlots || []].sort((a, b) => a - b);
-    const decoNames = [...roll.decoNames || []];
-    const usedDecosCount = {};
-    decoNames.forEach(decoName => {
-        usedDecosCount[decoName] = (usedDecosCount[decoName] || 0) + 1;
-    });
-
-    const slotQueue = [
-        ...freeSlots.map((size, index) => ({ type: 'armor', size, index })),
-        ...freeWeaponSlots.map((size, index) => ({ type: 'weapon', size, index }))
-    ].sort((a, b) => a.size - b.size);
-
-    for (const slot of slotQueue) {
-        let best = null;
-        for (const [decoName, decoData] of Object.entries(DECORATIONS)) {
-            const [decoType, decoSkills, decoSize] = decoData;
-            if (decoType !== slot.type || decoSize > slot.size) { continue; }
-            if ((usedDecosCount[decoName] || 0) >= (decoInventory[decoName] || 0)) { continue; }
-
-            const scored = scoreSkillGain(currentSkills, decoSkills, params);
-            if (!best || scored.score > best.score) {
-                best = { ...scored, decoName };
-            }
-        }
-
-        if (!best || best.score <= 0) { continue; }
-
-        currentSkills = best.nextSkills;
-        decoNames.push(best.decoName);
-        usedDecosCount[best.decoName] = (usedDecosCount[best.decoName] || 0) + 1;
-        if (slot.type === 'armor') {
-            freeSlots[slot.index] = null;
-        } else {
-            freeWeaponSlots[slot.index] = null;
-        }
-    }
-
-    return {
-        ...roll,
-        skills: currentSkills,
-        decoNames,
-        freeSlots: freeSlots.filter(slot => slot !== null),
-        freeWeaponSlots: freeWeaponSlots.filter(slot => slot !== null)
-    };
-};
-
-const sortPiecesForSearch = (pieces, desiredSkills, optimizationGoal = 'highest_dps') => Object.entries(pieces).sort((a, b) => {
-    const aData = a[1];
-    const bData = b[1];
-    let aContribution = 0;
-    let bContribution = 0;
-
-    for (const [skillName] of Object.entries(desiredSkills)) {
-        const weight = getSearchSkillWeight(skillName, optimizationGoal);
-        aContribution += (aData[1]?.[skillName] || 0) * weight;
-        bContribution += (bData[1]?.[skillName] || 0) * weight;
-    }
-    aContribution += aData[3]?.length || 0;
-    bContribution += bData[3]?.length || 0;
-
-    return bContribution - aContribution;
-});
-
-const scoreTalismanForDamage = (talismanData, params) => {
-    const talismanSkills = talismanData[1] || {};
-    const directSkillScore = scoreSkillGain({}, talismanSkills, params).score;
-    const socketScore = scoreSocketDamagePotential(talismanSkills, talismanData[3] || [], talismanData[8] || [], params);
-
-    return directSkillScore + socketScore;
-};
-
-const sortTalismansForDamage = (gear, params) => {
-    if (!gear?.talisman || params.findOne) { return gear; }
-
-    const customTalismanNames = new Set((params.customTalismans || []).map(talisman => talisman.name));
-    gear.talisman = Object.fromEntries(Object.entries(gear.talisman).sort((a, b) => {
-        const scoreCompare = scoreTalismanForDamage(b[1], params) - scoreTalismanForDamage(a[1], params);
-        if (scoreCompare !== 0) { return scoreCompare; }
-
-        const aCustom = customTalismanNames.has(a[0]) ? 1 : 0;
-        const bCustom = customTalismanNames.has(b[0]) ? 1 : 0;
-        if (aCustom !== bCustom) { return bCustom - aCustom; }
-
-        const aGenerated = a[0].startsWith('RARE[') ? 1 : 0;
-        const bGenerated = b[0].startsWith('RARE[') ? 1 : 0;
-        return bGenerated - aGenerated;
-    }));
-
-    return gear;
-};
-
-const getSortedCandidateList = (gear, slot, desiredSkills, optimizationGoal = 'highest_dps') => {
-    if (slot === "talisman") {
-        return Object.entries(gear[slot]);
-    }
-
-    return sortPiecesForSearch(gear[slot], desiredSkills, optimizationGoal);
-};
-
-const buildSuffixAvailability = (candidateLists, armorSlots, requiredNames, getNames) => {
-    const availability = Object.fromEntries(
-        requiredNames.map(name => [name, Array(armorSlots.length + 1).fill(0)])
-    );
-
-    for (let index = armorSlots.length - 1; index >= 0; index--) {
-        const slot = armorSlots[index];
-        for (const name of requiredNames) {
-            const slotCanProvide = candidateLists[slot].some(([, piece]) => (getNames(piece) || []).includes(name)) ? 1 : 0;
-            availability[name][index] = availability[name][index + 1] + slotCanProvide;
-        }
-    }
-
-    return availability;
-};
-
-const getPieceSkillPotential = (slot, piece, skillName, decos, baseWeaponSlots = []) => {
-    let points = piece[1]?.[skillName] || 0;
-    const armorSlots = piece[3] || [];
-    const weaponSlots = slot === "talisman" ? [...baseWeaponSlots, ..._x.weaponSlots(piece)] : [];
-
-    for (const deco of Object.values(decos)) {
-        const validSlots = deco[0] === "weapon" ? weaponSlots : armorSlots;
-        const decoSkillLevel = deco[1]?.[skillName];
-        if (decoSkillLevel && validSlots.length) {
-            points += decoSkillLevel * validSlots.filter(slotSize => slotSize >= deco[2]).length;
-            break;
-        }
-    }
-
-    return points;
-};
-
-const buildSkillPotentialSuffix = (candidateLists, armorSlots, desiredSkills, decos, baseWeaponSlots = []) => {
-    const skillNames = Object.keys(desiredSkills);
-    const potential = Object.fromEntries(
-        skillNames.map(name => [name, Array(armorSlots.length + 1).fill(0)])
-    );
-
-    for (let index = armorSlots.length - 1; index >= 0; index--) {
-        const slot = armorSlots[index];
-        for (const skillName of skillNames) {
-            const bestSlotPotential = candidateLists[slot].reduce((best, [, piece]) => {
-                return Math.max(best, getPieceSkillPotential(slot, piece, skillName, decos, baseWeaponSlots));
-            }, 0);
-            potential[skillName][index] = potential[skillName][index + 1] + bestSlotPotential;
-        }
-    }
-
-    return potential;
-};
-
 const rollCombosDfs = async(
-    gear, desiredSkills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined,
-    optimizationGoal = 'highest_dps',
-    profile = createOptimizerProfile("dfs")
+    gear, desiredSkills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined
 ) => {
     const results = [];
     const armorSlots = getArmorTypeList();
 
-    const candidateLists = Object.fromEntries(
-        armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal)])
-    );
+    const headList = Object.entries(gear.head);
+    const chestList = Object.entries(gear.chest);
+    const armsList = Object.entries(gear.arms);
+    const waistList = Object.entries(gear.waist);
+    const legsList = Object.entries(gear.legs);
+    const talismanList = Object.entries(gear.talisman);
 
     // Calculate total possible combinations
-    totalPossibleCombinations = armorSlots
-        .map(slot => candidateLists[slot].length)
-        .reduce((total, count) => total * count, 1);
+    totalPossibleCombinations =
+        headList.length * chestList.length * armsList.length *
+        waistList.length * legsList.length * talismanList.length;
     if (CHOSEN_ARMOR_DEBUG) {
         console.log(`possible: ${totalPossibleCombinations.toLocaleString()}`);
     }
@@ -1117,22 +616,13 @@ const rollCombosDfs = async(
     for (const name of Object.keys(groupSkills)) {
         requiredGroupPoints[name] = Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0));
     }
-    const requiredSetNames = Object.keys(setSkills);
-    const requiredGroupNames = Object.keys(groupSkills);
-    const setSuffixAvailability = buildSuffixAvailability(candidateLists, armorSlots, requiredSetNames, _x.setSkills);
-    const groupSuffixAvailability = buildSuffixAvailability(candidateLists, armorSlots, requiredGroupNames, _x.groupSkills);
-    const skillPotentialSuffix = buildSkillPotentialSuffix(
-        candidateLists, armorSlots, desiredSkills, gear.decos, gear.weaponSlots
-    );
 
     let counter = 1, inc = 1, allCounter = 0;
 
     // Precompute best-case future values for skill projection
-    const dfs = async(index, currentArmor, usedNames, setCounts, groupCounts, skillPotentialCounts) => {
-        profile.nodes++;
+    const dfs = async(index, currentArmor, usedNames, setCounts, groupCounts) => {
         allCounter++;
         if (index === armorSlots.length) {
-            profile.leaves++;
             const fullSet = armorCombo(
                 formatArmorC(currentArmor.head),
                 formatArmorC(currentArmor.chest),
@@ -1169,15 +659,35 @@ const rollCombosDfs = async(
         }
 
         const slot = armorSlots[index];
-        for (const [name, piece] of candidateLists[slot]) {
+        const pieces = gear[slot];
+
+        // Sort pieces by skill contribution (pieces with needed skills first)
+        const piecesSorted = Object.entries(pieces).sort((a, b) => {
+            const aData = a[1];
+            const bData = b[1];
+            let aContribution = 0;
+            let bContribution = 0;
+            
+            // Score pieces: +2 for each skill point toward desired skill, +1 per slot
+            for (const [skillName, level] of Object.entries(desiredSkills)) {
+                aContribution += (aData[1]?.[skillName] || 0) * 2;
+                bContribution += (bData[1]?.[skillName] || 0) * 2;
+            }
+            aContribution += aData[3]?.length || 0;
+            bContribution += bData[3]?.length || 0;
+            
+            return bContribution - aContribution; // descending: most useful first
+        });
+
+        for (const [name, piece] of piecesSorted) {
             if (usedNames.has(name) && name !== "None") { continue; } // None exception since None name is not unique
+            const piece = pieces[name];
             currentArmor[slot] = [name, piece];
             usedNames.add(name);
 
             // Track set/group skill counts
             const addedSetCounts = {};
             const addedGroupCounts = {};
-            const addedSkillPotentials = {};
 
             const mySetSkillNames = _x.setSkills(piece);
             const myGroupSkillNames = _x.groupSkills(piece);
@@ -1199,31 +709,20 @@ const rollCombosDfs = async(
                     }
                 }
             }
-            for (const skillName of Object.keys(desiredSkills)) {
-                const addedPotential = getPieceSkillPotential(slot, piece, skillName, gear.decos, gear.weaponSlots);
-                if (addedPotential) {
-                    skillPotentialCounts[skillName] = (skillPotentialCounts[skillName] || 0) + addedPotential;
-                    addedSkillPotentials[skillName] = addedPotential;
-                }
-            }
             let shouldContinue = true;
 
             // Prune early based on set/group skill future feasibility
             const remainingSlots = armorSlots.length - (index + 1);
-            for (const skill of requiredSetNames) {
-                const current = setCounts[skill] || 0;
-                const needed = requiredSetPoints[skill] - current;
-                if (needed > remainingSlots || current + setSuffixAvailability[skill][index + 1] < requiredSetPoints[skill]) {
-                    profile.pruned++;
+            for (const skill of Object.keys(setSkills)) {
+                const needed = requiredSetPoints[skill] - (setCounts[skill] || 0);
+                if (needed > remainingSlots) {
                     shouldContinue = false;
                     break;
                 }
             }
-            for (const skill of requiredGroupNames) {
-                const current = groupCounts[skill] || 0;
-                const needed = requiredGroupPoints[skill] - current;
-                if (needed > remainingSlots || current + groupSuffixAvailability[skill][index + 1] < requiredGroupPoints[skill]) {
-                    profile.pruned++;
+            for (const skill of Object.keys(groupSkills)) {
+                const needed = requiredGroupPoints[skill] - (groupCounts[skill] || 0);
+                if (needed > remainingSlots) {
                     shouldContinue = false;
                     break;
                 }
@@ -1241,10 +740,7 @@ const rollCombosDfs = async(
 
             // Check projected skill feasibility
             for (const [skillName, level] of Object.entries(desiredSkills)) {
-                const maxPossibleLevel = (skillPotentialCounts[skillName] || 0) +
-                    skillPotentialSuffix[skillName][index + 1];
-                if (maxPossibleLevel < level) {
-                    profile.pruned++;
+                if (!canArmorFulfillSkill(currentArmor, gear, gear.decos, skillName, level)) {
                     shouldContinue = false;
 
                     if (DFS_DEBUG) {
@@ -1257,7 +753,7 @@ const rollCombosDfs = async(
             }
 
             if (shouldContinue) {
-                const done = await dfs(index + 1, currentArmor, usedNames, setCounts, groupCounts, skillPotentialCounts);
+                const done = await dfs(index + 1, currentArmor, usedNames, setCounts, groupCounts);
                 if (done) { return true; }
             }
 
@@ -1265,224 +761,16 @@ const rollCombosDfs = async(
             delete currentArmor[slot];
             for (const skill of Object.keys(addedSetCounts)) { setCounts[skill] -= addedSetCounts[skill]; }
             for (const skill of Object.keys(addedGroupCounts)) { groupCounts[skill] -= addedGroupCounts[skill]; }
-            for (const skill of Object.keys(addedSkillPotentials)) {
-                skillPotentialCounts[skill] -= addedSkillPotentials[skill];
-                if (skillPotentialCounts[skill] <= 0) { delete skillPotentialCounts[skill]; }
-            }
         }
 
         return false;
     };
 
-    await dfs(0, {}, new Set(), {}, {}, {});
+    await dfs(0, {}, new Set(), {}, {});
     return results;
 };
 
-class OptimizerState {
-    constructor(gear) {
-        this.gear = gear;
-        this.armorSlots = getArmorTypeList();
-        this.currentArmor = {};
-        this.usedNames = new Set();
-        this.skills = {};
-        this.slots = [];
-        this.talismanWeaponSlots = [];
-        this.setCounts = {};
-        this.groupCounts = {};
-    }
-
-    canUse(name) {
-        return name === "None" || !this.usedNames.has(name);
-    }
-
-    add(slot, name, piece) {
-        this.currentArmor[slot] = [name, piece];
-        this.usedNames.add(name);
-
-        for (const [skillName, level] of Object.entries(piece[1] || {})) {
-            this.skills[skillName] = (this.skills[skillName] || 0) + level;
-        }
-
-        for (const slotSize of piece[3] || []) {
-            this.slots.push(slotSize);
-        }
-
-        if (slot === "talisman") {
-            this.talismanWeaponSlots.push(..._x.weaponSlots(piece));
-        } else {
-            for (const setName of _x.setSkills(piece)) {
-                this.setCounts[setName] = (this.setCounts[setName] || 0) + 1;
-            }
-            for (const groupName of _x.groupSkills(piece)) {
-                this.groupCounts[groupName] = (this.groupCounts[groupName] || 0) + 1;
-            }
-        }
-    }
-
-    remove(slot, name, piece) {
-        delete this.currentArmor[slot];
-        this.usedNames.delete(name);
-
-        for (const [skillName, level] of Object.entries(piece[1] || {})) {
-            this.skills[skillName] -= level;
-            if (this.skills[skillName] <= 0) { delete this.skills[skillName]; }
-        }
-
-        for (const slotSize of piece[3] || []) {
-            const index = this.slots.lastIndexOf(slotSize);
-            if (index !== -1) { this.slots.splice(index, 1); }
-        }
-
-        if (slot === "talisman") {
-            for (const slotSize of _x.weaponSlots(piece)) {
-                const index = this.talismanWeaponSlots.lastIndexOf(slotSize);
-                if (index !== -1) { this.talismanWeaponSlots.splice(index, 1); }
-            }
-        } else {
-            for (const setName of _x.setSkills(piece)) {
-                this.setCounts[setName] -= 1;
-                if (this.setCounts[setName] <= 0) { delete this.setCounts[setName]; }
-            }
-            for (const groupName of _x.groupSkills(piece)) {
-                this.groupCounts[groupName] -= 1;
-                if (this.groupCounts[groupName] <= 0) { delete this.groupCounts[groupName]; }
-            }
-        }
-    }
-
-    buildArmorSet() {
-        const setSkillBonus = this.gear.setSkillBonus ? { [this.gear.setSkillBonus]: 1 } : {};
-        const groupSkillBonus = this.gear.groupSkillBonus ? { [this.gear.groupSkillBonus]: 1 } : {};
-
-        return {
-            names: this.armorSlots.map(slot => this.currentArmor[slot][0]),
-            skills: Object.fromEntries(Object.entries(this.skills).sort((a, b) => b[1] - a[1])),
-            slots: [...this.slots],
-            weaponSlots: [...this.gear.weaponSlots, ...this.talismanWeaponSlots],
-            setSkills: mergeSumMaps([setSkillBonus, this.setCounts]),
-            groupSkills: mergeSumMaps([groupSkillBonus, this.groupCounts]),
-            defense: this.armorSlots
-                .filter(slot => slot !== "talisman")
-                .map(slot => this.currentArmor[slot][1][4])
-        };
-    }
-}
-
-const rollCombosNewEngine = async(
-    gear, desiredSkills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined,
-    optimizationGoal = 'highest_dps',
-    profile = createOptimizerProfile("new-engine")
-) => {
-    if (!gear) {
-        console.warn("rollCombosNewEngine(): gear is null, something went wrong");
-        return [];
-    }
-
-    const results = [];
-    const state = new OptimizerState(gear);
-    const armorSlots = state.armorSlots;
-    const candidateLists = Object.fromEntries(
-        armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal)])
-    );
-
-    totalPossibleCombinations = armorSlots
-        .map(slot => candidateLists[slot].length)
-        .reduce((total, count) => total * count, 1);
-    if (CHOSEN_ARMOR_DEBUG) {
-        console.log(`possible: ${totalPossibleCombinations.toLocaleString()}`);
-    }
-
-    const requiredSetPoints = {};
-    const requiredGroupPoints = {};
-    for (const [name, level] of Object.entries(setSkills)) {
-        requiredSetPoints[name] = Math.max(0, level * 2 - (gear.setSkillBonus === name ? 1 : 0));
-    }
-    for (const name of Object.keys(groupSkills)) {
-        requiredGroupPoints[name] = Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0));
-    }
-
-    let inc = 1, allCounter = 0;
-
-    const dfs = async index => {
-        profile.nodes++;
-        allCounter++;
-
-        if (allCounter % 500 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 0));
-        }
-        if (cancelToken && cancelToken.current) {
-            console.warn('rollCombosNewEngine() cancel pressed, returning early');
-            return true;
-        }
-
-        if (index === armorSlots.length) {
-            profile.leaves++;
-            const fullSet = state.buildArmorSet();
-            const result = test(fullSet, gear.decos, desiredSkills);
-            if (result) {
-                result.id = stringToId(`${result.armorNames.join(",")}_${result.decoNames.join(",")}`);
-                result._id = inc;
-                inc++;
-                results.push(result);
-                if (findOne || results.length >= limit) { return true; }
-            }
-            return false;
-        }
-
-        const slot = armorSlots[index];
-        for (const [name, piece] of candidateLists[slot]) {
-            if (!state.canUse(name)) { continue; }
-
-            state.add(slot, name, piece);
-            let shouldContinue = true;
-            const remainingSlots = armorSlots.length - (index + 1);
-
-            for (const skill of Object.keys(setSkills)) {
-                const needed = requiredSetPoints[skill] - (state.setCounts[skill] || 0);
-                if (needed > remainingSlots) {
-                    profile.pruned++;
-                    shouldContinue = false;
-                    break;
-                }
-            }
-            for (const skill of Object.keys(groupSkills)) {
-                const needed = requiredGroupPoints[skill] - (state.groupCounts[skill] || 0);
-                if (needed > remainingSlots) {
-                    profile.pruned++;
-                    shouldContinue = false;
-                    break;
-                }
-            }
-
-            for (const [skillName, level] of Object.entries(desiredSkills)) {
-                if (!canArmorFulfillSkill(state.currentArmor, gear, gear.decos, skillName, level)) {
-                    profile.pruned++;
-                    shouldContinue = false;
-                    break;
-                }
-            }
-
-            if (shouldContinue) {
-                const done = await dfs(index + 1);
-                if (done) { return true; }
-            }
-
-            state.remove(slot, name, piece);
-        }
-
-        return false;
-    };
-
-    await dfs(0);
-    return results;
-};
-
-const rollCombos = async(
-    gear, skills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined,
-    optimizationGoal = 'highest_dps',
-    profile = createOptimizerProfile("cartesian")
-) => {
-    profile.optimizationGoal = optimizationGoal;
+const rollCombos = async(gear, skills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined) => {
     if (!gear) {
         console.warn("rollCombos(): gear is null, something went wrong");
         return [];
@@ -1526,8 +814,6 @@ const rollCombos = async(
     const allCombos = cartesianProduct(headList, chestList, armsList, waistList, legsList, talismanList);
 
     for (const combo of allCombos) {
-        profile.nodes++;
-        profile.leaves++;
         allCounter++;
         if (counter >= limit) {
             console.warn("rollCombos() - limit reached, exiting");
@@ -1564,12 +850,10 @@ const rollCombos = async(
             }
 
             if ([...setSkillsCheck].some(skill => (piecesFromSet[skill] || 0) < requiredSetPoints[skill])) {
-                profile.pruned++;
                 continue;
             }
 
             if ([...groupSkillsCheck].some(skill => (piecesFromGroup[skill] || 0) < requiredGroupPoints[skill])) {
-                profile.pruned++;
                 continue;
             }
         }
@@ -1679,29 +963,6 @@ const getMaxSkillLevelsFromResults = (results, allSkills) => {
     }
 
     return soFar;
-};
-
-const resultSignature = result => [
-    result.armorNames.join("|"),
-    [...result.decoNames].sort().join("|"),
-    [...result.freeSlots].sort((a, b) => b - a).join("|"),
-    [...result.freeWeaponSlots].sort((a, b) => b - a).join("|")
-].join("::");
-
-const warnIfEngineMismatch = (oldResults, newResults) => {
-    const oldSet = new Set(oldResults.map(resultSignature));
-    const newSet = new Set(newResults.map(resultSignature));
-    const onlyOld = [...oldSet].filter(key => !newSet.has(key));
-    const onlyNew = [...newSet].filter(key => !oldSet.has(key));
-
-    if (onlyOld.length || onlyNew.length) {
-        console.warn("Optimizer engine mismatch", {
-            oldCount: oldResults.length,
-            newCount: newResults.length,
-            onlyOld: onlyOld.slice(0, 5),
-            onlyNew: onlyNew.slice(0, 5)
-        });
-    }
 };
 
 export const getAddableSkills = async parameters => {
@@ -1822,11 +1083,12 @@ export const getAddableSkills = async parameters => {
 
 export const search = async parameters => {
     const params = getSearchParameters(parameters);
-    const cacheKey = buildSearchCacheKey(params);
-    const cachedSearch = searchCache.get(cacheKey);
-    if (cachedSearch) {
-        return cachedSearch;
-    }
+    const gear = speed(
+        getBestArmor, params.skills, params.setSkills, params.groupSkills,
+        params.mandatoryArmor, params.blacklistedArmor, params.blacklistedArmorTypes,
+        params.dontUseDecos, params.weaponSlots, params.setSkillBonus, params.groupSkillBonus,
+        params.customTalismans, params.useOnlyOwnedTalismans
+    );
 
     decoInventory = { ...DECO_INVENTORY };
 
@@ -1837,44 +1099,15 @@ export const search = async parameters => {
         }
     }
 
-    let gear = speed(
-        getBestArmor, params.skills, params.setSkills, params.groupSkills,
-        params.mandatoryArmor, params.blacklistedArmor, params.blacklistedArmorTypes,
-        params.dontUseDecos, params.weaponSlots, params.setSkillBonus, params.groupSkillBonus,
-        params.customTalismans, params.useOnlyOwnedTalismans
-    );
-    gear = sortTalismansForDamage(gear, params);
-
-    let comboFunc = USE_NEW_ENGINE ? rollCombosNewEngine : rollCombosDfs;
-    if (!USE_NEW_ENGINE && !DFS) {
+    let comboFunc = rollCombosDfs;
+    if (!DFS) {
         comboFunc = rollCombos;
     }
 
-    let engineName = "dfs";
-    if (USE_NEW_ENGINE) {
-        engineName = "new-engine";
-    } else if (!DFS) {
-        engineName = "cartesian";
-    }
-    const profile = createOptimizerProfile(engineName);
-    const comboStartTime = performance.now();
-    const searchLimit = params.findOne ? params.limit : Math.max(params.limit, Math.min(params.limit * 8, 160));
     let rolls = await comboFunc(
-        gear, params.skills, params.setSkills, params.groupSkills, searchLimit,
-        params.findOne, params.cancelToken, params.optimizationGoal, profile
+        gear, params.skills, params.setSkills, params.groupSkills, params.limit,
+        params.findOne, params.cancelToken
     );
-    profile.runtimeMs = performance.now() - comboStartTime;
-    finishOptimizerProfile(profile, rolls);
-
-    if (VALIDATE_NEW_ENGINE && !params.cancelToken?.current) {
-        const validateProfile = createOptimizerProfile(USE_NEW_ENGINE ? "dfs-validate" : "new-engine-validate");
-        const validateFunc = USE_NEW_ENGINE ? rollCombosDfs : rollCombosNewEngine;
-        const validationRolls = await validateFunc(
-            gear, params.skills, params.setSkills, params.groupSkills, searchLimit,
-            params.findOne, params.cancelToken, params.optimizationGoal, validateProfile
-        );
-        warnIfEngineMismatch(USE_NEW_ENGINE ? validationRolls : rolls, USE_NEW_ENGINE ? rolls : validationRolls);
-    }
 
     // lazily handle slotFilters filtering here
     if (!isEmpty(params.slotFilters)) {
@@ -1914,44 +1147,14 @@ export const search = async parameters => {
         }
     }
 
-    rolls = rolls.map(roll => {
-        const enrichedRoll = {
-            ...roll,
-            skills: roll.skills || params.skills || {},
-            setSkills: roll.setSkills || params.setSkills || {},
-            groupSkills: roll.groupSkills || params.groupSkills || {},
-            conditions: roll.conditions || params.conditions || {},
-            weaponBaseRaw: roll.weaponBaseRaw ?? params.weaponBaseRaw ?? 0,
-            weaponBaseAffinity: roll.weaponBaseAffinity ?? params.weaponBaseAffinity ?? 0,
-            weaponType: roll.weaponType ?? params.weaponType ?? 'other',
-            weaponElementType: roll.weaponElementType ?? params.weaponElementType ?? 'None',
-            weaponElementValue: roll.weaponElementValue ?? params.weaponElementValue ?? 0,
-            weaponSharpness: roll.weaponSharpness ?? params.weaponSharpness ?? 'White'
-        };
-        const rollWithDamageDecos = fillFreeSlotsWithDamageDecos(enrichedRoll, params);
-        const damageProfile = buildDamageProfile(rollWithDamageDecos);
-        return {
-            ...rollWithDamageDecos,
-            damageProfile,
-            tags: damageProfile.tags
-        };
-    });
-
-    const rankedRolls = rankBuildsByDamage(rolls, params.optimizationGoal || 'highest_dps');
-    rolls = reorder(rankedRolls).slice(0, params.limit);
-    cacheSearchResult(cacheKey, rolls);
+    rolls = reorder(rolls);
 
     return rolls;
 };
 
 export const searchAndSpeed = async(parameters, useCached = false) => {
-    const params = getSearchParameters(parameters);
-    const cacheKey = buildSearchCacheKey(params);
-    if (useCached) {
-        const cachedSearch = searchCache.get(cacheKey);
-        if (cachedSearch) {
-            return { results: cachedSearch, seconds: 0 };
-        }
+    if (useCached && cached) {
+        return cached;
     }
 
     const startTime = performance.now();

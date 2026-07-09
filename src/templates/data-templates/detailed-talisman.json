@@ -1,0 +1,8 @@
+{
+  "Your Charm Name": {
+    "effect": "Short effect text",
+    "rarity": 4,
+    "skills": { "Skill Name": 1 },
+    "type": "talisman"
+  }
+}

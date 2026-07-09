@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { generateTalismans } from '../util/talismanGenerator';
 import {
     armorNameFormat, armorSetToCalculatorJSON, copyTextToClipboard, formatSkillsDiff,
     generateWikiString, getArmorDefenseFromName, getArmorDefenseFromNames,
@@ -26,6 +27,7 @@ import TablePaginationActions from './TablePaginationActions';
 import Swap from '@mui/icons-material/Sync';
 import { Button, IconButton, TextField } from '@mui/material';
 import SKILLS from '../data/detailed/skills.json';
+import SET_SKILLS_COMPACT from '../data/compact/set-skills.json';
 import { isEmpty } from '../util/tools';
 import Pin from '@mui/icons-material/PushPin';
 import Unpin from '@mui/icons-material/PushPinOutlined';
@@ -293,6 +295,11 @@ const Results = ({
         const armorNames = result.armorNames;
         const savedMatch = fields.savedSets?.filter(x => x.id === result?.id)[0];
         const theName = savedMatch?.name || "Unnamed Set";
+        const score = result?.damageProfile?.expected_dps ? result.damageProfile.expected_dps.toFixed(1) : '—';
+        const rawValue = result?.damageProfile?.raw_dps?.toFixed(1) ?? '—';
+        const elementValue = result?.damageProfile?.element_dps?.toFixed(1) ?? '—';
+        const affinityValue = result?.damageProfile?.final_affinity?.toFixed(0) ?? '—';
+        const goalLabel = fields.optimizationGoal === 'highest_raw' ? 'Raw' : fields.optimizationGoal === 'highest_element' ? 'Element' : fields.optimizationGoal === 'highest_affinity' ? 'Affinity' : fields.optimizationGoal === 'balanced' ? 'Balanced' : 'DPS';
         let cls = "";
         if (!save && savedMatch) { cls += 'striped'; }
         if (highlighted) { cls += ' row-shine'; }
@@ -310,8 +317,16 @@ const Results = ({
             sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
             {save && <StyledTableCell align="left">{theName}</StyledTableCell>}
             <StyledTableCell align="left">
-                {customSlot === "slots" && renderSlots(result)}
-                {customSlot === "defense" && renderDefense(result)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {customSlot === "slots" && renderSlots(result)}
+                    {customSlot === "defense" && renderDefense(result)}
+                    <div style={{ fontSize: '12px', color: '#3b6ea8', fontWeight: 600 }}>
+                        {goalLabel}: {score}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#4b5563' }}>
+                        Raw {rawValue} • Element {elementValue} • Aff {affinityValue}%
+                    </div>
+                </div>
             </StyledTableCell>
             {isMobile && <StyledTableCell align="left" scope="row">{renderDefense(result)}</StyledTableCell>}
             {!isMobile && <StyledTableCell align="left" scope="row">{armorNameFormat(armorNames[0])}</StyledTableCell>}
@@ -373,11 +388,41 @@ const Results = ({
         </div>;
     };
 
-    const renderArmorSlots = slots => {
-        return <div className="armor-slots">
-            {slots.map((size, index) => {
-                return <img key={index} className="armor-slot" src={`images/slot${size}.png`} />;
-            })}
+    const renderArmorSlots = (armorSlots = [], weaponSlots = []) => {
+        const armorIcons = (armorSlots || []).map((size, index) => {
+            return <img key={`armor-${index}`} className="armor-slot" src={`images/slot${size}.png`} alt={`armor slot ${size}`} />;
+        });
+        const weaponIcons = (weaponSlots || []).map((size, index) => {
+            return <div key={`weapon-${index}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <img className="armor-slot" src={`images/slot${size}.png`} alt={`weapon slot ${size}`} />
+            </div>;
+        });
+
+        return <div className="armor-slots" style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+            {weaponIcons.length > 0 && <span
+                title="Talisman weapon decoration slots"
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    marginLeft: armorIcons.length ? '5px' : 0,
+                    padding: '1px 4px',
+                    border: '1px solid rgba(128, 214, 224, 0.35)',
+                    borderRadius: '4px',
+                    background: 'rgba(74, 144, 156, 0.14)'
+                }}>
+                <span style={{
+                    color: '#9ee8f0',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    textTransform: 'uppercase'
+                }}>
+                    Weapon
+                </span>
+                {weaponIcons}
+            </span>}
+            {armorIcons}
         </div>;
     };
 
@@ -392,7 +437,7 @@ const Results = ({
         }
         let levelModSpan = null;
         if (showLevelMods && isWantedSkill && want < sk.level) {
-            levelModSpan = <span className="wanted left-space">{`(+${sk.level - want})`}</span>;
+            levelModSpan = <span className="wanted left-space">{`(+${sk.level - want} over target)`}</span>;
         }
         const title = getSkillPopup(sk.name);
         const setTag = isGroupSkillName(sk.name) ? 'set-names set-color' : '';
@@ -403,6 +448,179 @@ const Results = ({
             <span className={`${wantedCls} sk-name`}>{`${sk.name} `}</span>
             <span className={`${wantedCls}`}>{`Lv. ${sk.level}`}{levelModSpan}</span>
             {comma && ', '}
+        </div>;
+    };
+
+    const getActivatedSetSkillLevel = (skillName, points) => {
+        const thresholds = SET_SKILLS_COMPACT[skillName]?.[2];
+        if (!Array.isArray(thresholds)) {
+            return points;
+        }
+
+        return thresholds.reduce((level, threshold) => points >= threshold ? level + 1 : level, 0);
+    };
+
+    const getMinimumSetPointsForLevel = (skillName, level) => {
+        const thresholds = SET_SKILLS_COMPACT[skillName]?.[2];
+        if (!Array.isArray(thresholds)) {
+            return level;
+        }
+
+        return thresholds[Math.max(0, Math.min(level, thresholds.length) - 1)] || 0;
+    };
+
+    const renderSetSkill = ([skillName, points], j, arr) => {
+        const level = getActivatedSetSkillLevel(skillName, points);
+        if (!level) {
+            return null;
+        }
+
+        const thresholds = SET_SKILLS_COMPACT[skillName]?.[2];
+        const thresholdText = Array.isArray(thresholds) ?
+            ` (${points}/${thresholds[thresholds.length - 1]} points)` :
+            '';
+        const comma = j < arr.length - 1;
+        const title = getSkillPopup(skillName);
+        const displayName = fields.showGroupSkillNames && SET_SKILLS_COMPACT[skillName] ?
+            SET_SKILLS_COMPACT[skillName][0] :
+            skillName;
+
+        return <div key={skillName} className="result-skill set-names group-color" title={title}>
+            <span className="sk-name">{`${displayName} `}</span>
+            <span>{`Lv. ${level}${thresholdText}`}</span>
+            {comma && ', '}
+        </div>;
+    };
+
+    const formatContributionName = contribution => {
+        return contribution.level ? `${contribution.skill} Lv. ${contribution.level}` : contribution.skill;
+    };
+
+    const formatConditionSuffix = contribution => {
+        const conditionLabel = contribution.conditionLabel || contribution.condition;
+        if (!conditionLabel || conditionLabel === contribution.skill) {
+            return '';
+        }
+
+        return ` (${conditionLabel})`;
+    };
+
+    const formatRawContribution = contribution => {
+        const name = formatContributionName(contribution);
+        const condition = contribution.condition ? formatConditionSuffix(contribution) : '';
+        if (contribution.active === false) {
+            return `${name}${condition}: inactive`;
+        }
+
+        const flat = contribution.flat ? `+${contribution.flat}` : '';
+        const percent = contribution.rawPercent ? `+${(contribution.rawPercent * 100).toFixed(0)}%` : '';
+        const postPercent = contribution.postRawPercent ? `post +${(contribution.postRawPercent * 100).toFixed(0)}%` : '';
+        return `${name}${condition}: ${[flat, percent, postPercent].filter(Boolean).join(', ')}`;
+    };
+
+    const formatAffinityContribution = contribution => {
+        const condition = contribution.condition ? formatConditionSuffix(contribution) : '';
+        return `${contribution.skill}${condition}: +${contribution.contribution}`;
+    };
+
+    const formatElementContribution = contribution => {
+        const name = formatContributionName(contribution);
+        const condition = contribution.condition ? formatConditionSuffix(contribution) : '';
+        if (contribution.active === false) {
+            return `${name}${condition}: inactive`;
+        }
+
+        const flat = contribution.flat ? `+${contribution.flat}` : '';
+        const percent = contribution.elementPercent ? `+${(contribution.elementPercent * 100).toFixed(0)}%` : '';
+        return `${name}${condition}: ${[flat, percent].filter(Boolean).join(', ')}`;
+    };
+
+    const compactList = (items, formatter, limit = 4) => {
+        const formatted = items.map(formatter);
+        if (formatted.length <= limit) {
+            return formatted;
+        }
+
+        return [...formatted.slice(0, limit), `+${formatted.length - limit} more`];
+    };
+
+    const renderBreakdownLine = (label, value, details = null) => {
+        return <div style={{ display: 'flex', gap: '0.5em', flexWrap: 'wrap', alignItems: 'baseline' }}>
+            <span style={{ color: '#d2c4b8', fontWeight: 700 }}>{label}:</span>
+            <span>{value}</span>
+            {details && <span style={{ color: '#9fb2a4' }}>{details}</span>}
+        </div>;
+    };
+
+    const renderContributionLine = (label, items, formatter, limit = 4) => {
+        if (!items?.length) {
+            return null;
+        }
+
+        const fullText = items.map(formatter).join(' | ');
+        return <div style={{ display: 'flex', gap: '0.5em', flexWrap: 'wrap', alignItems: 'center' }} title={fullText}>
+            <span style={{ color: '#d2c4b8', fontWeight: 700 }}>{label}:</span>
+            {compactList(items, formatter, limit).map(text =>
+                <span key={text} style={{
+                    border: '1px solid rgba(140, 255, 158, 0.28)',
+                    borderRadius: '4px',
+                    padding: '1px 5px',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {text}
+                </span>
+            )}
+        </div>;
+    };
+
+    const renderDamageBreakdown = (breakdown, result, activeAffinityContributions, activeAffinityTotal) => {
+        if (!breakdown?.affinity) {
+            return null;
+        }
+
+        const rawPercentMultiplier = 1 + (breakdown.raw.rawPercentBonus || 0);
+        const postRawPercentMultiplier = 1 + (breakdown.raw.postRawPercentBonus || 0);
+        const elementPercentMultiplier = 1 + (breakdown.element.elementPercentBonus || 0);
+        const rawFormula = `(${breakdown.raw.base} x ${rawPercentMultiplier.toFixed(2)} + ` +
+            `${breakdown.raw.flatRaw}) x ${postRawPercentMultiplier.toFixed(2)} = ` +
+            `${breakdown.raw.effectiveRaw.toFixed(1)}`;
+        const rawFinal = `x sharp ${breakdown.raw.sharpnessMultiplier.toFixed(2)} x crit ` +
+            `${breakdown.raw.critExpectation.toFixed(3)} = ${result.damageProfile.raw_dps.toFixed(1)}`;
+        const elementFormula = `${breakdown.element.base} + ${breakdown.element.flatElement} x ` +
+            `${elementPercentMultiplier.toFixed(2)} = ${breakdown.element.effectiveElement.toFixed(1)}`;
+        const elementFinal = `x sharp ${breakdown.element.sharpnessMultiplier.toFixed(2)} = ` +
+            `${result.damageProfile.element_dps.toFixed(1)}`;
+        const statusExcludedDetails = breakdown.raw.statusExcludedRawFlat ?
+            `; +${breakdown.raw.statusExcludedRawFlat} shown separately in-game` :
+            '';
+
+        return <div className="set-skills" style={{ marginTop: '0.75em' }}>
+            <span className="set-label">Damage:</span>
+            <div className="set-names wanted" style={{
+                display: 'grid',
+                gap: '0.35em',
+                marginTop: '0.25em',
+                maxWidth: '1180px'
+            }}>
+                <div style={{ display: 'flex', gap: '1em', flexWrap: 'wrap', color: '#b8e7ff' }}>
+                    <span>DPS {result.damageProfile.expected_dps.toFixed(1)}</span>
+                    <span>Raw {result.damageProfile.raw_dps.toFixed(1)}</span>
+                    <span>Element {result.damageProfile.element_dps.toFixed(1)}</span>
+                    <span>Affinity {breakdown.affinity.final}%</span>
+                </div>
+                {renderBreakdownLine('Raw', rawFormula, `${rawFinal}${statusExcludedDetails}`)}
+                {renderContributionLine('Raw boosts', breakdown.raw.skillContributions, formatRawContribution, 5)}
+                {renderBreakdownLine('Element', elementFormula, elementFinal)}
+                {renderContributionLine('Element boosts', breakdown.element.skillContributions, formatElementContribution, 4)}
+                {renderBreakdownLine(
+                    'Affinity',
+                    `${breakdown.affinity.base}% + ${activeAffinityTotal}% = ${breakdown.affinity.final}%`
+                )}
+                {renderContributionLine('Affinity boosts', activeAffinityContributions, formatAffinityContribution, 4)}
+                {breakdown.unmodeledSkills?.length ?
+                    renderBreakdownLine('Unmodeled', breakdown.unmodeledSkills.join(', ')) :
+                    null}
+            </div>
         </div>;
     };
 
@@ -434,7 +652,7 @@ const Results = ({
                         <img className="armor-def-img" src={`images/defense-up.png`} />
                         <div className="def-value">{defense?.upgraded || 0}</div>
                     </div>}
-                    {!isMobile && renderArmorSlots(armor.slots)}
+                    {!isMobile && renderArmorSlots(armor.slots, armor.weaponSlots)}
                     {!isMobile && <span className="armor-skills">
                         {Object.entries(armor.skills).map((sk, j, arr) => renderSkill(sk, j, arr, searchedSkills))}
                     </span>}
@@ -470,8 +688,36 @@ const Results = ({
         let defenseTotal = null;
         if (selectedResult) {
             const decos = getDecosFromNames(selectedResult.decoNames, fields.showDecoSkillNames);
-            const armor = getArmorFromNames(selectedResult.armorNames);
-            const defense = getArmorDefenseFromNames(selectedResult.armorNames);
+            const armorNames = selectedResult.armorNames || [];
+            const talismanName = armorNames[5];
+            const talismanLookup = selectedResult.talismanData || {};
+            let resolvedTalismanData = talismanLookup[talismanName] || talismanLookup[talismanName?.toLowerCase()];
+
+            if (!resolvedTalismanData) {
+                const matchingCustomTalisman = (fields.customTalismans || []).find(talisman => talisman.name === talismanName);
+                if (matchingCustomTalisman) {
+                    resolvedTalismanData = {
+                        name: matchingCustomTalisman.name,
+                        skills: matchingCustomTalisman.skills || {},
+                        slots: matchingCustomTalisman.slots || [],
+                        weaponSlots: matchingCustomTalisman.weaponSlots || []
+                    };
+                }
+            }
+
+            if (!resolvedTalismanData) {
+                const desiredSkills = fields.skills || selectedResult.searchedSkills || {};
+                if (Object.keys(desiredSkills).length) {
+                    const generatedTalismans = generateTalismans(desiredSkills);
+                    resolvedTalismanData = generatedTalismans[talismanName];
+                }
+            }
+
+            const armor = getArmorFromNames(armorNames, {
+                ...talismanLookup,
+                ...resolvedTalismanData ? { [talismanName]: resolvedTalismanData } : {}
+            });
+            const defense = getArmorDefenseFromNames(armorNames);
 
             summary = renderDecos(decos);
             details = renderArmor(armor, selectedResult);
@@ -493,19 +739,43 @@ const Results = ({
                 <div className="def-value base">({defense.base} base)</div>
             </div>;
 
+            const breakdown = selectedResult?.damageProfile?.breakdown;
+            const activeSetSkills = Object.entries(selectedResult.setSkills)
+                .map(([skillName, level]) => {
+                    const points = selectedResult.setSkillPoints?.[skillName] ??
+                        getMinimumSetPointsForLevel(skillName, level);
+                    return [skillName, points, level];
+                })
+                .filter(([, , level]) => level > 0);
+            const activeAffinityContributions = (breakdown?.affinity?.contributions || [])
+                .filter(contribution => contribution.active !== false && contribution.contribution);
+            const activeAffinityTotal = activeAffinityContributions.reduce((total, contribution) => {
+                return total + contribution.contribution;
+            }, 0);
+            const affinityBreakdown = renderDamageBreakdown(
+                breakdown,
+                selectedResult,
+                activeAffinityContributions,
+                activeAffinityTotal
+            );
+
             all = <div className="all-skills">
                 {Object.entries(selectedResult.skills).map(x => {
                     return { name: x[0], level: x[1] };
                 }).map((sk, j, arr) => renderSkill(sk, j, arr, fields.skills, true))}
             </div>;
 
-            if (setExist) {
+            if (setExist && activeSetSkills.length) {
                 setEffects = <div className="set-skills">
                     <span className="set-label">Set Skills:</span>
-                    {Object.entries(selectedResult.setSkills).map(x => {
-                        return { name: x[0], level: x[1] };
-                    }).map(renderSkill)}
+                    {activeSetSkills.map(([skillName, points], j, arr) => renderSetSkill([skillName, points], j, arr))}
                 </div>;
+            }
+            if (affinityBreakdown) {
+                setEffects = <>
+                    {setEffects}
+                    {affinityBreakdown}
+                </>;
             }
             if (groupExist) {
                 groupSkills = <div className="set-skills">
@@ -722,8 +992,20 @@ const Results = ({
     };
 
     elapsedSeconds = elapsedSeconds || -1;
-    const skillsList = Object.entries(fields.skills || {}).map(([k, v]) => [`${k} Lv. ${v}`]).join(", ");
-    const displayStr = `Results for ${skillsList} (${results.length.toLocaleString('en', { useGrouping: true })}` +
+    const skillsList = Object.entries(fields.skills || {}).map(([k, v]) => [`${k} Lv. ${v}`]);
+    const activeSearchParts = [...skillsList];
+    if ((fields.weaponSlots || []).length) {
+        activeSearchParts.push(`Weapon Slots ${fields.weaponSlots.join("-")}`);
+    }
+    if (fields.groupSkillBonus) {
+        activeSearchParts.push(`Group Skill +1 ${fields.groupSkillBonus}`);
+    }
+    if (fields.setSkillBonus) {
+        activeSearchParts.push(`Set Bonus +1 ${fields.setSkillBonus}`);
+    }
+
+    const searchList = activeSearchParts.join(", ");
+    const displayStr = `Results for ${searchList} (${results.length.toLocaleString('en', { useGrouping: true })}` +
         ` hits in ${elapsedSeconds.toFixed(2)} seconds):`;
     const displayStrEmpty = `No skills specified.  ` +
         `Showing best slotted armor combos (${results.length.toLocaleString('en', { useGrouping: true })}` +
@@ -738,7 +1020,10 @@ const Results = ({
         {elapsedSeconds > 0 && <div style={{ marginBottom: '0.5em' }}>
             {shouldNotify && <span className="warn">Some armor is pinned/blacklisted - </span>}
             {!isEmpty(fields.slotFilters) && <span className="notice">Deco filters active - </span>}
-            {skillsList ? displayStr : displayStrEmpty}
+            {searchList ? displayStr : displayStrEmpty}
+            {shouldNotify && results.length === 0 && <div className="warn">
+                Current pinned or blacklisted armor can eliminate otherwise valid sets.
+            </div>}
         </div>}
         {renderTable()}
     </div>;

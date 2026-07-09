@@ -1,0 +1,26 @@
+{
+  "templates": [
+    {
+      "rarity": "RARE[5]",
+      "skillGroups": [1, 2, 3],
+      "slotCombos": [
+        [1, 1],
+        [2, 0],
+        [2, 1],
+        [3, 0]
+      ]
+    }
+  ],
+  "groups": {
+    "1": [
+      ["Attack Boost", 3],
+      ["Weakness Exploit", 3]
+    ],
+    "2": [
+      ["Critical Eye", 3]
+    ],
+    "3": [
+      ["Handicraft", 3]
+    ]
+  }
+}

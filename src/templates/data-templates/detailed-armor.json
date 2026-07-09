@@ -1,0 +1,18 @@
+{
+  "Your Armor Name": {
+    "defense": 10,
+    "description": "Armor description",
+    "dragonResistance": 0,
+    "fireResistance": 0,
+    "groupSkill": [],
+    "iceResistance": 0,
+    "rank": "high",
+    "rarity": 1,
+    "setSkill": [],
+    "skills": { "Skill Name": 1 },
+    "slots": [],
+    "thunderResistance": 0,
+    "type": "head",
+    "waterResistance": 0
+  }
+}

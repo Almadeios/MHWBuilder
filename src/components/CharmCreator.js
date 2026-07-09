@@ -136,6 +136,37 @@ const weaponSlotsToString = slots => {
   return sorted.map(s => `W${s}`).concat(Array(3 - sorted.length).fill(0)).slice(0, 3).join("-");
 };
 
+const getSlotImage = slotSize => `images/slot${slotSize}.png`;
+
+const renderSlotSummary = (armorSlots = [], weaponSlots = []) => {
+  const armorIcons = [...armorSlots].sort((a, b) => b - a).map(slotSize =>
+    <img
+      key={`armor-${slotSize}`}
+      src={getSlotImage(slotSize)}
+      alt={`slot ${slotSize}`}
+      title={`armor slot ${slotSize}`}
+      style={{ width: '16px', height: '16px', display: 'inline-block' }}
+    />
+  );
+
+  const weaponIcons = [...weaponSlots].sort((a, b) => b - a).map(slotSize =>
+    <span
+      key={`weapon-${slotSize}`}
+      title={`weapon slot ${slotSize}`}
+      style={{ fontSize: '0.8em', fontWeight: 'bold', marginLeft: '2px' }}
+    >
+      W{slotSize}
+    </span>
+  );
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexWrap: 'wrap', marginTop: '0.25em' }}>
+      {armorIcons}
+      {weaponIcons}
+    </div>
+  );
+};
+
 const getMaxAllowedLevelForSkill = (skill, selectedSkills) => {
   const compatible = getCompatibleTemplates(selectedSkills);
   let maxLevel = 1;
@@ -497,7 +528,7 @@ const CharmCreator = () => {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '0.95em' }}>{name}</div>
                   <div style={{ fontSize: '0.85em', color: '#555' }}>
-                    Slots: {(talismanData[3] || []).join('-') || 'none'} · Weapon: {(talismanData[8] || []).map(x => `W${x}`).join('-') || 'none'}
+                    {renderSlotSummary(talismanData[3] || [], talismanData[8] || [])}
                   </div>
                 </div>
                 <Button size="small" variant="outlined" onClick={() => addGeneratedTalisman(name, talismanData)}>
@@ -538,7 +569,7 @@ const CharmCreator = () => {
                   {Object.entries(talisman.skills).map(([name, level]) => `${name} ${level}`).join(' / ')}
                 </div>
                 <div style={{ fontSize: '0.85em', color: '#777' }}>
-                  Slots: {(talisman.slots || []).join('-') || 'none'} · Weapon: {(talisman.weaponSlots || []).map(x => `W${x}`).join('-') || 'none'}
+                  {renderSlotSummary(talisman.slots || [], talisman.weaponSlots || [])}
                 </div>
               </div>
               <Button variant="outlined" color="error" onClick={() => removeCustomTalisman(talisman.id)}>

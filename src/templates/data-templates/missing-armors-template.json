@@ -1,0 +1,452 @@
+{
+  "head": [
+    {
+      "name": "Arkvulcan Helm Gamma",
+      "compact": ["head", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "head",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Azure Age Hair Alpha",
+      "compact": ["head", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "head",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Earring of Dedication Alpha",
+      "compact": ["head", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "head",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Gala Suit Top Hat Alpha",
+      "compact": ["head", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "head",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Rompomask Alpha",
+      "compact": ["head", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "head",
+        "waterResistance": 0
+      }
+    }
+  ],
+  "chest": [
+    {
+      "name": "Arkvulcan Mail Gamma",
+      "compact": ["chest", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Azure Age Haori Alpha",
+      "compact": ["chest", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Gala Suit Jacket Alpha",
+      "compact": ["chest", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Gelidron Backpack α",
+      "compact": ["chest", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Harvest Tronco α",
+      "compact": ["chest", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "chest",
+        "waterResistance": 0
+      }
+    }
+  ],
+  "arms": [
+    {
+      "name": "Arkvulcan Vambraces Gamma",
+      "compact": ["arms", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "arms",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Azure Age Sleeve Alpha",
+      "compact": ["arms", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "arms",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Gala Suit Cuffs Alpha",
+      "compact": ["arms", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "arms",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Harvest Trama α",
+      "compact": ["arms", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "arms",
+        "waterResistance": 0
+      }
+    }
+  ],
+  "waist": [
+    {
+      "name": "Arkvulcan Coil Gamma",
+      "compact": ["waist", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "waist",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Azure Age Obi Alpha",
+      "compact": ["waist", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "waist",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Gala Suit Tail Alpha",
+      "compact": ["waist", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "waist",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Harvest Hoja α",
+      "compact": ["waist", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "waist",
+        "waterResistance": 0
+      }
+    }
+  ],
+  "legs": [
+    {
+      "name": "Arkvulcan Greaves Gamma",
+      "compact": ["legs", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "legs",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Azure Age Geta Alpha",
+      "compact": ["legs", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "legs",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Gala Suit Slacks Alpha",
+      "compact": ["legs", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "legs",
+        "waterResistance": 0
+      }
+    },
+    {
+      "name": "Harvest Raiz α",
+      "compact": ["legs", {}, [], [], 0, [0,0,0,0,0], "high", []],
+      "detailed": {
+        "defense": 0,
+        "description": "",
+        "dragonResistance": 0,
+        "fireResistance": 0,
+        "groupSkill": [],
+        "iceResistance": 0,
+        "rank": "high",
+        "rarity": 0,
+        "setSkill": [],
+        "skills": {},
+        "slots": [],
+        "thunderResistance": 0,
+        "type": "legs",
+        "waterResistance": 0
+      }
+    }
+  ]
+}

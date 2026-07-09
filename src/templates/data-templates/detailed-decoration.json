@@ -1,0 +1,9 @@
+{
+  "Your Jewel Name": {
+    "description": "What this jewel does",
+    "rarity": 3,
+    "skills": { "Your Skill Name": 1 },
+    "slot": 1,
+    "type": "armor"
+  }
+}

@@ -15,6 +15,13 @@ const DEFAULTS = {
     skills: {},
     slotFilters: {},
     weaponSlots: [],
+    weaponBaseRaw: 0,
+    weaponBaseAffinity: 0,
+    weaponType: 'other',
+    weaponElementType: 'None',
+    weaponElementValue: 0,
+    weaponSharpness: 'White',
+    optimizationGoal: 'highest_dps',
     setSkillBonus: '',
     groupSkillBonus: '',
     customTalismans: [],
@@ -29,6 +36,7 @@ const DEFAULTS = {
     searchedSkills: {},
     lastParams: {},
     paramStr: '',
+    conditions: {},
 
     // saved sets page
     savedSets: [],
