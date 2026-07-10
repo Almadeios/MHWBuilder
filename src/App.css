@@ -35,6 +35,8 @@
   margin-left: 0px;
   margin-top: 0px;
   margin-right: 0px;
+  max-width: 100%;
+  overflow: visible;
 }
 
 .skills-search-textfield {
@@ -47,15 +49,123 @@
   flex-wrap: wrap;
   gap: 2px 4px;
   margin-top: 0.5em;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   max-height: 10em;
+  max-width: 100%;
+}
+.skills-search.grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: auto;
+  max-height: min(58vh, 620px);
+  width: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+  scrollbar-color: #a7b6c2 #202424;
+  scrollbar-width: thin;
+  border-right: 1px solid rgba(180, 223, 241, 0.22);
+}
+.skills-search.grouped::-webkit-scrollbar {
+  width: 12px;
+}
+.skills-search.grouped::-webkit-scrollbar-track {
+  background: #202424;
+  border-radius: 8px;
+}
+.skills-search.grouped::-webkit-scrollbar-thumb {
+  background: #a7b6c2;
+  border: 3px solid #202424;
+  border-radius: 8px;
+}
+.skills-search.grouped::-webkit-scrollbar-thumb:hover {
+  background: #c4d4df;
+}
+.skill-picker-group-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+.skill-picker-group-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.skill-picker-group {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  align-items: start;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid rgba(180, 223, 241, 0.16);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  min-width: 0;
+  overflow: hidden;
+}
+.skill-picker-group-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #b8e7ff;
+  font-weight: 700;
+  font-size: 0.82em;
+  background: #242929;
+  padding: 3px 5px;
+  border-radius: 4px;
+  min-width: 0;
+}
+.skill-picker-group-title span:first-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.skill-picker-group-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 3px;
+  min-width: 0;
+  overflow: visible;
+}
+.skill-picker-group .skills-search-bubble {
+  padding: 2px 6px 2px 3px;
+  gap: 3px;
+}
+.skill-picker-group .skills-search-bubble-icon,
+.skill-picker-group-title .skills-search-bubble-icon {
+  width: 16px;
+  height: 16px;
+}
+.skill-picker-group .skills-search-bubble-text {
+  font-size: 0.9em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 900px) {
+  .skill-picker-group-columns {
+    grid-template-columns: 1fr;
+  }
+  .skill-picker-group {
+    grid-template-columns: 1fr;
+  }
 }
 .skills-search-mini {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px 4px;
   margin-top: 0.5em;
-  overflow: auto;
-  max-height: min-content;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 7em;
+  max-width: 100%;
 }
 
 .skills-search-bubble {
@@ -531,7 +641,16 @@ input[type=number] {
 }
 .slots-filter {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
+}
+.skill-picker-slot-group {
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid rgba(180, 223, 241, 0.16);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.08);
 }
 .slot-filter {
   border-radius: 6px;
@@ -625,15 +744,77 @@ input[type=number] {
   transform: translateY(2px) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: var(--dark-mode-bkg-color);
-    color: var(--dark-mode-white-color);
-  }
+body {
+  background-color: var(--dark-mode-bkg-color);
+  color: var(--dark-mode-white-color);
+}
 
-  .wanted {
-    color: #89c789;
-  }
+.App {
+  min-height: 100vh;
+  background-color: var(--dark-mode-bkg-color);
+  color: var(--dark-mode-white-color);
+}
+
+.MuiPaper-root {
+  background-color: #242929 !important;
+  color: var(--dark-mode-white-color) !important;
+}
+
+.MuiInputBase-root,
+.MuiOutlinedInput-root,
+.MuiSelect-select {
+  background-color: #282b2b;
+  color: var(--dark-mode-white-color) !important;
+}
+
+.MuiFormLabel-root,
+.MuiInputLabel-root {
+  color: #b4a0a0 !important;
+}
+
+.MuiButtonBase-root.Mui-disabled {
+  color: #6f7780 !important;
+}
+
+.MuiIconButton-root:not(.Mui-disabled) {
+  color: #c5d8ea !important;
+}
+
+.MuiButton-outlined {
+  background-color: #151b26;
+}
+
+.MuiButton-outlined:hover {
+  background-color: #203049;
+}
+
+.MuiTablePagination-root {
+  background-color: #242929;
+  border-top: 1px solid #40494f;
+}
+
+.MuiTablePagination-toolbar,
+.MuiTablePagination-displayedRows,
+.MuiTablePagination-selectLabel,
+.MuiTablePagination-input {
+  color: #d8e6f2 !important;
+}
+
+.MuiTablePagination-actions .MuiIconButton-root {
+  color: #9fb7ca !important;
+}
+
+.MuiTablePagination-actions .MuiIconButton-root.Mui-disabled {
+  color: #4f565d !important;
+}
+
+.MuiTablePagination-selectIcon {
+  color: #d8e6f2 !important;
+}
+
+.wanted {
+  color: #89c789;
+}
 
   .row-shine {
     background-color: #504221 !important;
@@ -645,7 +826,7 @@ input[type=number] {
     color: var(--dark-mode-white-color) !important;
   }
   .MuiTablePagination-toolbar button:not(.Mui-disabled) svg {
-    color: var(--dark-mode-white-color) !important;
+    color: #9fb7ca !important;
   }
   .MuiTablePagination-selectIcon {
     color: var(--dark-mode-white-color) !important;
@@ -879,6 +1060,5 @@ input[type=number] {
     color: var(--dark-mode-onblue-color)
   }
   .result-cyclers button.Mui-disabled svg {
-    color: #454545;
+    color: #4f565d;
   }
-}

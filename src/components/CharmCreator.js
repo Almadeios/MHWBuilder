@@ -139,9 +139,9 @@ const weaponSlotsToString = slots => {
 const getSlotImage = slotSize => `images/slot${slotSize}.png`;
 
 const renderSlotSummary = (armorSlots = [], weaponSlots = []) => {
-  const armorIcons = [...armorSlots].sort((a, b) => b - a).map(slotSize =>
+  const armorIcons = [...armorSlots].sort((a, b) => b - a).map((slotSize, index) =>
     <img
-      key={`armor-${slotSize}`}
+      key={`armor-${slotSize}-${index}`}
       src={getSlotImage(slotSize)}
       alt={`slot ${slotSize}`}
       title={`armor slot ${slotSize}`}
@@ -149,22 +149,96 @@ const renderSlotSummary = (armorSlots = [], weaponSlots = []) => {
     />
   );
 
-  const weaponIcons = [...weaponSlots].sort((a, b) => b - a).map(slotSize =>
-    <span
-      key={`weapon-${slotSize}`}
+  const weaponIcons = [...weaponSlots].sort((a, b) => b - a).map((slotSize, index) =>
+    <img
+      key={`weapon-${slotSize}-${index}`}
+      src={getSlotImage(slotSize)}
+      alt={`weapon slot ${slotSize}`}
       title={`weapon slot ${slotSize}`}
-      style={{ fontSize: '0.8em', fontWeight: 'bold', marginLeft: '2px' }}
-    >
-      W{slotSize}
-    </span>
+      style={{ width: '16px', height: '16px', display: 'inline-block' }}
+    />
   );
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexWrap: 'wrap', marginTop: '0.25em' }}>
+      {weaponIcons.length > 0 && <span
+        title="Weapon decoration slots"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '2px',
+          padding: '1px 4px',
+          border: '1px solid rgba(128, 214, 224, 0.35)',
+          borderRadius: '4px',
+          background: 'rgba(74, 144, 156, 0.14)'
+        }}>
+        <span style={{
+          color: '#9ee8f0',
+          fontSize: '10px',
+          fontWeight: 700,
+          lineHeight: 1,
+          textTransform: 'uppercase'
+        }}>
+          Weapon
+        </span>
+        {weaponIcons}
+      </span>}
       {armorIcons}
-      {weaponIcons}
     </div>
   );
+};
+
+const getRarityValue = name => {
+  if (name.startsWith('Golden Age Charm')) { return 8; }
+  const match = name.match(/RARE\[(\d+)\]/);
+  return match ? Number(match[1]) : 0;
+};
+
+const getRarityLabel = name => {
+  const rarity = getRarityValue(name);
+  return rarity ? `R${rarity}` : 'Charm';
+};
+
+const getGeneratedCharmKey = charm => {
+  const talismanData = charm[1];
+  const skills = talismanData[1] || {};
+  const armorSlots = talismanData[3] || [];
+  const weaponSlots = talismanData[8] || [];
+  const skillKey = Object.entries(skills)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, level]) => `${name}:${level}`)
+    .join("|");
+
+  return `${skillKey}::a${armorSlots.join(",")}::w${weaponSlots.join(",")}`;
+};
+
+const getGeneratedCharmScore = ([name, talismanData], targetSkills = {}) => {
+  const skills = talismanData[1] || {};
+  const armorSlots = talismanData[3] || [];
+  const weaponSlots = talismanData[8] || [];
+  const targetScore = Object.entries(skills).reduce((total, [skillName, level]) => {
+    return total + Math.min(level, targetSkills[skillName] || 0) * 10;
+  }, 0);
+
+  return getRarityValue(name) * 100 + targetScore + weaponSlots.length * 3 + armorSlots.length;
+};
+
+const dedupeGeneratedCharms = (charms, targetSkills = {}) => {
+  const seen = new Set();
+  return charms
+    .filter(charm => {
+      const key = getGeneratedCharmKey(charm);
+      if (seen.has(key)) { return false; }
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => getGeneratedCharmScore(b, targetSkills) - getGeneratedCharmScore(a, targetSkills));
+};
+
+const formatTalismanSkills = skills => {
+  return Object.entries(skills || {})
+    .map(([name, level]) => `${name} ${level}`)
+    .join(' / ');
 };
 
 const getMaxAllowedLevelForSkill = (skill, selectedSkills) => {
@@ -188,11 +262,12 @@ const CharmCreator = () => {
 
   const customTalismans = fields.customTalismans || [];
   const useOnlyOwnedTalismans = fields.useOnlyOwnedTalismans || false;
-  const allGeneratedCharms = hasTalismanGeneratorRules() && Object.keys(fields.skills || {}).length
+  const generatedFromSearch = hasTalismanGeneratorRules() && Object.keys(fields.skills || {}).length
     ? Object.entries(generateTalismans(fields.skills))
     : [];
-  const generatedTruncated = allGeneratedCharms.length > 50;
-  const generatedCharms = allGeneratedCharms.slice(0, 50);
+  const allGeneratedCharms = dedupeGeneratedCharms(generatedFromSearch, fields.skills || {});
+  const generatedTruncated = allGeneratedCharms.length > 20;
+  const generatedCharms = allGeneratedCharms.slice(0, 20);
 
   const normalizedSkillRows = form.skillRows.map(row => {
     if (!row.name) { return row; }
@@ -205,6 +280,7 @@ const CharmCreator = () => {
 
   const selectedSkillNames = normalizedSkillRows.map(row => row.name).filter(Boolean);
   const slotFilterActive = form.slots !== '0-0-0' || form.weaponSlots !== '0-0-0';
+  const hasManualSelection = selectedSkillNames.length > 0 || slotFilterActive || Boolean(form.name.trim());
   const currentArmorSlots = slotFilterActive ? parseSlots(form.slots) : null;
   const currentWeaponSlots = slotFilterActive ? parseSlots(form.weaponSlots) : null;
   const compatibleTemplates = getCompatibleTemplates(selectedSkillNames, currentArmorSlots, currentWeaponSlots);
@@ -439,8 +515,8 @@ const CharmCreator = () => {
       <Typography sx={{ marginBottom: '1em' }}>
         Create and manage custom talismans here. Saved charms are available in Search.
       </Typography>
-      <Typography sx={{ marginBottom: '1em', color: '#555', fontSize: '0.95em' }}>
-        Manual charms are validated against the same talisman rule templates used by the automatic generator. Legal charm suggestions update automatically from the current Search skills.
+      <Typography sx={{ marginBottom: '1em', color: '#9fb2a4', fontSize: '0.95em' }}>
+        Manual charms are validated against the talisman templates. Suggestions are based on your current Search skills.
       </Typography>
       <div style={{ display: 'grid', gap: '1em', maxWidth: '760px' }}>
         <TextField
@@ -509,25 +585,57 @@ const CharmCreator = () => {
         <Button variant="contained" onClick={addCustomTalisman} disabled={!validateCustomTalisman()}>
           Add Custom Talisman
         </Button>
-        {!validateCustomTalisman() && <Typography sx={{ color: 'error.main', fontSize: '0.9em' }}>
+        {hasManualSelection && !validateCustomTalisman() && <Typography sx={{ color: 'error.main', fontSize: '0.9em' }}>
           Current selection does not match any legal talisman template.
         </Typography>}
         {generatedCharms.length > 0 &&
-          <div style={{ padding: '0.75em', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '8px' }}>
-            <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5em' }}>
-              Generated Legal Charms
-            </Typography>
+          <div style={{
+            padding: '0.75em',
+            border: '1px solid rgba(128, 214, 224, 0.18)',
+            borderRadius: '8px',
+            background: 'rgba(0,0,0,0.08)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'baseline',
+              gap: '1em',
+              marginBottom: '0.5em'
+            }}>
+              <Typography sx={{ fontWeight: 'bold' }}>
+                Suggested Legal Charms
+              </Typography>
+              <Typography sx={{ fontSize: '0.82em', color: '#9fb2a4' }}>
+                {generatedCharms.length} shown
+              </Typography>
+            </div>
+            <div style={{ maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25em' }}>
             {generatedCharms.map(([name, talismanData]) =>
               <div key={name} style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0.5em 0',
-                borderBottom: '1px solid rgba(0,0,0,0.08)'
+                gap: '0.75em',
+                padding: '0.55em 0',
+                borderBottom: '1px solid rgba(128, 214, 224, 0.12)'
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '0.95em' }}>{name}</div>
-                  <div style={{ fontSize: '0.85em', color: '#555' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5em', flexWrap: 'wrap' }}>
+                    <span style={{
+                      border: '1px solid rgba(150, 190, 255, 0.35)',
+                      borderRadius: '4px',
+                      color: '#b7d7ff',
+                      fontSize: '0.78em',
+                      fontWeight: 700,
+                      padding: '1px 5px'
+                    }}>
+                      {getRarityLabel(name)}
+                    </span>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.95em', color: '#bfe1ff' }}>
+                      {formatTalismanSkills(talismanData[1] || {})}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.85em', color: '#9fb2a4' }}>
                     {renderSlotSummary(talismanData[3] || [], talismanData[8] || [])}
                   </div>
                 </div>
@@ -536,8 +644,9 @@ const CharmCreator = () => {
                 </Button>
               </div>
             )}
-            {generatedTruncated && <Typography sx={{ marginTop: '0.5em', fontSize: '0.85em', color: '#777' }}>
-              Showing first 50 generated charms.
+            </div>
+            {generatedTruncated && <Typography sx={{ marginTop: '0.5em', fontSize: '0.85em', color: '#9fb2a4' }}>
+              Showing 20 of {allGeneratedCharms.length} unique suggestions. Add or narrow Search skills to reduce this list.
             </Typography>}
           </div>
         }

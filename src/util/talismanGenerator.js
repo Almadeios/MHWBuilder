@@ -87,7 +87,7 @@ const buildName = (rarity, skills) => {
 const chooseRelevantEntries = (entries, desiredSkills, usedSkills) => {
     const desired = entries.filter(entry => desiredSkills[entry.skill] && !usedSkills.has(entry.skill));
     if (desired.length) { return desired; }
-    return entries.filter(entry => !usedSkills.has(entry.skill)).slice(0, 1);
+    return [{ skill: null, maxLevel: 0 }];
 };
 
 const buildSkillRolls = (groupIds, desiredSkills) => {
@@ -104,6 +104,11 @@ const buildSkillRolls = (groupIds, desiredSkills) => {
         }
 
         for (const entry of chooseRelevantEntries(groups[index], desiredSkills, usedSkills)) {
+            if (!entry.skill) {
+                visit(index + 1, usedSkills, skills);
+                continue;
+            }
+
             const nextUsed = new Set(usedSkills);
             nextUsed.add(entry.skill);
             visit(index + 1, nextUsed, {

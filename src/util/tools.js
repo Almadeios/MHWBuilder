@@ -36,6 +36,7 @@ export const getSearchParameters = parameters => {
         useOnlyOwnedTalismans: parameters.useOnlyOwnedTalismans || false,
         limit: parameters.limit || LIMIT, // amount of results to process
         findOne: parameters.findOne || false, // if true, stops at the first result
+        maxSearchMs: parameters.maxSearchMs || 0,
         priorResults: parameters.priorResults || [],
         verifySlots: parameters.verifySlots || [], // runs a results test to see if x amount of 3, 2/3 and total slots are present
         updateProgressFunc: parameters.updateProgressFunc, // callback function to pass progress value to

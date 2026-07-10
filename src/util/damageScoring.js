@@ -106,7 +106,7 @@ const RAW_SKILL_TABLES = {
   }
 };
 
-const ELEMENT_SKILL_TABLES = {
+export const ELEMENT_SKILL_TABLES = {
   'Fire Attack': { elementType: 'Fire', flat: [40, 50, 60], elementPercent: [0, 0.10, 0.20] },
   'Water Attack': { elementType: 'Water', flat: [40, 50, 60], elementPercent: [0, 0.10, 0.20] },
   'Thunder Attack': { elementType: 'Thunder', flat: [40, 50, 60], elementPercent: [0, 0.10, 0.20] },

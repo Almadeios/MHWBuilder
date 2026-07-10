@@ -31,6 +31,33 @@ const MinimizeIcon = styled(Minimize)`
 `;
 
 const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, true]));
+const ICON_GROUP_ORDER = [
+    'attack', 'power', 'set', 'group', 'defense', 'stamina', 'recovery', 'item',
+    'explore', 'meditate', 'crit', 'elemental', 'sharpness', 'ammo'
+];
+const ICON_GROUP_LABELS = {
+    attack: 'Attack',
+    crit: 'Affinity / Crit',
+    elemental: 'Element / Status',
+    sharpness: 'Sharpness',
+    ammo: 'Ammo / Ranged',
+    stamina: 'Stamina',
+    recovery: 'Recovery',
+    defense: 'Defense',
+    item: 'Items',
+    explore: 'Exploration',
+    meditate: 'Utility',
+    power: 'Power',
+    set: 'Set Bonuses',
+    group: 'Group Skills',
+    misc: 'Other'
+};
+const GROUP_COLUMN_COUNT = 2;
+
+const getIconRank = icon => {
+    const rank = ICON_GROUP_ORDER.indexOf(icon);
+    return rank === -1 ? ICON_GROUP_ORDER.length : rank;
+};
 
 const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkillNames }) => {
     const [searchText, setSearchText] = useState('');
@@ -38,7 +65,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
     const [allSkills, setAllSkills] = useState([]);
     const [showIcons, setShowIcons] = useState(true);
     const [hideBlur, setHideBlur] = useState(false);
-    const [expanded, setExpanded] = useState(true);
+    const [expanded, setExpanded] = useState(false);
 
     const combinedSkills = () => {
         const combo = Object.entries({ ...SKILLS, ...SET_SKILLS, ...GROUP_SKILLS })
@@ -64,9 +91,13 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
                 description: x.description,
                 levels: x.levels,
                 maxLevel: x.levels?.length || 1,
-                icon: iconName
+                icon: iconName,
+                iconGroup: iconName || 'misc'
             };
-        }).sort((a, b) => a.displayName.localeCompare(b.displayName));
+        }).sort((a, b) => {
+            return getIconRank(a.iconGroup) - getIconRank(b.iconGroup) ||
+                a.displayName.localeCompare(b.displayName);
+        });
         return combo;
     };
 
@@ -87,7 +118,9 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
                 const aFound = foundNames.has(a.displayName.toLowerCase()) ? -1 : 1;
                 const bFound = foundNames.has(b.displayName.toLowerCase()) ? -1 : 1;
 
-                return aFound - bFound || a.displayName.localeCompare(b.displayName);
+                return aFound - bFound ||
+                    getIconRank(a.iconGroup) - getIconRank(b.iconGroup) ||
+                    a.displayName.localeCompare(b.displayName);
             });
         }
 
@@ -98,9 +131,50 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
         setAllSkills(all);
     }, [searchText]);
 
-    const renderSkills = skills => {
+    const renderSkills = (skills, useGroups = true) => {
         const chosen = (chosenSkillNames || []).map(x => x.toLowerCase());
-        return skills.filter(x => !chosen.includes(x.name.toLowerCase())).map(renderSkill);
+        const visibleSkills = skills.filter(x => !chosen.includes(x.name.toLowerCase()));
+        if (searchText || !useGroups) {
+            return visibleSkills.map(renderSkill);
+        }
+
+        const groupedSkills = visibleSkills.reduce((groups, skill) => {
+            const groupName = skill.iconGroup || 'misc';
+            groups[groupName] = groups[groupName] || [];
+            groups[groupName].push(skill);
+            return groups;
+        }, {});
+
+        const sortedGroups = Object.entries(groupedSkills)
+            .sort(([a], [b]) => getIconRank(a) - getIconRank(b) || a.localeCompare(b))
+            .map(([groupName, groupSkills]) => {
+                return <div key={groupName} className="skill-picker-group">
+                    <div className="skill-picker-group-title">
+                        {showIcons && groupName !== 'misc' && <img
+                            className="skills-search-bubble-icon"
+                            src={`images/icons/${groupName}.png`}
+                            alt={groupName}
+                        />}
+                        <span>{ICON_GROUP_LABELS[groupName] || groupName}</span>
+                    </div>
+                    <div className="skill-picker-group-skills">
+                        {groupSkills.map(renderSkill)}
+                    </div>
+                </div>;
+            });
+
+        const columns = Array.from({ length: GROUP_COLUMN_COUNT }, () => []);
+        sortedGroups.forEach((group, index) => {
+            columns[index % GROUP_COLUMN_COUNT].push(group);
+        });
+
+        return <div className="skill-picker-group-columns">
+            {columns.map((columnGroups, index) => {
+                return <div className="skill-picker-group-column" key={`skill-group-column-${index}`}>
+                    {columnGroups}
+                </div>;
+            })}
+        </div>;
     };
 
     const renderSkill = skill => {
@@ -137,9 +211,11 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
                 onClick={() => setExpanded(!expanded)}><MinimizeIcon /></IconButton>}
         </div>
 
-        <div id="skills-search" className={expanded ? "skills-search" : "skills-search-mini"}>
-            {renderSkills(allSkills)}
-            <div className="slots-filter">
+        <div id="skills-search" className={
+            expanded ? `skills-search ${searchText ? '' : 'grouped'}` : "skills-search-mini"
+        }>
+            {renderSkills(allSkills, expanded)}
+            <div className={searchText || !expanded ? "slots-filter" : "slots-filter skill-picker-slot-group"}>
                 {[1, 2, 3].map(x => {
                     const highlighted = searchText && `${x} slot deco filter`.includes(searchText.toLowerCase());
                     const highlightClass = highlighted ? "highlighted" : "";

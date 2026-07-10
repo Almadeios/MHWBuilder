@@ -140,7 +140,7 @@ const CloseIcon = styled(Close)`
 `;
 
 const Results = ({
-    elapsedSeconds, onSaveSet, results, save
+    elapsedSeconds, optimizerProfile, onSaveSet, results, save
 }) => {
     const { fields, updateField, pinArmor, excludeArmor, saveArmorSet, setId, setSetId } = useStorage();
     const [selectedResult, setSelectedResult] = useState();
@@ -290,6 +290,59 @@ const Results = ({
         </div>;
     };
 
+    const getCompactTalismanName = name => {
+        if (!name) { return ''; }
+        if (name.startsWith('Golden Age Charm')) {
+            return 'Golden Age Charm';
+        }
+
+        return armorNameFormat(name);
+    };
+
+    const getTalismanDataForResult = result => {
+        const talismanName = result?.armorNames?.[5];
+        if (!talismanName) { return null; }
+
+        const talismanLookup = result.talismanData || {};
+        const resolvedTalismanData = talismanLookup[talismanName] || talismanLookup[talismanName?.toLowerCase()];
+        if (resolvedTalismanData) { return resolvedTalismanData; }
+
+        const matchingCustomTalisman = (fields.customTalismans || []).find(talisman => talisman.name === talismanName);
+        if (matchingCustomTalisman) {
+            return {
+                skills: matchingCustomTalisman.skills || {},
+                slots: matchingCustomTalisman.slots || [],
+                weaponSlots: matchingCustomTalisman.weaponSlots || []
+            };
+        }
+
+        const desiredSkills = fields.skills || result.searchedSkills || {};
+        if (Object.keys(desiredSkills).length) {
+            return generateTalismans(desiredSkills)[talismanName] || null;
+        }
+
+        return null;
+    };
+
+    const renderCompactTalisman = result => {
+        const talismanName = result?.armorNames?.[5];
+        const talismanData = getTalismanDataForResult(result);
+        const skills = talismanData?.skills || talismanData?.[1] || {};
+        const slots = talismanData?.slots || talismanData?.[3] || [];
+        const weaponSlots = talismanData?.weaponSlots || talismanData?.[8] || [];
+        const skillText = Object.entries(skills)
+            .map(([skillName, level]) => `${skillName} ${level}`)
+            .join(' / ');
+
+        return <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
+            <div style={{ fontWeight: 700 }}>{getCompactTalismanName(talismanName)}</div>
+            {skillText && <div style={{ color: '#b8d7ff', fontSize: '12px', whiteSpace: 'normal' }}>
+                {skillText}
+            </div>}
+            {(slots.length > 0 || weaponSlots.length > 0) && renderArmorSlots(slots, weaponSlots)}
+        </div>;
+    };
+
     const renderResult = (result, resultIndex, resultArr) => {
         const highlighted = result.id === selectedResult?.id;
         const armorNames = result.armorNames;
@@ -334,7 +387,7 @@ const Results = ({
             {!isMobile && <StyledTableCell align="left">{armorNameFormat(armorNames[2])}</StyledTableCell>}
             {!isMobile && <StyledTableCell align="left">{armorNameFormat(armorNames[3])}</StyledTableCell>}
             {!isMobile && <StyledTableCell align="left">{armorNameFormat(armorNames[4])}</StyledTableCell>}
-            {!isMobile && <StyledTableCell align="left">{armorNameFormat(armorNames[5])}</StyledTableCell>}
+            {!isMobile && <StyledTableCell align="left">{renderCompactTalisman(result)}</StyledTableCell>}
         </StyledTableRow>;
     };
 
@@ -365,12 +418,13 @@ const Results = ({
         window.open(`https://mhwilds.wiki-db.com/sim/#skills=${wiki}&fee=1`, "_blank");
     };
 
-    const renderDecos = decos => {
+    const renderDecos = (decos, label = null) => {
         if (decos.length === 0) {
-            return <Typography>No decorations required</Typography>;
+            return label ? null : <Typography>No decorations required</Typography>;
         }
 
         return <div className="decos-selected">
+            {label && <span style={{ color: '#d2c4b8', fontWeight: 700, alignSelf: 'center' }}>{label}</span>}
             {decos.map(deco => {
                 const skillIcons = deco.skillNames.map(x => SKILLS[x].icon);
                 const singleIcon = skillIcons[0]; // todo: change this should armor decos ever have more than 1 skill each
@@ -573,23 +627,28 @@ const Results = ({
         </div>;
     };
 
+    const formatFixed = (value, digits = 1, fallback = 'N/A') => {
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? numericValue.toFixed(digits) : fallback;
+    };
+
     const renderDamageBreakdown = (breakdown, result, activeAffinityContributions, activeAffinityTotal) => {
-        if (!breakdown?.affinity) {
+        if (!breakdown?.raw || !breakdown?.element || !breakdown?.affinity || !result?.damageProfile) {
             return null;
         }
 
         const rawPercentMultiplier = 1 + (breakdown.raw.rawPercentBonus || 0);
         const postRawPercentMultiplier = 1 + (breakdown.raw.postRawPercentBonus || 0);
         const elementPercentMultiplier = 1 + (breakdown.element.elementPercentBonus || 0);
-        const rawFormula = `(${breakdown.raw.base} x ${rawPercentMultiplier.toFixed(2)} + ` +
-            `${breakdown.raw.flatRaw}) x ${postRawPercentMultiplier.toFixed(2)} = ` +
-            `${breakdown.raw.effectiveRaw.toFixed(1)}`;
-        const rawFinal = `x sharp ${breakdown.raw.sharpnessMultiplier.toFixed(2)} x crit ` +
-            `${breakdown.raw.critExpectation.toFixed(3)} = ${result.damageProfile.raw_dps.toFixed(1)}`;
-        const elementFormula = `${breakdown.element.base} + ${breakdown.element.flatElement} x ` +
-            `${elementPercentMultiplier.toFixed(2)} = ${breakdown.element.effectiveElement.toFixed(1)}`;
-        const elementFinal = `x sharp ${breakdown.element.sharpnessMultiplier.toFixed(2)} = ` +
-            `${result.damageProfile.element_dps.toFixed(1)}`;
+        const rawFormula = `(${breakdown.raw.base ?? 'N/A'} x ${formatFixed(rawPercentMultiplier, 2)} + ` +
+            `${breakdown.raw.flatRaw ?? 0}) x ${formatFixed(postRawPercentMultiplier, 2)} = ` +
+            `${formatFixed(breakdown.raw.effectiveRaw)}`;
+        const rawFinal = `x sharp ${formatFixed(breakdown.raw.sharpnessMultiplier, 2)} x crit ` +
+            `${formatFixed(breakdown.raw.critExpectation, 3)} = ${formatFixed(result.damageProfile.raw_dps)}`;
+        const elementFormula = `${breakdown.element.base ?? 'N/A'} + ${breakdown.element.flatElement ?? 0} x ` +
+            `${formatFixed(elementPercentMultiplier, 2)} = ${formatFixed(breakdown.element.effectiveElement)}`;
+        const elementFinal = `x sharp ${formatFixed(breakdown.element.sharpnessMultiplier, 2)} = ` +
+            `${formatFixed(result.damageProfile.element_dps)}`;
         const statusExcludedDetails = breakdown.raw.statusExcludedRawFlat ?
             `; +${breakdown.raw.statusExcludedRawFlat} shown separately in-game` :
             '';
@@ -603,10 +662,10 @@ const Results = ({
                 maxWidth: '1180px'
             }}>
                 <div style={{ display: 'flex', gap: '1em', flexWrap: 'wrap', color: '#b8e7ff' }}>
-                    <span>DPS {result.damageProfile.expected_dps.toFixed(1)}</span>
-                    <span>Raw {result.damageProfile.raw_dps.toFixed(1)}</span>
-                    <span>Element {result.damageProfile.element_dps.toFixed(1)}</span>
-                    <span>Affinity {breakdown.affinity.final}%</span>
+                    <span>DPS {formatFixed(result.damageProfile.expected_dps)}</span>
+                    <span>Raw {formatFixed(result.damageProfile.raw_dps)}</span>
+                    <span>Element {formatFixed(result.damageProfile.element_dps)}</span>
+                    <span>Affinity {breakdown.affinity.final ?? 'N/A'}%</span>
                 </div>
                 {renderBreakdownLine('Raw', rawFormula, `${rawFinal}${statusExcludedDetails}`)}
                 {renderContributionLine('Raw boosts', breakdown.raw.skillContributions, formatRawContribution, 5)}
@@ -687,7 +746,10 @@ const Results = ({
         let freeSlots = null;
         let defenseTotal = null;
         if (selectedResult) {
-            const decos = getDecosFromNames(selectedResult.decoNames, fields.showDecoSkillNames);
+            const requiredDecoNames = selectedResult.requiredDecoNames || selectedResult.decoNames || [];
+            const autoDecoNames = selectedResult.autoDecoNames || [];
+            const requiredDecos = getDecosFromNames(requiredDecoNames, fields.showDecoSkillNames);
+            const autoDecos = getDecosFromNames(autoDecoNames, fields.showDecoSkillNames);
             const armorNames = selectedResult.armorNames || [];
             const talismanName = armorNames[5];
             const talismanLookup = selectedResult.talismanData || {};
@@ -719,7 +781,12 @@ const Results = ({
             });
             const defense = getArmorDefenseFromNames(armorNames);
 
-            summary = renderDecos(decos);
+            summary = autoDecos.length ?
+                <>
+                    {renderDecos(requiredDecos, 'Required:')}
+                    {renderDecos(autoDecos, 'Auto-filled:')}
+                </> :
+                renderDecos(requiredDecos);
             details = renderArmor(armor, selectedResult);
             const extras = fields.skills || selectedResult.searchedSkills;
             const extraSkills = extras ? getSkillDiff(extras, {
@@ -991,7 +1058,28 @@ const Results = ({
         </Paper>;
     };
 
-    elapsedSeconds = elapsedSeconds || -1;
+    const renderOptimizerProfile = () => {
+        if (!optimizerProfile) { return null; }
+
+        const stages = Object.entries(optimizerProfile.stages || {})
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, ms]) => `${name} ${(ms / 1000).toFixed(2)}s`);
+        const details = [
+            optimizerProfile.timedOut ? 'timed out' : null,
+            optimizerProfile.cacheHit ? 'cache hit' : optimizerProfile.engine,
+            optimizerProfile.seed ? `guided by ${optimizerProfile.seed}` : null,
+            `nodes ${Number(optimizerProfile.nodes || 0).toLocaleString()}`,
+            `pruned ${Number(optimizerProfile.pruned || 0).toLocaleString()}`,
+            ...stages
+        ].filter(Boolean).join(' | ');
+
+        return <div style={{ fontSize: '0.85em', color: '#9fb2a4', marginTop: '0.25em' }}>
+            Profile: {details}
+        </div>;
+    };
+
+    elapsedSeconds = elapsedSeconds ?? -1;
     const skillsList = Object.entries(fields.skills || {}).map(([k, v]) => [`${k} Lv. ${v}`]);
     const activeSearchParts = [...skillsList];
     if ((fields.weaponSlots || []).length) {
@@ -1005,11 +1093,13 @@ const Results = ({
     }
 
     const searchList = activeSearchParts.join(", ");
-    const displayStr = `Results for ${searchList} (${results.length.toLocaleString('en', { useGrouping: true })}` +
-        ` hits in ${elapsedSeconds.toFixed(2)} seconds):`;
-    const displayStrEmpty = `No skills specified.  ` +
-        `Showing best slotted armor combos (${results.length.toLocaleString('en', { useGrouping: true })}` +
-        ` hits in ${elapsedSeconds.toFixed(2)} seconds):`;
+    const resultCountText = results.length.toLocaleString('en', { useGrouping: true });
+    const timedOutWithoutResults = optimizerProfile?.timedOut && results.length === 0;
+    const resultStatusText = timedOutWithoutResults ?
+        `timed out before finding results in ${elapsedSeconds.toFixed(2)} seconds` :
+        `${resultCountText} hits in ${elapsedSeconds.toFixed(2)} seconds`;
+    const displayStr = `Results for ${searchList} (${resultStatusText}):`;
+    const displayStrEmpty = `No skills specified. Showing best slotted armor combos (${resultStatusText}):`;
     const someArmorBlacklisted = fields.blacklistedArmor.length > 0;
     const someArmorMandatory = fields.mandatoryArmor.filter(x => x).length > 0;
     const someTypesBlacklisted = fields.blacklistedArmorTypes.length > 0;
@@ -1017,10 +1107,19 @@ const Results = ({
 
     return <div className="results">
         {renderSelectedResult()}
-        {elapsedSeconds > 0 && <div style={{ marginBottom: '0.5em' }}>
+        {elapsedSeconds >= 0 && <div style={{ marginBottom: '0.5em' }}>
             {shouldNotify && <span className="warn">Some armor is pinned/blacklisted - </span>}
             {!isEmpty(fields.slotFilters) && <span className="notice">Deco filters active - </span>}
             {searchList ? displayStr : displayStrEmpty}
+            {renderOptimizerProfile()}
+            {optimizerProfile?.seed && <div className="notice">
+                Search was guided by {optimizerProfile.seed} because it produced valid results faster.
+                {' '}Add it from Extra Skills if you want to make that bonus an explicit requirement.
+            </div>}
+            {timedOutWithoutResults && <div className="warn">
+                Search stopped before the optimizer could prove this build is impossible.
+                {' '}Try reducing requirements or rerun after changing one filter.
+            </div>}
             {shouldNotify && results.length === 0 && <div className="warn">
                 Current pinned or blacklisted armor can eliminate otherwise valid sets.
             </div>}
@@ -1032,6 +1131,7 @@ const Results = ({
 Results.propTypes = {
     results: PropTypes.array.isRequired,
     elapsedSeconds: PropTypes.number,
+    optimizerProfile: PropTypes.object,
     onSaveSet: PropTypes.func,
     save: PropTypes.bool, // if true, on saved sets page
 };
