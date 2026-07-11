@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import SkillsPicker from "../components/SkillsPicker";
-import { searchAndSpeed } from "../util/logic";
 import SKILLS from '../data/compact/skills.json';
 import GROUP_SKILLS from '../data/compact/group-skills.json';
 import SET_SKILLS from '../data/compact/set-skills.json';
@@ -88,6 +87,7 @@ const Search = () => {
     const [loadProgress, setLoadProgress] = useState(0);
     const [optimizerProfile, setOptimizerProfile] = useState(null);
     const bonusWorkerRef = useRef(null);
+    const searchWorkerRef = useRef(null);
     const bonusStartedAtRef = useRef(0);
     const [isExploringBonuses, setIsExploringBonuses] = useState(false);
     const [bonusProgress, setBonusProgress] = useState(0);
@@ -95,6 +95,9 @@ const Search = () => {
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [showConditions, setShowConditions] = useState(false);
+    const customDecorationMap = Object.fromEntries((fields.customDecorations || [])
+        .map(deco => [deco.name, [deco.type, deco.skills || {}, Number(deco.size || 1)]]));
+    const availableDecorations = { ...DECORATIONS, ...customDecorationMap };
 
     useEffect(() => {
         if (!isEmpty(moreResults)) {
@@ -108,7 +111,10 @@ const Search = () => {
         }
     }, [isGenerating]);
 
-    useEffect(() => () => bonusWorkerRef.current?.terminate(), []);
+    useEffect(() => () => {
+        bonusWorkerRef.current?.terminate();
+        searchWorkerRef.current?.terminate();
+    }, []);
 
     const prepareSearch = ({ resetElapsed = true } = {}) => {
         bonusWorkerRef.current?.terminate();
@@ -167,6 +173,7 @@ const Search = () => {
             blacklistedArmor: fields.blacklistedArmor,
             blacklistedArmorTypes: fields.blacklistedArmorTypes,
             decoMods: fields.decoInventory,
+            customDecorations: fields.customDecorations,
             cancelToken: cancelledRef
         });
 
@@ -204,6 +211,7 @@ const Search = () => {
             params.setSkillBonus,
             params.groupSkillBonus,
             JSON.stringify(params.customTalismans),
+            JSON.stringify(params.customDecorations),
             params.useOnlyOwnedTalismans,
             Object.entries(params.decoMods).map(x => `${x[0]}-${x[1]}`).sort().join(".")
         ].join(",");
@@ -221,15 +229,36 @@ const Search = () => {
         params.limit = 100;
         params.findOne = false;
         // console.log('params', params);
-        const cache = searchAndSpeed(params, same);
-        cache.then(ret => {
+        searchWorkerRef.current?.terminate();
+        const worker = new Worker(new URL('../workers/search.worker.js', import.meta.url));
+        searchWorkerRef.current = worker;
+        const workerParams = { ...params };
+        delete workerParams.cancelToken;
+
+        worker.onmessage = eventData => {
+            if (eventData.data.type === 'error') {
+                console.error("Search worker failed:", eventData.data.message, eventData.data.stack);
+                setIsGenerating(false);
+                searchWorkerRef.current = null;
+                worker.terminate();
+                return;
+            }
+            if (eventData.data.type !== 'done') { return; }
+            const ret = eventData.data.response;
             setElapsedSeconds(ret.seconds);
             setResults(ret.results);
             setOptimizerProfile(ret.profile || null);
             setIsGenerating(false);
-        }).catch(err => {
-            console.error("Error during searchAndSpeed:", err);
-        });
+            searchWorkerRef.current = null;
+            worker.terminate();
+        };
+        worker.onerror = error => {
+            console.error("Search worker failed:", error);
+            setIsGenerating(false);
+            searchWorkerRef.current = null;
+            worker.terminate();
+        };
+        worker.postMessage({ params: workerParams, useCached: same });
     };
 
     const isOffElementSkill = skillName => {
@@ -365,7 +394,7 @@ const Search = () => {
         }), {});
         const candidatesBySkill = {};
 
-        Object.entries(DECORATIONS).forEach(([decoName, [decoType, decoSkills, decoSize]]) => {
+        Object.entries(availableDecorations).forEach(([decoName, [decoType, decoSkills, decoSize]]) => {
             if (!canUseDecoForCurrentElement(decoSkills)) { return; }
             Object.entries(decoSkills).forEach(([skillName, level]) => {
                 if (!SKILLS[skillName] || isOffElementSkill(skillName)) { return; }
@@ -403,7 +432,7 @@ const Search = () => {
         const requiredDecoNames = result.requiredDecoNames || result.decoNames || [];
 
         requiredDecoNames.forEach(requiredDecoName => {
-            const requiredDeco = DECORATIONS[requiredDecoName];
+            const requiredDeco = availableDecorations[requiredDecoName];
             if (!requiredDeco || requiredDeco[0] !== 'weapon') { return; }
 
             const [, requiredDecoSkills, requiredDecoSize] = requiredDeco;
@@ -413,7 +442,7 @@ const Search = () => {
             if (isEmpty(requiredSkillPortion)) { return; }
 
             const bonusLevelsFromThisSlot = {};
-            Object.entries(DECORATIONS).forEach(([candidateName, [decoType, candidateSkills, candidateSize]]) => {
+            Object.entries(availableDecorations).forEach(([candidateName, [decoType, candidateSkills, candidateSize]]) => {
                 if (decoType !== 'weapon' || candidateSize > requiredDecoSize) { return; }
                 if (Object.prototype.hasOwnProperty.call(decoInventory, candidateName) && decoInventory[candidateName] <= 0) {
                     return;
@@ -935,7 +964,7 @@ const Search = () => {
     };
 
     const formatDecoSkills = decoName => {
-        return Object.entries(DECORATIONS[decoName]?.[1] || {})
+        return Object.entries(availableDecorations[decoName]?.[1] || {})
             .map(([skillName, level]) => `${skillName} ${level}`)
             .join(' / ');
     };
@@ -1192,6 +1221,9 @@ return (
                     onClick={stopBonusExploration}>Cancel Bonus Search</Button>}
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
                     cancelledRef.current = true;
+                    searchWorkerRef.current?.terminate();
+                    searchWorkerRef.current = null;
+                    setIsGenerating(false);
                 }}>Cancel</Button>}
             </div>
             {isGenerating && <LoadingBar className="loading-bar" value={loadProgress}

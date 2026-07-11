@@ -17,6 +17,7 @@ export const getSearchParameters = parameters => {
         groupSkills: parameters.groupSkills || {},
         slotFilters: parameters.slotFilters || {}, // specify only armor that has x amount of y size free slots
         decoMods: parameters.decoMods || {}, // specify if you have limited number of a deco
+        customDecorations: parameters.customDecorations || [],
         mandatoryArmor: parameters.mandatoryArmor || ['', '', '', '', '', ''], // must use these named armor pieces (per slot)
         blacklistedArmor: parameters.blacklistedArmor || [], // don't use these named armor pieces
         blacklistedArmorTypes: parameters.blacklistedArmorTypes || [], // don't use thes armor types (head, chest, etc)
@@ -154,8 +155,8 @@ export const isEmpty = obj => {
     return Object.keys(obj).length === 0;
 };
 
-export const getDecoSkillsFromNames = names => {
-    return mergeSumMaps(names.map(name => _x.skills(DECORATIONS[name])));
+export const getDecoSkillsFromNames = (names, decorations = DECORATIONS) => {
+    return mergeSumMaps(names.map(name => decorations[name]).filter(Boolean).map(_x.skills));
 };
 
 export const groupArmorIntoSets = (armorPieces, setSkills, groupSkills) => {

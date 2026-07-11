@@ -35,6 +35,7 @@ const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, tru
 
 let totalPossibleCombinations = 0;
 let decoInventory = { ...DECO_INVENTORY };
+let currentDecorations = { ...DECORATIONS };
 
 // getting lazier..
 let currentSlotFilters = {};
@@ -119,6 +120,7 @@ export const buildSearchCacheKey = parameters => {
         blacklistedArmor: normalizeList(params.blacklistedArmor),
         blacklistedArmorTypes: normalizeList(params.blacklistedArmorTypes),
         customTalismans: JSON.stringify(normalizeCustomTalismans(params.customTalismans)),
+        customDecorations: JSON.stringify(normalizeCustomDecorations(params.customDecorations)),
         useOnlyOwnedTalismans: Boolean(params.useOnlyOwnedTalismans),
         dontUseDecos: Boolean(params.dontUseDecos),
         decoMods: normalizeQueryMap(params.decoMods),
@@ -141,6 +143,20 @@ const cacheSearchResult = (key, results) => {
     searchCache.set(key, results);
 };
 
+const normalizeCustomDecorations = value => (value || [])
+    .map(deco => ({
+        name: deco?.name || "",
+        type: deco?.type || "armor",
+        size: Number(deco?.size || 1),
+        amount: Number(deco?.amount ?? 99),
+        skills: normalizeQueryMap(deco?.skills || {})
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+const customDecorationsToCompact = value => Object.fromEntries((value || [])
+    .filter(deco => deco?.name && ["armor", "weapon"].includes(deco?.type))
+    .map(deco => [deco.name, [deco.type, deco.skills || {}, Number(deco.size || 1)]]));
+
 const cacheTalismanScore = (key, score) => {
     if (talismanScoreCache.size >= MAX_TALISMAN_SCORE_CACHE_ENTRIES) {
         const oldestKey = talismanScoreCache.keys().next().value;
@@ -159,6 +175,8 @@ const createOptimizerProfile = engine => ({
     pruned: 0,
     leaves: 0,
     results: 0,
+    impossible: false,
+    impossibleReasons: [],
     totalPossibleCombinations: 0
 });
 
@@ -207,6 +225,7 @@ export const getBestArmor = (
     groupSkillBonus = '',
     customTalismans = [],
     useOnlyOwnedTalismans = false,
+    customDecorations = [],
     rank = "high"
 ) => {
     // const fullDataFile = getJsonFromType("armor");
@@ -282,7 +301,9 @@ export const getBestArmor = (
     const firsts = emptyGearSet();
     firsts.talisman = {};
     const best = emptyGearSet();
-    const bestDecos = dontUseDecos ? {} : getBestDecos(skills);
+    const allDecorations = { ...DECORATIONS, ...customDecorationsToCompact(customDecorations) };
+    const bestDecos = dontUseDecos ? {} : Object.fromEntries(Object.entries(allDecorations)
+        .filter(([, deco]) => ["armor", "weapon"].includes(deco[0]) && hasNeededSkill(deco[1], skills)));
 
     ["length", "size"].forEach(sortType => {
         const checker = emptyGearSet();
@@ -579,7 +600,7 @@ const getUsefulDecoPoints = (decoSkills, skillsNeeded) => {
 };
 
 const getRequestedDecoSkillsFromNames = (names, desiredSkills) => {
-    const decoSkills = getDecoSkillsFromNames(names);
+    const decoSkills = getDecoSkillsFromNames(names, currentDecorations);
     return Object.fromEntries(
         Object.entries(decoSkills).filter(([skillName]) => desiredSkills[skillName])
     );
@@ -967,7 +988,7 @@ const scoreSocketDamagePotential = (baseSkills, armorSlots = [], weaponSlots = [
 
     for (const slot of allSlots) {
         let best = null;
-        for (const [decoName, decoData] of Object.entries(DECORATIONS)) {
+        for (const [decoName, decoData] of Object.entries(currentDecorations)) {
             const [decoType, decoSkills, decoSize] = decoData;
             if (decoType !== slot.type || decoSize > slot.size || (decoInventory[decoName] || 0) <= 0) {
                 continue;
@@ -1200,7 +1221,7 @@ const buildSearchGear = (params, setSkills = params.setSkills, groupSkills = par
         getBestArmor, params.skills, setSkills, groupSkills,
         params.mandatoryArmor, params.blacklistedArmor, params.blacklistedArmorTypes,
         params.dontUseDecos, params.weaponSlots, params.setSkillBonus, params.groupSkillBonus,
-        params.customTalismans, params.useOnlyOwnedTalismans
+        params.customTalismans, params.useOnlyOwnedTalismans, params.customDecorations
     );
     gear = {
         ...gear,
@@ -1299,6 +1320,48 @@ const buildPiecePotentialMap = (candidateLists, armorSlots, desiredSkills, decos
     }
 
     return piecePotentialMap;
+};
+
+export const validateSearchFeasibility = (gear, desiredSkills = {}, setSkills = {}, groupSkills = {}) => {
+    const armorSlots = getArmorTypeList();
+    const candidateLists = Object.fromEntries(
+        armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills)])
+    );
+    const reasons = [];
+
+    for (const slot of armorSlots) {
+        if (!candidateLists[slot].length) {
+            reasons.push(`No ${slot} candidates remain after the current filters.`);
+        }
+    }
+
+    const { potential } = buildSkillPotentialSuffix(
+        candidateLists, armorSlots, desiredSkills, gear.decos || {}, gear.weaponSlots || []
+    );
+    for (const [skillName, targetLevel] of Object.entries(desiredSkills)) {
+        const maximum = potential[skillName]?.[0] || 0;
+        if (maximum < targetLevel) {
+            reasons.push(`${skillName} Lv. ${targetLevel} cannot be reached (maximum ${maximum}).`);
+        }
+    }
+
+    const checkBonusPieces = (requirements, accessor, pointsForLevel, bonusName) => {
+        for (const [skillName, level] of Object.entries(requirements)) {
+            const bonusPoint = bonusName === skillName ? 1 : 0;
+            const required = Math.max(0, pointsForLevel(level) - bonusPoint);
+            const maximum = armorSlots.reduce((total, slot) => total + (
+                candidateLists[slot].some(([, piece]) => accessor(piece)?.includes(skillName)) ? 1 : 0
+            ), 0);
+            if (maximum < required) {
+                reasons.push(`${skillName} requires ${required} matching pieces, but at most ${maximum} are available.`);
+            }
+        }
+    };
+
+    checkBonusPieces(setSkills, _x.setSkills, level => level * 2, gear.setSkillBonus);
+    checkBonusPieces(groupSkills, _x.groupSkills, () => 3, gear.groupSkillBonus);
+
+    return { possible: reasons.length === 0, reasons };
 };
 
 const rollCombosDfs = async(
@@ -2071,11 +2134,18 @@ export const search = async parameters => {
     }
 
     stageStartedAt = performance.now();
+    const customDecorationMap = customDecorationsToCompact(params.customDecorations);
+    currentDecorations = { ...DECORATIONS, ...customDecorationMap };
     decoInventory = { ...DECO_INVENTORY };
+    for (const deco of params.customDecorations || []) {
+        if (deco?.name) {
+            decoInventory[deco.name] = Math.max(0, Number(deco.amount ?? 99));
+        }
+    }
 
     // limit decos to what user has specified they have
     for (const [decoName, decoAmount] of Object.entries(params.decoMods)) {
-        if (Object.keys(decoInventory).includes(decoName)) {
+        if (Object.prototype.hasOwnProperty.call(decoInventory, decoName)) {
             decoInventory[decoName] = decoAmount;
         }
     }
@@ -2084,6 +2154,17 @@ export const search = async parameters => {
     stageStartedAt = performance.now();
     let gear = buildSearchGear(params);
     recordOptimizerStage(profile, "candidatePrep", stageStartedAt);
+
+    stageStartedAt = performance.now();
+    const feasibility = validateSearchFeasibility(gear, params.skills, params.setSkills, params.groupSkills);
+    recordOptimizerStage(profile, "feasibilityCheck", stageStartedAt);
+    if (!feasibility.possible) {
+        profile.impossible = true;
+        profile.impossibleReasons = feasibility.reasons;
+        profile.runtimeMs = performance.now() - searchStartedAt;
+        finishOptimizerProfile(profile, []);
+        return [];
+    }
 
     let comboFunc = USE_NEW_ENGINE ? rollCombosNewEngine : rollCombosDfs;
     if (!USE_NEW_ENGINE && !DFS) {

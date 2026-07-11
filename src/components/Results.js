@@ -769,8 +769,12 @@ const Results = ({
         if (selectedResult) {
             const requiredDecoNames = selectedResult.requiredDecoNames || selectedResult.decoNames || [];
             const autoDecoNames = selectedResult.autoDecoNames || [];
-            const requiredDecos = getDecosFromNames(requiredDecoNames, fields.showDecoSkillNames);
-            const autoDecos = getDecosFromNames(autoDecoNames, fields.showDecoSkillNames);
+            const customDecoMap = Object.fromEntries((fields.customDecorations || [])
+                .map(deco => [deco.name, [deco.type, deco.skills || {}, Number(deco.size || 1)]]));
+            const requiredDecos = getDecosFromNames(
+                requiredDecoNames, fields.showDecoSkillNames, customDecoMap
+            );
+            const autoDecos = getDecosFromNames(autoDecoNames, fields.showDecoSkillNames, customDecoMap);
             const armorNames = selectedResult.armorNames || [];
             const talismanName = armorNames[5];
             const talismanLookup = selectedResult.talismanData || {};
@@ -1116,7 +1120,9 @@ const Results = ({
     const searchList = activeSearchParts.join(", ");
     const resultCountText = results.length.toLocaleString('en', { useGrouping: true });
     const timedOutWithoutResults = optimizerProfile?.timedOut && results.length === 0;
-    const resultStatusText = timedOutWithoutResults ?
+    const impossibleWithoutResults = optimizerProfile?.impossible && results.length === 0;
+    const resultStatusText = impossibleWithoutResults ?
+        `combination is not possible (${elapsedSeconds.toFixed(2)} seconds)` : timedOutWithoutResults ?
         `timed out before finding results in ${elapsedSeconds.toFixed(2)} seconds` :
         `${resultCountText} hits in ${elapsedSeconds.toFixed(2)} seconds`;
     const displayStr = `Results for ${searchList} (${resultStatusText}):`;
@@ -1140,6 +1146,10 @@ const Results = ({
             {timedOutWithoutResults && <div className="warn">
                 Search stopped before the optimizer could prove this build is impossible.
                 {' '}Try reducing requirements or rerun after changing one filter.
+            </div>}
+            {impossibleWithoutResults && <div className="warn">
+                Combination is not possible.
+                {(optimizerProfile.impossibleReasons || []).map(reason => <div key={reason}>{reason}</div>)}
             </div>}
             {shouldNotify && results.length === 0 && <div className="warn">
                 Current pinned or blacklisted armor can eliminate otherwise valid sets.

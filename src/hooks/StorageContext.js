@@ -27,6 +27,7 @@ const DEFAULTS = {
     customTalismans: [],
     useOnlyOwnedTalismans: false,
     decoInventory: {},
+    customDecorations: [],
     mandatoryArmor: ['', '', '', '', '', ''],
     blacklistedArmor: [],
     blacklistedArmorTypes: [],

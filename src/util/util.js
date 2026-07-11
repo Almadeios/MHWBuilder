@@ -441,8 +441,8 @@ export const notImplemented = text => {
     );
 };
 
-export const getDecoFromName = (name, showSkillNames = false) => {
-    const data = DECORATIONS[name];
+export const getDecoFromName = (name, showSkillNames = false, customDecorations = {}) => {
+    const data = DECORATIONS[name] || customDecorations[name];
     const detailed = DECO_DB[name];
     const decoSkillNames = `${Object.entries(data[1]).map(x => [`${x[0]} Lv. ${x[1]}`]).join("/")} Jewel`;
     return {
@@ -455,13 +455,14 @@ export const getDecoFromName = (name, showSkillNames = false) => {
     };
 };
 
-export const getDecosFromNames = (names, showSkillNames = false) => {
+export const getDecosFromNames = (names, showSkillNames = false, customDecorations = {}) => {
     const objDecos = [];
     const amount = {};
     for (const name of names) {
         amount[name] = (amount[name] || 0) + 1;
     }
-    const decos = Object.fromEntries(names.map(name => [name, DECORATIONS[name]]));
+    const decos = Object.fromEntries(names.map(name => [name, DECORATIONS[name] || customDecorations[name]])
+        .filter(([, data]) => data));
     let key = 1;
     for (const [name, data] of Object.entries(decos)) {
         const decoSkillNames = `${Object.entries(data[1]).map(x => [`${x[0]} Lv. ${x[1]}`]).join("/")} Jewel`;
