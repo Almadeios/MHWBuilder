@@ -586,7 +586,9 @@ const Results = ({
 
         const flat = contribution.flat ? `+${contribution.flat}` : '';
         const percent = contribution.elementPercent ? `+${(contribution.elementPercent * 100).toFixed(0)}%` : '';
-        return `${name}${condition}: ${[flat, percent].filter(Boolean).join(', ')}`;
+        const timing = contribution.durationSeconds ?
+            `${contribution.durationSeconds}s, cooldown ${contribution.cooldownSeconds}s` : '';
+        return `${name}${condition}: ${[flat, percent, timing].filter(Boolean).join(', ')}`;
     };
 
     const compactList = (items, formatter, limit = 4) => {
@@ -639,19 +641,27 @@ const Results = ({
 
         const rawPercentMultiplier = 1 + (breakdown.raw.rawPercentBonus || 0);
         const postRawPercentMultiplier = 1 + (breakdown.raw.postRawPercentBonus || 0);
-        const elementPercentMultiplier = 1 + (breakdown.element.elementPercentBonus || 0);
+        const elementPercentMultipliers = breakdown.element.elementPercentMultipliers?.length ?
+            breakdown.element.elementPercentMultipliers :
+            [breakdown.element.elementPercentMultiplier || 1];
+        const elementMultiplierFormula = elementPercentMultipliers
+            .map(multiplier => formatFixed(multiplier, 2))
+            .join(' x ');
         const rawFormula = `(${breakdown.raw.base ?? 'N/A'} x ${formatFixed(rawPercentMultiplier, 2)} + ` +
-            `${breakdown.raw.flatRaw ?? 0}) x ${formatFixed(postRawPercentMultiplier, 2)} = ` +
+            `${breakdown.raw.flatRaw ?? 0}) x ${formatFixed(postRawPercentMultiplier, 2)} ` +
+            `${breakdown.raw.postMultiplierRawFlat ? `+ ${breakdown.raw.postMultiplierRawFlat} ` : ''}= ` +
             `${formatFixed(breakdown.raw.effectiveRaw)}`;
         const rawFinal = `x sharp ${formatFixed(breakdown.raw.sharpnessMultiplier, 2)} x crit ` +
             `${formatFixed(breakdown.raw.critExpectation, 3)} = ${formatFixed(result.damageProfile.raw_dps)}`;
-        const elementFormula = `${breakdown.element.base ?? 'N/A'} + ${breakdown.element.flatElement ?? 0} x ` +
-            `${formatFixed(elementPercentMultiplier, 2)} = ${formatFixed(breakdown.element.effectiveElement)}`;
+        const elementFormula = `(${breakdown.element.base ?? 'N/A'} x ${elementMultiplierFormula}) + ` +
+            `${breakdown.element.flatElement ?? 0} = ` +
+            `${formatFixed(breakdown.element.uncappedElement ?? breakdown.element.effectiveElement)}`;
+        const elementCapDetails = breakdown.element.capApplied ?
+            `capped from ${formatFixed(breakdown.element.uncappedElement)} at ` +
+                `${formatFixed(breakdown.element.elementCap)}` :
+            null;
         const elementFinal = `x sharp ${formatFixed(breakdown.element.sharpnessMultiplier, 2)} = ` +
             `${formatFixed(result.damageProfile.element_dps)}`;
-        const statusExcludedDetails = breakdown.raw.statusExcludedRawFlat ?
-            `; +${breakdown.raw.statusExcludedRawFlat} shown separately in-game` :
-            '';
 
         return <div className="set-skills" style={{ marginTop: '0.75em' }}>
             <span className="set-label">Damage:</span>
@@ -669,9 +679,13 @@ const Results = ({
                         <span>Procs {formatFixed(result.damageProfile.proc_dps)}</span>}
                     <span>Affinity {breakdown.affinity.final ?? 'N/A'}%</span>
                 </div>
-                {renderBreakdownLine('Raw', rawFormula, `${rawFinal}${statusExcludedDetails}`)}
+                {renderBreakdownLine('Raw', rawFormula, rawFinal)}
                 {renderContributionLine('Raw boosts', breakdown.raw.skillContributions, formatRawContribution, 5)}
-                {renderBreakdownLine('Element', elementFormula, elementFinal)}
+                {renderBreakdownLine(
+                    'Element',
+                    elementFormula,
+                    `${elementCapDetails ? `${elementCapDetails}; ` : ''}${elementFinal}`
+                )}
                 {renderContributionLine('Element boosts', breakdown.element.skillContributions, formatElementContribution, 4)}
                 {breakdown.procs?.contributions?.map(proc => renderBreakdownLine(
                     proc.skill,

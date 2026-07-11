@@ -23,6 +23,17 @@ export const CONDITION_LABELS = {
   azure_bolt_active: 'Azure Bolt Active',
   meat_item_used: 'Meat Item Used',
   binding_counter_active: 'Binding Counter Active',
+  war_cry_active: 'War Cry Active',
+  guts_triggered: 'Guts Triggered (Attack Bonus Ended)',
+  airborne_attack: 'Airborne Attack',
+  normal_shot: 'Normal Shot',
+  piercing_shot: 'Piercing Shot',
+  spread_power_shot: 'Spread / Power Shot',
+  rapid_fire_shot: 'LBG Rapid Fire Shot',
+  tetrad_affinity_active: 'Tetrad: 4th Shot or Later',
+  tetrad_bonus_shot: 'Tetrad: 4th or 6th Shot',
+  convert_element_active: 'Convert Element Active',
+  elemental_absorption_active: 'Elemental Absorption Active',
   powercharm: 'Powercharm',
   food_attack_up: 'Food Attack Up'
 };
@@ -95,6 +106,31 @@ export const CONDITION_SKILL_TABLES = {
   },
   Ambush: {
     ambush_active: { field: 'post_raw_percent', values: [0.05, 0.10, 0.15] }
+  },
+  Airborne: {
+    airborne_attack: { field: 'raw_percent', values: [0.10] }
+  },
+  'Normal Shots': {
+    normal_shot: { field: 'post_raw_percent', values: [0.05] }
+  },
+  'Piercing Shots': {
+    piercing_shot: { field: 'post_raw_percent', values: [0.05] }
+  },
+  'Spread/Power Shots': {
+    spread_power_shot: { field: 'post_raw_percent', values: [0.05] }
+  },
+  'Rapid Fire Up': {
+    rapid_fire_shot: { field: 'post_raw_percent', values: [0.05] }
+  },
+  'Tetrad Shot': {
+    tetrad_affinity_active: { field: 'affinity', values: [8, 10, 12] },
+    tetrad_bonus_shot: { field: 'flat_raw', values: [3, 6, 10] }
+  },
+  'Convert Element': {
+    convert_element_active: []
+  },
+  'Elemental Absorption': {
+    elemental_absorption_active: []
   }
 };
 
@@ -106,7 +142,8 @@ const SET_SKILL_THRESHOLDS = {
   Gogmapocalypse: [2, 4],
   "Rathalos's Flare": [2, 4],
   "Doshaguma's Might": [2, 4],
-  "Leviathan's Fury": [2, 4]
+  "Leviathan's Fury": [2, 4],
+  "Blangonga's Spirit": [2, 4]
 };
 
 const BLACK_ECLIPSE_SKILL = "Gore Magala's Tyranny";
@@ -117,6 +154,7 @@ const MUTUAL_HOSTILITY_SKILL = 'Gogmapocalypse';
 const SCORCHER_SKILL = "Rathalos's Flare";
 const POWERHOUSE_SKILL = "Doshaguma's Might";
 const AZURE_BOLT_SKILL = "Leviathan's Fury";
+const WAR_CRY_SKILL = "Blangonga's Spirit";
 const LORDS_SOUL_SKILL = "Lord's Soul";
 
 const RAW_SKILL_TABLES = {
@@ -173,6 +211,52 @@ const estimateCoalescenceContribution = (skills = {}, conditions = {}, weaponTyp
     elementPercent: active ? getSkillValue(values, level) : 0,
     active
   }];
+};
+
+const ELEMENTAL_ABSORPTION_TABLES = {
+  great_sword_hunting_horn: [50, 80, 100],
+  dual_blades: [30, 40, 50],
+  ranged: [30, 40, 50],
+  other: [40, 50, 60]
+};
+
+const estimateActivationElementContributions = (
+  skills = {},
+  conditions = {},
+  weaponType = 'other',
+  weaponElementType = 'None'
+) => {
+  const contributions = [];
+  const convertElementLevel = skills['Convert Element'] || 0;
+  const convertElementActive = isConditionActive(conditions, 'convert_element_active');
+  if (convertElementLevel && weaponElementType === 'Dragon') {
+    contributions.push({
+      skill: 'Convert Element',
+      condition: 'convert_element_active',
+      conditionLabel: CONDITION_LABELS.convert_element_active,
+      flat: convertElementActive ? getSkillValue([80, 120, 180], convertElementLevel) : 0,
+      elementPercent: 0,
+      active: convertElementActive
+    });
+  }
+
+  const absorptionLevel = skills['Elemental Absorption'] || 0;
+  const absorptionActive = isConditionActive(conditions, 'elemental_absorption_active');
+  if (absorptionLevel && weaponElementType !== 'None') {
+    const table = ELEMENTAL_ABSORPTION_TABLES[weaponType] || ELEMENTAL_ABSORPTION_TABLES.other;
+    contributions.push({
+      skill: 'Elemental Absorption',
+      condition: 'elemental_absorption_active',
+      conditionLabel: CONDITION_LABELS.elemental_absorption_active,
+      flat: absorptionActive ? getSkillValue(table, absorptionLevel) : 0,
+      elementPercent: 0,
+      durationSeconds: 120,
+      cooldownSeconds: 60,
+      active: absorptionActive
+    });
+  }
+
+  return contributions;
 };
 
 const AFFINITY_SKILL_TABLES = {
@@ -242,6 +326,12 @@ export const getConditionOptionsForSkills = (skills = {}) => {
   }
   if (selectedSkills.includes(AZURE_BOLT_SKILL) && !options.some(option => option.id === 'azure_bolt_active')) {
     options.push({ id: 'azure_bolt_active', displayLabel: CONDITION_LABELS.azure_bolt_active });
+  }
+  if (selectedSkills.includes(WAR_CRY_SKILL) && !options.some(option => option.id === 'war_cry_active')) {
+    options.push({ id: 'war_cry_active', displayLabel: CONDITION_LABELS.war_cry_active });
+  }
+  if (selectedSkills.includes(LORDS_SOUL_SKILL) && !options.some(option => option.id === 'guts_triggered')) {
+    options.push({ id: 'guts_triggered', displayLabel: CONDITION_LABELS.guts_triggered });
   }
 
   return options;
@@ -384,6 +474,7 @@ const estimateSetSkillDamageContribution = (skills = {}, setSkills = {}, conditi
   const scorcherLevel = getSetSkillLevel(setSkills, SCORCHER_SKILL);
   const powerhouseLevel = getSetSkillLevel(setSkills, POWERHOUSE_SKILL);
   const azureBoltLevel = getSetSkillLevel(setSkills, AZURE_BOLT_SKILL);
+  const warCryLevel = getSetSkillLevel(setSkills, WAR_CRY_SKILL);
   const antivirusLevel = skills.Antivirus || 0;
   const frenzyCured = isConditionActive(conditions, 'frenzy_cured');
   const burstActive = isConditionActive(conditions, 'burst_active');
@@ -392,6 +483,7 @@ const estimateSetSkillDamageContribution = (skills = {}, setSkills = {}, conditi
   const monsterEnraged = isConditionActive(conditions, 'monster_enraged');
   const powerhouseActive = isConditionActive(conditions, 'powerhouse_active');
   const azureBoltActive = isConditionActive(conditions, 'azure_bolt_active');
+  const warCryActive = isConditionActive(conditions, 'war_cry_active');
 
   if (blackEclipseLevel >= 1 && antivirusLevel) {
     contributions.push({
@@ -506,22 +598,39 @@ const estimateSetSkillDamageContribution = (skills = {}, setSkills = {}, conditi
     });
   }
 
-  return contributions;
-};
-
-const estimateGroupSkillDamageContribution = (groupSkills = {}) => {
-  const contributions = [];
-  if (getGroupSkillLevel(groupSkills, LORDS_SOUL_SKILL) >= 1) {
+  if (warCryLevel >= 1) {
     contributions.push({
-      skill: 'Guts (Tenacity)',
-      sourceSkill: LORDS_SOUL_SKILL,
-      contribution: 0.05,
-      active: true,
-      field: 'post_raw_percent'
+      skill: warCryLevel >= 2 ? 'War Cry II' : 'War Cry I',
+      sourceSkill: WAR_CRY_SKILL,
+      condition: 'war_cry_active',
+      conditionLabel: CONDITION_LABELS.war_cry_active,
+      contribution: warCryActive ? [3, 6][warCryLevel - 1] : 0,
+      durationSeconds: 60,
+      active: warCryActive,
+      field: 'post_multiplier_flat_raw'
     });
   }
 
   return contributions;
+};
+
+const estimateGroupSkillDamageContribution = (groupSkills = {}, conditions = {}) => {
+  const lordsSoulLevel = getGroupSkillLevel(groupSkills, LORDS_SOUL_SKILL);
+  if (!lordsSoulLevel) {
+    return [];
+  }
+
+  const gutsTriggered = isConditionActive(conditions, 'guts_triggered');
+  return [{
+    skill: 'Guts (Tenacity)',
+    sourceSkill: LORDS_SOUL_SKILL,
+    level: lordsSoulLevel,
+    condition: 'guts_triggered',
+    conditionLabel: CONDITION_LABELS.guts_triggered,
+    contribution: gutsTriggered ? 0 : 0.05,
+    active: !gutsTriggered,
+    field: 'post_raw_percent'
+  }];
 };
 
 const estimateBurstContributions = (skills = {}, conditions = {}, weaponType = 'other') => {
@@ -588,12 +697,14 @@ const estimateElementSkillContribution = (skills = {}, weaponElementType = 'None
 
 const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills = {}, groupSkills = {}, weaponType = 'other') => {
   const setSkillContributions = estimateSetSkillDamageContribution(skills, setSkills, conditions);
-  const groupSkillContributions = estimateGroupSkillDamageContribution(groupSkills);
+  const groupSkillContributions = estimateGroupSkillDamageContribution(groupSkills, conditions);
   const burstContributions = estimateBurstContributions(skills, conditions, weaponType);
   const coalescenceElementContributions = estimateCoalescenceContribution(skills, conditions, weaponType);
   const setRawContributions = setSkillContributions.filter(item => item.field === 'flat_raw');
   const setRawPercentContributions = setSkillContributions.filter(item => item.field === 'raw_percent');
   const setPostRawPercentContributions = setSkillContributions.filter(item => item.field === 'post_raw_percent');
+  const setPostMultiplierRawContributions = setSkillContributions
+    .filter(item => item.field === 'post_multiplier_flat_raw');
   const setAffinityContributions = setSkillContributions.filter(item => item.field === 'affinity');
   const procContributions = setSkillContributions.filter(item => item.field === 'proc_damage');
   const setElementContributions = setSkillContributions
@@ -625,7 +736,6 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
   const rawFlat = unconditionalRawContributions.reduce((total, item) => total + item.contribution, 0) +
     permanentRawContributions.reduce((total, item) => total + item.contribution, 0) +
     conditionalRawContributions.reduce((total, item) => total + item.contribution, 0) +
-    burstRawContributions.reduce((total, item) => total + item.contribution, 0) +
     setRawContributions.reduce((total, item) => total + item.contribution, 0);
 
   const rawPercent = Object.entries(RAW_SKILL_TABLES).reduce((total, [skillName, table]) => {
@@ -637,6 +747,10 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
   const postRawPercent = conditionalPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0) +
     setPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0) +
     groupPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0);
+  const postMultiplierRawFlat = permanentStatusExcludedRawContributions
+    .reduce((total, item) => total + item.contribution, 0) +
+    burstRawContributions.reduce((total, item) => total + item.contribution, 0) +
+    setPostMultiplierRawContributions.reduce((total, item) => total + item.contribution, 0);
 
   const unconditionalRawBreakdown = Object.entries(RAW_SKILL_TABLES).filter(([skillName]) => skills[skillName]).map(([skillName, table]) => ({
     skill: skillName,
@@ -679,6 +793,7 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     condition: item.condition,
     conditionLabel: item.conditionLabel,
     flat: item.contribution,
+    postMultiplierFlat: item.contribution,
     rawPercent: 0,
     active: item.active
   }));
@@ -733,9 +848,21 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     active: item.active
   }));
 
+  const setPostMultiplierRawBreakdown = setPostMultiplierRawContributions.map(item => ({
+    skill: item.skill,
+    sourceSkill: item.sourceSkill,
+    condition: item.condition,
+    conditionLabel: item.conditionLabel,
+    flat: item.contribution,
+    postMultiplierFlat: item.contribution,
+    active: item.active
+  }));
+
   const groupPostRawPercentBreakdown = groupPostRawPercentContributions.map(item => ({
     skill: item.skill,
     sourceSkill: item.sourceSkill,
+    condition: item.condition,
+    conditionLabel: item.conditionLabel,
     flat: 0,
     rawPercent: 0,
     postRawPercent: item.contribution,
@@ -753,6 +880,7 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     ...setRawBreakdown,
     ...setRawPercentBreakdown,
     ...setPostRawPercentBreakdown,
+    ...setPostMultiplierRawBreakdown,
     ...groupPostRawPercentBreakdown
   ];
 
@@ -776,6 +904,7 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
   return {
     rawFlat,
     statusExcludedRawFlat: permanentStatusExcludedRawContributions.reduce((total, item) => total + item.contribution, 0),
+    postMultiplierRawFlat,
     rawPercent,
     postRawPercent,
     affinity: affinityContributions.reduce((total, item) => total + item.contribution, 0),
@@ -848,20 +977,36 @@ export const buildDamageProfile = roll => {
   }[roll?.weaponSharpness || 'White'] || 1;
   const elementSharpnessMultiplier = sharpnessMultiplier > 1 ? sharpnessMultiplier * 0.85 : 0.75;
   const elementValue = Number(roll?.weaponElementValue || 0);
+  const activationElementContributions = estimateActivationElementContributions(
+    combinedSkills,
+    roll?.conditions || {},
+    roll?.weaponType || 'other',
+    roll?.weaponElementType || 'None'
+  );
   const elementContributions = estimateElementSkillContribution(
     combinedSkills,
     roll?.weaponElementType || 'None',
     [
       ...skillContribution.burstElementContributions,
       ...skillContribution.coalescenceElementContributions,
-      ...skillContribution.setElementContributions
+      ...skillContribution.setElementContributions,
+      ...activationElementContributions
     ]
   );
   const elementFlat = elementContributions.reduce((total, item) => total + item.flat, 0);
   const elementPercent = elementContributions.reduce((total, item) => total + item.elementPercent, 0);
-  const effectiveElement = elementValue * (1 + elementPercent) + elementFlat;
+  const elementPercentMultipliers = elementContributions
+    .filter(item => item.elementPercent)
+    .map(item => 1 + item.elementPercent);
+  const elementPercentMultiplier = elementPercentMultipliers.reduce(
+    (total, multiplier) => total * multiplier,
+    1
+  );
+  const uncappedElement = elementValue * elementPercentMultiplier + elementFlat;
+  const elementCap = elementValue > 0 ? Math.max(elementValue * 2.3, elementValue + 400) : 0;
+  const effectiveElement = elementValue > 0 ? Math.min(uncappedElement, elementCap) : 0;
   const effectiveRaw = (baseRaw * (1 + skillContribution.rawPercent) + skillContribution.rawFlat) *
-    (1 + skillContribution.postRawPercent);
+    (1 + skillContribution.postRawPercent) + skillContribution.postMultiplierRawFlat;
   const critExpectation = affinity >= 0 ?
     1 + affinity / 100 * (skillContribution.critMultiplier - 1) :
     1 + Math.abs(affinity) / 100 * (NEGATIVE_CRIT_MULTIPLIER - 1);
@@ -901,7 +1046,8 @@ export const buildDamageProfile = roll => {
     ...conditionSensitiveEntries,
     ...rawConditionSensitiveEntries,
     ...setConditionSensitiveEntries,
-    ...skillContribution.coalescenceElementContributions.filter(item => item.condition)
+    ...skillContribution.coalescenceElementContributions.filter(item => item.condition),
+    ...activationElementContributions.filter(item => item.condition)
   ];
 
   return {
@@ -928,6 +1074,7 @@ export const buildDamageProfile = roll => {
         critExpectation,
         flatRaw: skillContribution.rawFlat,
         statusExcludedRawFlat: skillContribution.statusExcludedRawFlat,
+        postMultiplierRawFlat: skillContribution.postMultiplierRawFlat,
         rawPercentBonus: skillContribution.rawPercent,
         postRawPercentBonus: skillContribution.postRawPercent,
         skillContributions: skillContribution.rawContributions
@@ -936,6 +1083,11 @@ export const buildDamageProfile = roll => {
         base: elementValue,
         flatElement: elementFlat,
         elementPercentBonus: elementPercent,
+        elementPercentMultiplier,
+        elementPercentMultipliers,
+        uncappedElement,
+        elementCap,
+        capApplied: uncappedElement > elementCap,
         effectiveElement,
         sharpnessMultiplier: elementSharpnessMultiplier,
         skillContributions: elementContributions

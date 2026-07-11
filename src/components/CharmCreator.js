@@ -156,6 +156,33 @@ const weaponSlotsToString = slots => {
   return sorted.map(s => `W${s}`).concat(Array(3 - sorted.length).fill(0)).slice(0, 3).join("-");
 };
 
+export const getCompatibleSlotOptions = (selectedSkills, armorSlotValue, weaponSlotValue) => {
+  const currentArmorSlots = parseSlots(armorSlotValue);
+  const currentWeaponSlots = parseSlots(weaponSlotValue);
+  const armorOptions = new Set();
+  const weaponOptions = new Set();
+
+  // Each selector must be constrained only by the other selector. Filtering by
+  // both current values first traps the form in the current template family
+  // (for example, R7 without W1 cannot transition to the equivalent R8 roll).
+  getCompatibleTemplates(selectedSkills).forEach(template => {
+    (template.slotCombos || []).forEach(combo => {
+      const { armorSlots, weaponSlots } = splitSlotCombo(combo);
+      if (slotsMatch(weaponSlots, currentWeaponSlots)) {
+        armorOptions.add(slotsToString(armorSlots));
+      }
+      if (slotsMatch(armorSlots, currentArmorSlots)) {
+        weaponOptions.add(weaponSlotsToString(weaponSlots));
+      }
+    });
+  });
+
+  return {
+    armorOptions: [...armorOptions].sort(),
+    weaponOptions: [...weaponOptions].sort()
+  };
+};
+
 const getSlotImage = slotSize => `images/slot${slotSize}.png`;
 
 const renderSlotSummary = (armorSlots = [], weaponSlots = []) => {
@@ -384,21 +411,16 @@ const CharmCreator = () => {
     return false;
   };
 
-  const allowedArmorSlotOptions = new Set();
-  const allowedWeaponSlotOptions = new Set();
-  compatibleTemplates.forEach(template => {
-    (template.slotCombos || []).forEach(combo => {
-      const { armorSlots, weaponSlots } = splitSlotCombo(combo);
-      allowedArmorSlotOptions.add(slotsToString(armorSlots));
-      allowedWeaponSlotOptions.add(weaponSlotsToString(weaponSlots));
-    });
-  });
-
-  const armorSlotOptions = allowedArmorSlotOptions.size
-    ? [...allowedArmorSlotOptions].sort()
+  const compatibleSlotOptions = getCompatibleSlotOptions(
+    selectedSkillNames,
+    form.slots,
+    form.weaponSlots
+  );
+  const armorSlotOptions = compatibleSlotOptions.armorOptions.length
+    ? compatibleSlotOptions.armorOptions
     : SLOT_OPTIONS;
-  const weaponSlotOptions = allowedWeaponSlotOptions.size
-    ? [...allowedWeaponSlotOptions].sort()
+  const weaponSlotOptions = compatibleSlotOptions.weaponOptions.length
+    ? compatibleSlotOptions.weaponOptions
     : SLOT_OPTIONS;
 
 

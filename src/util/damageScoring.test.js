@@ -317,7 +317,7 @@ describe('damage scoring', () => {
     ]));
   });
 
-  it('matches the 378 attack status raw category ordering', () => {
+  it('applies food raw after percentages with the pre-trigger Guts attack bonus', () => {
     const profile = buildDamageProfile({
       skills: { 'Attack Boost': 5, Agitator: 5, Burst: 4 },
       setSkills: { "Ebony Odogaron's Power": 2, "Jin Dahaad's Revolt": 1 },
@@ -337,10 +337,11 @@ describe('damage scoring', () => {
     });
 
     expect(profile.breakdown.raw.rawPercentBonus).toBe(0.04);
-    expect(profile.breakdown.raw.flatRaw).toBe(93);
+    expect(profile.breakdown.raw.flatRaw).toBe(78);
     expect(profile.breakdown.raw.statusExcludedRawFlat).toBe(8);
     expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.05);
-    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(378.294);
+    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(23);
+    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(385.544);
   });
 
   it('preserves permanent raw conditions when filtering stale skill conditions', () => {
@@ -509,6 +510,169 @@ describe('damage scoring', () => {
     ]));
   });
 
+  it('models confirmed attack-specific damage multipliers', () => {
+    const airborne = buildDamageProfile({
+      skills: { Airborne: 1 },
+      conditions: { airborne_attack: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'Yellow'
+    });
+    const normalShot = buildDamageProfile({
+      skills: { 'Normal Shots': 1 },
+      conditions: { normal_shot: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'Yellow'
+    });
+    const piercingShot = buildDamageProfile({
+      skills: { 'Piercing Shots': 1 },
+      conditions: { piercing_shot: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'Yellow'
+    });
+    const spreadShot = buildDamageProfile({
+      skills: { 'Spread/Power Shots': 1 },
+      conditions: { spread_power_shot: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'Yellow'
+    });
+    const rapidFireShot = buildDamageProfile({
+      skills: { 'Rapid Fire Up': 1 },
+      conditions: { rapid_fire_shot: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'Yellow'
+    });
+
+    expect(airborne.breakdown.raw.effectiveRaw).toBeCloseTo(220);
+    expect(normalShot.breakdown.raw.effectiveRaw).toBeCloseTo(210);
+    expect(piercingShot.breakdown.raw.effectiveRaw).toBeCloseTo(210);
+    expect(spreadShot.breakdown.raw.effectiveRaw).toBeCloseTo(210);
+    expect(rapidFireShot.breakdown.raw.effectiveRaw).toBeCloseTo(210);
+    expect(airborne.breakdown.unmodeledSkills).not.toContain('Airborne');
+    expect(normalShot.breakdown.unmodeledSkills).not.toContain('Normal Shots');
+    expect(rapidFireShot.breakdown.unmodeledSkills).not.toContain('Rapid Fire Up');
+    expect(getConditionOptionsForSkills({ 'Rapid Fire Up': 1 })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'rapid_fire_shot' })
+    ]));
+  });
+
+  it('models Tetrad Shot affinity and bonus-shot raw separately', () => {
+    const profile = buildDamageProfile({
+      skills: { 'Tetrad Shot': 3 },
+      conditions: { tetrad_affinity_active: true, tetrad_bonus_shot: true },
+      weaponBaseRaw: 200,
+      weaponBaseAffinity: 0,
+      weaponSharpness: 'Yellow'
+    });
+
+    expect(profile.breakdown.raw.flatRaw).toBe(10);
+    expect(profile.final_affinity).toBe(12);
+    expect(profile.breakdown.unmodeledSkills).not.toContain('Tetrad Shot');
+    expect(getConditionOptionsForSkills({ 'Tetrad Shot': 3 })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'tetrad_affinity_active' }),
+      expect.objectContaining({ id: 'tetrad_bonus_shot' })
+    ]));
+  });
+
+  it('multiplies independent elemental percentages before adding flat element', () => {
+    const profile = buildDamageProfile({
+      skills: { 'Dragon Attack': 3, Coalescence: 3, Burst: 5 },
+      setSkills: { Gogmapocalypse: 1 },
+      setSkillPoints: { Gogmapocalypse: 2 },
+      conditions: {
+        burst_active: true,
+        coalescence_active: true,
+        monster_enraged: true
+      },
+      weaponType: 'hammer_gunlance_switch_axe_charge_blade',
+      weaponElementType: 'Dragon',
+      weaponElementValue: 630,
+      weaponSharpness: 'White'
+    });
+
+    expect(profile.breakdown.element.flatElement).toBe(220);
+    expect(profile.breakdown.element.elementPercentMultipliers).toEqual([1.20, 1.30, 1.20]);
+    expect(profile.breakdown.element.elementPercentMultiplier).toBeCloseTo(1.872);
+    expect(profile.breakdown.element.effectiveElement).toBeCloseTo(1399.36);
+  });
+
+  it('caps element at the higher of 2.3x base or base plus 400', () => {
+    const profile = buildDamageProfile({
+      skills: { 'Dragon Attack': 3, Coalescence: 3, Burst: 5 },
+      setSkills: { Gogmapocalypse: 2 },
+      setSkillPoints: { Gogmapocalypse: 4 },
+      conditions: {
+        burst_active: true,
+        coalescence_active: true,
+        monster_enraged: true
+      },
+      weaponType: 'hammer_gunlance_switch_axe_charge_blade',
+      weaponElementType: 'Dragon',
+      weaponElementValue: 630,
+      weaponSharpness: 'White'
+    });
+
+    expect(profile.breakdown.element.uncappedElement).toBeCloseTo(1517.64);
+    expect(profile.breakdown.element.elementCap).toBeCloseTo(1449);
+    expect(profile.breakdown.element.capApplied).toBe(true);
+    expect(profile.breakdown.element.effectiveElement).toBeCloseTo(1449);
+  });
+
+  it('uses base plus 400 when it is higher than 2.3x base', () => {
+    const profile = buildDamageProfile({
+      skills: { 'Fire Attack': 3, Coalescence: 3 },
+      conditions: { coalescence_active: true },
+      weaponType: 'hammer_gunlance_switch_axe_charge_blade',
+      weaponElementType: 'Fire',
+      weaponElementValue: 200,
+      weaponSharpness: 'White'
+    });
+
+    expect(profile.breakdown.element.elementCap).toBe(600);
+    expect(profile.breakdown.element.capApplied).toBe(false);
+  });
+
+  it('models Convert Element dragon attack while active', () => {
+    const profile = buildDamageProfile({
+      skills: { 'Convert Element': 3 },
+      conditions: { convert_element_active: true },
+      weaponElementType: 'Dragon',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+
+    expect(profile.breakdown.element.flatElement).toBe(180);
+    expect(profile.breakdown.element.effectiveElement).toBe(480);
+    expect(profile.breakdown.unmodeledSkills).not.toContain('Convert Element');
+  });
+
+  it.each([
+    ['great_sword_hunting_horn', 100],
+    ['hammer_gunlance_switch_axe_charge_blade', 60],
+    ['other', 60],
+    ['dual_blades', 50],
+    ['ranged', 50]
+  ])('models Elemental Absorption level 3 for %s', (weaponType, expectedFlat) => {
+    const profile = buildDamageProfile({
+      skills: { 'Elemental Absorption': 3 },
+      conditions: { elemental_absorption_active: true },
+      weaponType,
+      weaponElementType: 'Fire',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+
+    const contribution = profile.breakdown.element.skillContributions.find(
+      item => item.skill === 'Elemental Absorption'
+    );
+    expect(profile.breakdown.element.flatElement).toBe(expectedFlat);
+    expect(contribution).toEqual(expect.objectContaining({
+      durationSeconds: 120,
+      cooldownSeconds: 60,
+      active: true
+    }));
+    expect(profile.breakdown.unmodeledSkills).not.toContain('Elemental Absorption');
+  });
+
   it("models Rathalos's Flare as a separate expected fire proc", () => {
     const levelOne = buildDamageProfile({
       setSkills: { "Rathalos's Flare": 1 },
@@ -593,7 +757,7 @@ describe('damage scoring', () => {
     ]));
   });
 
-  it("models Lord's Soul as post raw percent", () => {
+  it("applies Lord's Soul Guts attack increase until Guts triggers", () => {
     const profile = buildDamageProfile({
       skills: {},
       groupSkills: { "Lord's Soul": 1 },
@@ -604,7 +768,74 @@ describe('damage scoring', () => {
 
     expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.05);
     expect(profile.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
-      expect.objectContaining({ skill: 'Guts (Tenacity)', postRawPercent: 0.05 })
+      expect.objectContaining({
+        skill: 'Guts (Tenacity)',
+        sourceSkill: "Lord's Soul",
+        postRawPercent: 0.05,
+        active: true
+      })
+    ]));
+
+    const afterGuts = buildDamageProfile({
+      skills: {},
+      groupSkills: { "Lord's Soul": 1 },
+      groupSkillPoints: { "Lord's Soul": 3 },
+      conditions: { guts_triggered: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'White'
+    });
+
+    expect(afterGuts.breakdown.raw.postRawPercentBonus).toBe(0);
+    expect(afterGuts.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ skill: 'Guts (Tenacity)', postRawPercent: 0, active: false })
+    ]));
+  });
+
+  it('matches the supplied War Cry I attack status capture', () => {
+    const profile = buildDamageProfile({
+      skills: {
+        Agitator: 5,
+        Counterstrike: 3,
+        'Offensive Guard': 3,
+        Burst: 1
+      },
+      setSkills: { "Jin Dahaad's Revolt": 1, "Blangonga's Spirit": 1 },
+      setSkillPoints: { "Jin Dahaad's Revolt": 2, "Blangonga's Spirit": 2 },
+      groupSkills: { "Lord's Soul": 1 },
+      groupSkillPoints: { "Lord's Soul": 3 },
+      conditions: {
+        powercharm: true,
+        food_attack_up: true,
+        monster_enraged: true,
+        counterstrike_active: true,
+        offensive_guard_active: true,
+        burst_active: true,
+        binding_counter_active: true,
+        war_cry_active: true
+      },
+      weaponBaseRaw: 257,
+      weaponSharpness: 'Yellow'
+    });
+
+    expect(profile.breakdown.raw.flatRaw).toBe(76);
+    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.20);
+    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(19);
+    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(418.6);
+  });
+
+  it('models War Cry II as six post-multiplier true raw', () => {
+    const profile = buildDamageProfile({
+      setSkills: { "Blangonga's Spirit": 2 },
+      setSkillPoints: { "Blangonga's Spirit": 4 },
+      conditions: { war_cry_active: true },
+      weaponBaseRaw: 200,
+      weaponSharpness: 'Yellow'
+    });
+
+    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(6);
+    expect(profile.breakdown.raw.effectiveRaw).toBe(206);
+    expect(profile.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ skill: 'War Cry II', flat: 6 })
     ]));
   });
 
@@ -637,11 +868,14 @@ describe('damage scoring', () => {
       weaponSharpness: 'White'
     });
 
-    expect(otherProfile.breakdown.raw.flatRaw).toBe(18);
+    expect(otherProfile.breakdown.raw.flatRaw).toBe(0);
+    expect(otherProfile.breakdown.raw.postMultiplierRawFlat).toBe(18);
     expect(otherProfile.breakdown.element.flatElement).toBe(140);
-    expect(greatSwordProfile.breakdown.raw.flatRaw).toBe(18);
+    expect(greatSwordProfile.breakdown.raw.flatRaw).toBe(0);
+    expect(greatSwordProfile.breakdown.raw.postMultiplierRawFlat).toBe(18);
     expect(greatSwordProfile.breakdown.element.flatElement).toBe(200);
-    expect(rangedProfile.breakdown.raw.flatRaw).toBe(10);
+    expect(rangedProfile.breakdown.raw.flatRaw).toBe(0);
+    expect(rangedProfile.breakdown.raw.postMultiplierRawFlat).toBe(10);
     expect(rangedProfile.breakdown.element.flatElement).toBe(120);
   });
 
