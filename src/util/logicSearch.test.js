@@ -36,4 +36,30 @@ describe('search feasibility and custom decorations', () => {
     expect(response.results[0].decoNames).toContain('Custom Attack Jewel');
     expect(buildSearchCacheKey(params)).not.toBe(buildSearchCacheKey({ ...params, customDecorations: [] }));
   });
+
+  it('completes the reported Burst gunlance-style search', async() => {
+    const response = await searchAndSpeed({
+      skills: {
+        'Attack Boost': 5,
+        Artillery: 3,
+        'Offensive Guard': 3,
+        'Load Shells': 2,
+        Burst: 5
+      },
+      weaponSlots: [3, 3, 3],
+      weaponBaseRaw: 100,
+      weaponElementType: 'None',
+      weaponElementValue: 100,
+      weaponSharpness: 'White',
+      groupSkillBonus: "Lord's Soul",
+      limit: 100
+    });
+
+    expect(response).toEqual(expect.objectContaining({
+      results: expect.any(Array),
+      seconds: expect.any(Number),
+      profile: expect.any(Object)
+    }));
+    expect(() => JSON.parse(JSON.stringify(response))).not.toThrow();
+  }, 20000);
 });
