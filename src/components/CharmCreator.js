@@ -4,6 +4,11 @@ import SKILLS from "../data/compact/skills.json";
 import RULES from "../data/talisman-generator/rules.json";
 import { generateTalismans, hasTalismanGeneratorRules } from "../util/talismanGenerator";
 import { useStorage } from "../hooks/StorageContext";
+import {
+  getCustomTalismanKey,
+  MAX_CUSTOM_TALISMANS,
+  MAX_TALISMAN_NAME_LENGTH
+} from "../util/customTalismans";
 
 const EMPTY_TALISMAN_FORM = {
   name: '',
@@ -500,17 +505,32 @@ const CharmCreator = () => {
       return;
     }
 
-    const name = form.name.trim() || `Custom Talisman ${customTalismans.length + 1}`;
+    if (customTalismans.length >= MAX_CUSTOM_TALISMANS) {
+      window.snackbar?.createSnackbar(`You can save up to ${MAX_CUSTOM_TALISMANS} custom talismans.`, {
+        timeout: 5000
+      });
+      return;
+    }
+
+    const name = (form.name.trim() || `Custom Talisman ${customTalismans.length + 1}`)
+      .slice(0, MAX_TALISMAN_NAME_LENGTH);
     const newTalisman = {
       id: `${Date.now()}-${customTalismans.length}`,
-      name,
+      name: String(name).slice(0, MAX_TALISMAN_NAME_LENGTH),
       skills,
       slots: parseSlots(form.slots),
       weaponSlots: parseSlots(form.weaponSlots)
     };
 
-    updateField('customTalismans', [...customTalismans, newTalisman]);
-    setForm(EMPTY_TALISMAN_FORM);
+    if (customTalismans.some(talisman =>
+      getCustomTalismanKey(talisman) === getCustomTalismanKey(newTalisman))) {
+      window.snackbar?.createSnackbar('That talisman is already saved.', { timeout: 4000 });
+      return;
+    }
+
+    if (updateField('customTalismans', [...customTalismans, newTalisman])) {
+      setForm(EMPTY_TALISMAN_FORM);
+    }
   };
 
   const removeCustomTalisman = id => {
@@ -523,14 +543,27 @@ const CharmCreator = () => {
     const skills = talismanData[1] || {};
     const newTalisman = {
       id: `${Date.now()}-${customTalismans.length}`,
-      name,
+      name: String(name).slice(0, MAX_TALISMAN_NAME_LENGTH),
       skills,
       slots,
       weaponSlots
     };
 
-    updateField('customTalismans', [...customTalismans, newTalisman]);
-    window.snackbar?.createSnackbar(`Added ${name} to custom talismans`, { timeout: 3000 });
+    if (customTalismans.length >= MAX_CUSTOM_TALISMANS) {
+      window.snackbar?.createSnackbar(`You can save up to ${MAX_CUSTOM_TALISMANS} custom talismans.`, {
+        timeout: 5000
+      });
+      return;
+    }
+    if (customTalismans.some(talisman =>
+      getCustomTalismanKey(talisman) === getCustomTalismanKey(newTalisman))) {
+      window.snackbar?.createSnackbar('That talisman is already saved.', { timeout: 4000 });
+      return;
+    }
+
+    if (updateField('customTalismans', [...customTalismans, newTalisman])) {
+      window.snackbar?.createSnackbar(`Added ${name} to custom talismans`, { timeout: 3000 });
+    }
   };
 
   return (
@@ -550,6 +583,8 @@ const CharmCreator = () => {
           label="Talisman Name"
           value={form.name}
           onChange={ev => updateForm('name', ev.target.value)}
+          inputProps={{ maxLength: MAX_TALISMAN_NAME_LENGTH }}
+          helperText={`${form.name.length}/${MAX_TALISMAN_NAME_LENGTH}`}
         />
 
         {normalizedSkillRows.map((row, index) => {

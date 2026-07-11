@@ -6,9 +6,18 @@ import {
     getSetFromUrlParams, saveToLocalStorage, stringToId
 } from "../util/util";
 import SKILL_ID_MAP from '../data/ids/skill-ids.json';
-import { renderToStaticMarkup } from "react-dom/server";
-
+import { normalizeCustomTalismans } from "../util/customTalismans";
 const StorageContext = createContext();
+
+const createSafeMessage = (prefix, highlighted, suffix, color) => {
+    const message = document.createElement('div');
+    message.append(document.createTextNode(prefix));
+    const highlight = document.createElement('span');
+    highlight.textContent = String(highlighted);
+    highlight.style.color = color;
+    message.append(highlight, document.createTextNode(suffix));
+    return message;
+};
 
 const DEFAULTS = {
     // search parameters
@@ -65,6 +74,8 @@ export const StorageProvider = ({ children }) => {
         for (const [fieldName, defaultValue] of Object.entries(DEFAULTS)) {
             tempFields[fieldName] = getFromLocalStorage(fieldName, defaultValue);
         }
+        tempFields.customTalismans = normalizeCustomTalismans(tempFields.customTalismans);
+        saveToLocalStorage('customTalismans', tempFields.customTalismans);
 
         const urlParams = new URLSearchParams(window.location.search);
 
@@ -113,11 +124,9 @@ export const StorageProvider = ({ children }) => {
 
                 saveToLocalStorage('savedSets', tempFields.savedSets);
 
-                const bite = <span>
-                    Added new set to saved sets:<span style={{ color: 'aqua' }}>{` ${sharedSet.name}`}</span>!
-                </span>;
-                const message = document.createElement('div');
-                message.innerHTML = renderToStaticMarkup(bite);
+                const message = createSafeMessage(
+                    'Added new set to saved sets: ', sharedSet.name, '!', 'aqua'
+                );
                 window.snackbar.createSnackbar(message, { timeout: 3000 });
             }
             urlParams.delete("set");
@@ -152,8 +161,12 @@ export const StorageProvider = ({ children }) => {
     const updateField = (name, value) => {
         const tempFields = { ...fields };
         tempFields[name] = value;
-        setFields(tempFields);
-        saveToLocalStorage(name, value);
+        if (saveToLocalStorage(name, value)) {
+            setFields(tempFields);
+            return true;
+        }
+        window.snackbar?.createSnackbar('Unable to save: browser storage is full.', { timeout: 5000 });
+        return false;
     };
 
     const updateMultipleFields = multiple => {
@@ -205,9 +218,7 @@ export const StorageProvider = ({ children }) => {
             }
         }
 
-        const bite = <span>{notifyStr[0]}<span style={{ color: 'skyblue' }}>{name}</span>{notifyStr[1]}</span>;
-        const message = document.createElement('div');
-        message.innerHTML = renderToStaticMarkup(bite);
+        const message = createSafeMessage(notifyStr[0], name, notifyStr[1], 'skyblue');
 
         window.snackbar.createSnackbar(
             message, { timeout: 3000 }
@@ -239,11 +250,9 @@ export const StorageProvider = ({ children }) => {
             }
         }
 
-        const bite = <span>
-            {notifyStr[0]}<span style={{ color: 'crimson' }}>{name}</span>{`${notifyStr[1]} the blacklist`}
-        </span>;
-        const message = document.createElement('div');
-        message.innerHTML = renderToStaticMarkup(bite);
+        const message = createSafeMessage(
+            notifyStr[0], name, `${notifyStr[1]} the blacklist`, 'crimson'
+        );
 
         window.snackbar.createSnackbar(message, { timeout: 3000 });
 

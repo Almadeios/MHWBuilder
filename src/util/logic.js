@@ -47,7 +47,7 @@ export let lastOptimizerProfile = null;
 
 const searchCache = new Map();
 const MAX_SEARCH_CACHE_ENTRIES = 50;
-const SEARCH_CACHE_VERSION = 12;
+const SEARCH_CACHE_VERSION = 13;
 const MAX_COMBO_SEARCH_MS = 12000;
 const talismanScoreCache = new Map();
 const MAX_TALISMAN_SCORE_CACHE_ENTRIES = 2000;
@@ -1979,6 +1979,10 @@ const resultSignature = result => [
     [...result.freeWeaponSlots].sort((a, b) => b - a).join("|")
 ].join("::");
 
+export const mergeUniqueResultGroups = resultGroups => Array.from(new Map(
+    resultGroups.flat().map(result => [resultSignature(result), result])
+).values());
+
 const warnIfEngineMismatch = (oldResults, newResults) => {
     const oldSet = new Set(oldResults.map(resultSignature));
     const newSet = new Set(newResults.map(resultSignature));
@@ -2181,14 +2185,14 @@ export const search = async parameters => {
     const searchLimit = params.findOne ? params.limit : Math.max(params.limit, Math.min(params.limit * 3, 60));
     const maxComboSearchMs = params.maxSearchMs || MAX_COMBO_SEARCH_MS;
     let searchTimedOut = false;
-    const runComboSearch = async(searchGear, setSkills, groupSkills, stageName) => {
+    const runComboSearch = async(searchGear, setSkills, groupSkills, stageName, timeBudget = maxComboSearchMs) => {
         const comboStartTime = performance.now();
         const effectiveCancelToken = { current: false };
         let localTimedOut = false;
         const timeoutId = setTimeout(() => {
             effectiveCancelToken.current = true;
             localTimedOut = true;
-        }, maxComboSearchMs);
+        }, timeBudget);
         const searchRolls = await comboFunc(
             searchGear, params.skills, setSkills, groupSkills, searchLimit,
             params.findOne, effectiveCancelToken, params.optimizationGoal, profile
@@ -2202,23 +2206,37 @@ export const search = async parameters => {
         return searchRolls;
     };
 
-    let rolls = [];
     const opportunisticSeeds = getOpportunisticSetSkillSeeds(params);
-    for (const seed of opportunisticSeeds) {
+    const searchVariants = [
+        {
+            label: 'base',
+            gear,
+            setSkills: params.setSkills,
+            groupSkills: params.groupSkills
+        },
+        ...opportunisticSeeds.map(seed => ({
+            ...seed,
+            gear: buildSearchGear(params, seed.setSkills, seed.groupSkills)
+        }))
+    ];
+    const variantTimeBudget = Math.max(100, Math.floor(maxComboSearchMs / searchVariants.length));
+    const resultGroups = [];
+    for (const variant of searchVariants) {
         stageStartedAt = performance.now();
-        const seededGear = buildSearchGear(params, seed.setSkills, seed.groupSkills);
-        recordOptimizerStage(profile, "seedCandidatePrep", stageStartedAt);
-        const seededRolls = await runComboSearch(seededGear, seed.setSkills, seed.groupSkills, "seedComboSearch");
-        if (seededRolls.length) {
-            profile.engine = `${engineName}+seeded`;
-            profile.seed = seed.label;
-            rolls = seededRolls;
-            break;
-        }
+        const variantRolls = await runComboSearch(
+            variant.gear,
+            variant.setSkills,
+            variant.groupSkills,
+            variant.label === 'base' ? "comboSearch" : "seedComboSearch",
+            variantTimeBudget
+        );
+        resultGroups.push(variantRolls);
     }
-
-    if (!rolls.length) {
-        rolls = await runComboSearch(gear, params.setSkills, params.groupSkills, "comboSearch");
+    let rolls = mergeUniqueResultGroups(resultGroups);
+    if (opportunisticSeeds.length) {
+        profile.engine = `${engineName}+fair-seeds`;
+        profile.seeds = opportunisticSeeds.map(seed => seed.label);
+        profile.seedTimeBudgetMs = variantTimeBudget;
     }
     profile.timedOut = !rolls.length && searchTimedOut;
 

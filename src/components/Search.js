@@ -182,6 +182,12 @@ const Search = () => {
         return params;
     };
 
+    const reloadLatestVersion = () => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('_refresh', Date.now().toString());
+        window.location.replace(url.toString());
+    };
+
     const getResults = event => {
         if (event.ctrlKey) {
             const url = getSearchUrl(fields.skills, fields.slotFilters);
@@ -1192,6 +1198,10 @@ const Search = () => {
                     Bonus improvements
                     {isExploringBonuses ? ` — exploring ${Math.round(bonusProgress)}%` : ''}:
                 </div>
+                <div style={{ color: '#d2c4b8', marginBottom: '0.45em' }}>
+                    Orange recommendations are Set Bonuses; blue recommendations are Group Skills.
+                    Click one to add it to the search.
+                </div>
                 <div className="more-skills" style={{ alignItems: 'flex-start' }}>
                     {Object.entries(bonusImprovements).map(sk => renderMoreSkillBubble(
                         sk,
@@ -1220,9 +1230,9 @@ return (
                     'Set Bonus +1', fields.setSkillBonus, updateSetSkillBonus, SET_SKILLS
                 )}
                 <Button variant="contained" disabled={isGenerating} onClick={getResults}>Search</Button>
-                <Button variant="outlined"
-                    disabled={isGenerating || isExploringBonuses || results.length === 0}
-                    onClick={findImprovements}>Find Improvements</Button>
+                <Button variant="text" size="small" onClick={reloadLatestVersion}>
+                    Refresh App
+                </Button>
                 {isExploringBonuses && <Button variant="outlined" color="error"
                     onClick={stopBonusExploration}>Cancel Bonus Search</Button>}
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
@@ -1237,8 +1247,34 @@ return (
             {isExploringBonuses && <LoadingBar className="loading-bar" value={bonusProgress}
                 variant={bonusProgress ? 'determinate' : 'indeterminate'} />}
             <Results results={results} elapsedSeconds={elapsedSeconds} optimizerProfile={optimizerProfile} />
+            {results.length > 0 && !showMore && !isExploringBonuses && <div
+                className="bonus-recommendation-prompt"
+            >
+                <div>
+                    <strong>Want bonus recommendations?</strong>
+                    <div>
+                        Check which extra skills, Set Bonuses, Group Skills, and free slots are compatible
+                        with these results. You do not need to select a bonus first.
+                    </div>
+                </div>
+                <Button variant="contained" size="small" onClick={findImprovements}>
+                    Explore Recommendations
+                </Button>
+            </div>}
             {searchError && <div className="warn" style={{ marginTop: '0.75em' }}>
-                Search failed: {searchError}
+                <div>Search failed: {searchError}</div>
+                <div style={{ marginTop: '0.5em' }}>
+                    If the app was recently updated, your browser may still be using an older version.
+                </div>
+                <Button
+                    variant="outlined"
+                    color="warning"
+                    size="small"
+                    onClick={reloadLatestVersion}
+                    sx={{ marginTop: '0.5em' }}
+                >
+                    Load latest version
+                </Button>
             </div>}
             {showMore && renderMoreResults()}
         </div>

@@ -644,13 +644,12 @@ input[type=number] {
   flex-wrap: wrap;
   gap: 4px;
 }
-.skill-picker-slot-group {
-  min-width: 0;
-  max-width: 100%;
-  padding: 6px;
-  border: 1px solid rgba(180, 223, 241, 0.16);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.08);
+.custom-slot-filter-group {
+  width: 100%;
+  box-sizing: border-box;
+}
+.custom-slot-filter-group .skill-picker-group-title {
+  color: #55d68b;
 }
 .slot-filter {
   border-radius: 6px;
@@ -666,6 +665,32 @@ input[type=number] {
   font-weight: bold;
   color: #a772a7;
   font-style: italic;
+}
+
+.bonus-recommendation-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(158, 232, 240, 0.42);
+  border-radius: 8px;
+  background: rgba(74, 144, 156, 0.12);
+  color: #d8edf0;
+}
+
+.bonus-recommendation-prompt strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #9ee8f0;
+}
+
+@media (max-width: 700px) {
+  .bonus-recommendation-prompt {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 
 .more-results {

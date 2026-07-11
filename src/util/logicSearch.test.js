@@ -1,6 +1,21 @@
-import { buildSearchCacheKey, searchAndSpeed } from './logic';
+import { buildSearchCacheKey, mergeUniqueResultGroups, searchAndSpeed } from './logic';
 
 describe('search feasibility and custom decorations', () => {
+  it('merges opportunistic result groups without favoring the first group', () => {
+    const result = armorName => ({
+      armorNames: [armorName],
+      decoNames: [],
+      freeSlots: [],
+      freeWeaponSlots: []
+    });
+    const base = result('Base armor');
+    const dahaad = result('Jin Dahaad armor');
+    const other = result('Other set armor');
+
+    expect(mergeUniqueResultGroups([[dahaad, base], [other, base]])).toEqual([dahaad, base, other]);
+    expect(mergeUniqueResultGroups([[other, base], [dahaad, base]])).toEqual([other, base, dahaad]);
+  });
+
   it('proves an unreachable skill target impossible before entering the DFS', async() => {
     const response = await searchAndSpeed({
       skills: { 'Attack Boost': 999 },

@@ -131,6 +131,40 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
         setAllSkills(all);
     }, [searchText]);
 
+    const renderSlotFilters = grouped => {
+        const filters = [1, 2, 3].map(x => {
+            const highlighted = searchText && `${x} slot deco filter`.includes(searchText.toLowerCase());
+            const highlightClass = highlighted ? "highlighted" : "";
+            const blurred = searchText && !highlighted;
+            const whichBlur = hideBlur ? "blurred-gone" : "blurred";
+            const blurredClass = blurred ? whichBlur : "";
+
+            return <div key={`slot-filter-${x}`}
+                className={`skills-search-bubble underline ${highlightClass} ${blurredClass} slot-filter`}
+                title={`Specify how many ${x} slot decos you want to be able to fit into the free slots`}
+                onClick={() => addSlotFilter(x)}>
+                {showIcons && <img
+                    className="skills-search-bubble-icon" src={`images/slot${x}.png`} alt={x} />}
+                <div className="skills-search-bubble-text">
+                    {`${x} Slot Deco Filter`}
+                </div>
+            </div>;
+        });
+
+        if (!grouped) {
+            return <div key="custom-slot-filters" className="slots-filter">{filters}</div>;
+        }
+
+        return <div key="custom-slot-filters" className="skill-picker-group custom-slot-filter-group">
+            <div className="skill-picker-group-title">
+                <span>Custom Deco</span>
+            </div>
+            <div className="skill-picker-group-skills slots-filter">
+                {filters}
+            </div>
+        </div>;
+    };
+
     const renderSkills = (skills, useGroups = true) => {
         const chosen = (chosenSkillNames || []).map(x => x.toLowerCase());
         const visibleSkills = skills.filter(x => !chosen.includes(x.name.toLowerCase()));
@@ -167,6 +201,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
         sortedGroups.forEach((group, index) => {
             columns[index % GROUP_COLUMN_COUNT].push(group);
         });
+        columns[0].push(renderSlotFilters(true));
 
         return <div className="skill-picker-group-columns">
             {columns.map((columnGroups, index) => {
@@ -215,26 +250,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
             expanded ? `skills-search ${searchText ? '' : 'grouped'}` : "skills-search-mini"
         }>
             {renderSkills(allSkills, expanded)}
-            <div className={searchText || !expanded ? "slots-filter" : "slots-filter skill-picker-slot-group"}>
-                {[1, 2, 3].map(x => {
-                    const highlighted = searchText && `${x} slot deco filter`.includes(searchText.toLowerCase());
-                    const highlightClass = highlighted ? "highlighted" : "";
-                    const blurred = searchText && !highlighted;
-                    const whichBlur = hideBlur ? "blurred-gone" : "blurred";
-                    const blurredClass = blurred ? whichBlur : "";
-
-                    return <div key={`slot-filter-${x}`}
-                        className={`skills-search-bubble underline ${highlightClass} ${blurredClass} slot-filter`}
-                        title={`Specify how many ${x} slot decos you want to be able to fit into the free slots`}
-                        onClick={() => addSlotFilter(x)}>
-                        {showIcons && <img
-                            className="skills-search-bubble-icon" src={`images/slot${x}.png`} alt={x} />}
-                        <div className={`skills-search-bubble-text`}>
-                            {`${x} Slot Deco Filter`}
-                        </div>
-                    </div>;
-                })}
-            </div>
+            {(searchText || !expanded) && renderSlotFilters(false)}
         </div>
     </div>;
 };

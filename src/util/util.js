@@ -413,7 +413,13 @@ export const getArmorDefenseFromNames = theNames => {
 
 export const saveToLocalStorage = (key, data) => {
     const updatedData = JSON.stringify(data);
-    localStorage.setItem(key, updatedData);
+    try {
+        localStorage.setItem(key, updatedData);
+        return true;
+    } catch (error) {
+        console.error(`Unable to save localStorage key: "${key}":`, error);
+        return false;
+    }
 };
 export const getFromLocalStorage = (key, defaultValue = null) => {
     const data = localStorage.getItem(key);

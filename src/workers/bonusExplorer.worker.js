@@ -8,6 +8,7 @@ import ARMS from '../data/compact/arms.json';
 import WAIST from '../data/compact/waist.json';
 import LEGS from '../data/compact/legs.json';
 import { _x } from '../util/armorAccessor';
+import { getUnsearchedSetBonusLevels } from '../util/bonusRecommendation';
 
 const ARMOR_DATA_BY_SLOT = [HEAD, CHEST, ARMS, WAIST, LEGS];
 const SEARCH_BUDGET_MS = 1800;
@@ -34,14 +35,13 @@ const getCandidates = params => {
     const setCandidates = Object.entries(SET_SKILLS).flatMap(([skillName, data]) => {
         const currentLevel = params.setSkills?.[skillName] || 0;
         const maxLevel = data?.[2]?.length || 1;
-        if (currentLevel >= maxLevel) { return []; }
-        return [{
+        return getUnsearchedSetBonusLevels(currentLevel, maxLevel).map(level => ({
             skillName,
             sourceType: 'set',
-            level: currentLevel + 1,
+            level,
             score: scoreCandidate(skillName, 'set', params.skills) +
                 (params.setSkillBonus === skillName ? 1000000 : 0)
-        }];
+        }));
     });
     const groupCandidates = Object.keys(GROUP_SKILLS).flatMap(skillName => {
         if (params.groupSkills?.[skillName]) { return []; }
@@ -56,15 +56,20 @@ const getCandidates = params => {
 
     return [...setCandidates, ...groupCandidates]
         .filter(candidate => candidate.score > 0)
-        .sort((a, b) => b.score - a.score || a.skillName.localeCompare(b.skillName));
+        .sort((a, b) => b.score - a.score || a.skillName.localeCompare(b.skillName) || b.level - a.level);
 };
 
 self.onmessage = async event => {
     const params = event.data;
     const candidates = getCandidates(params);
+    const foundSetSkills = new Set();
 
     for (let index = 0; index < candidates.length; index++) {
         const candidate = candidates[index];
+        if (candidate.sourceType === 'set' && foundSetSkills.has(candidate.skillName)) {
+            self.postMessage({ type: 'progress', completed: index + 1, total: candidates.length });
+            continue;
+        }
         const setSkills = candidate.sourceType === 'set' ?
             { ...params.setSkills, [candidate.skillName]: candidate.level } : params.setSkills;
         const groupSkills = candidate.sourceType === 'group' ?
@@ -80,6 +85,9 @@ self.onmessage = async event => {
                 maxSearchMs: SEARCH_BUDGET_MS
             });
             if (response.results?.length) {
+                if (candidate.sourceType === 'set') {
+                    foundSetSkills.add(candidate.skillName);
+                }
                 self.postMessage({ type: 'result', candidate });
             }
         } catch (error) {
