@@ -91,6 +91,26 @@ const isTemplateCompatible = (groupIds, selectedSkills) => {
   return assignSkill(0, new Set());
 };
 
+const isTemplateRollCompatible = (groupIds, selectedSkills) => {
+  const skills = Object.entries(selectedSkills);
+  const groups = groupIds.map(getGroupEntries);
+  const assignSkill = (index, usedGroups) => {
+    if (index >= skills.length) { return true; }
+    const [skillName, level] = skills[index];
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+      if (usedGroups.has(groupIndex)) { continue; }
+      const entry = groups[groupIndex].find(candidate => candidate.skill === skillName);
+      if (!entry || entry.maxLevel < level) { continue; }
+      usedGroups.add(groupIndex);
+      if (assignSkill(index + 1, usedGroups)) { return true; }
+      usedGroups.delete(groupIndex);
+    }
+    return false;
+  };
+
+  return assignSkill(0, new Set());
+};
+
 const getCompatibleTemplates = (selectedSkills, armorSlots = null, weaponSlots = null) => {
   const chosenSkills = selectedSkills.filter(Boolean);
   return RULES.templates.filter(template => {
@@ -429,35 +449,19 @@ const CharmCreator = () => {
     const skills = getFormSkills();
     if (Object.keys(skills).length === 0) { return false; }
     
-    const skillNames = Object.keys(skills);
     const manualSlots = parseSlots(form.slots);
     const manualWeaponSlots = parseSlots(form.weaponSlots);
     
     // Check if this skill + slot combo matches any template
     const validTemplates = compatibleTemplates.filter(template => {
+      if (!isTemplateRollCompatible(getTemplateGroups(template), skills)) { return false; }
       return (template.slotCombos || []).some(combo => {
         const { armorSlots: comboArmor, weaponSlots: comboWeapon } = splitSlotCombo(combo);
         return slotsMatch(comboArmor, manualSlots) && slotsMatch(comboWeapon, manualWeaponSlots);
       });
     });
     
-    if (validTemplates.length === 0) { return false; }
-    
-    // Also verify via generateTalismans for extra safety
-    const generated = generateTalismans(skills);
-    const skillsMatch = (a, b) => {
-      const aKeys = Object.keys(a);
-      const bKeys = Object.keys(b);
-      if (aKeys.length !== bKeys.length) { return false; }
-      return aKeys.every(key => b[key] === a[key]);
-    };
-
-    return Object.values(generated).some(talisman => {
-      const [_, generatedSkills, __, generatedSlots, ___, ____, _____, _______, generatedWeaponSlots] = talisman;
-      return skillsMatch(generatedSkills, skills) &&
-        slotsMatch(generatedSlots, manualSlots) &&
-        slotsMatch(generatedWeaponSlots || [], manualWeaponSlots);
-    });
+    return validTemplates.length > 0;
   };
 
   const addCustomTalisman = () => {

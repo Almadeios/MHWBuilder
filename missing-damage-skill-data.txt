@@ -1,0 +1,229 @@
+MHW BUILDER - DATOS DE SKILLS PENDIENTES
+========================================
+
+Objetivo
+--------
+Completar la informacion necesaria para modelar y rankear correctamente cada
+skill. Si un efecto cambia por nivel, arma o condicion, incluir una tabla.
+
+Formato recomendado
+-------------------
+Nombre:
+Niveles:
+Condicion de activacion:
+Duracion:
+Cooldown:
+Ataque plano:
+Multiplicador de ataque/dano:
+Afinidad:
+Elemento plano/multiplicador:
+Status plano/multiplicador:
+Probabilidad/frecuencia del proc:
+Partes fija, raw y elemental del proc:
+Variacion por tipo de arma/ataque:
+Notas sobre hitzones, sharpness o limites:
+Fuente/captura:
+
+
+1. SKILLS NORMALES OFENSIVOS
+============================
+
+[ ] Critical Element
+    Falta: multiplicador elemental por nivel al realizar un golpe critico.
+
+[ ] Critical Status
+    Falta: multiplicador de acumulacion de poison/paralysis/sleep/blast por nivel.
+
+[ ] Charge Master
+    Falta: multiplicadores de elemento y status por nivel y ataques compatibles.
+
+[ ] Punishing Draw
+    Falta: ataque adicional y stun por nivel.
+
+[ ] Airborne
+    Falta: multiplicador de dano por nivel y ataques considerados aereos.
+
+[ ] Artillery
+    Falta: multiplicador por nivel y tablas separadas para shelling, Wyvern's Fire,
+    phials de Charge Blade y Sticky Ammo.
+
+[ ] Charge Up
+    Falta: multiplicador de dano y stun por nivel para Hammer.
+
+[ ] Bludgeoner
+    Falta: multiplicador por nivel y colores de sharpness que lo activan.
+
+[ ] Mind's Eye
+    Falta: multiplicador contra partes duras por nivel y condicion exacta de hitzone.
+
+[ ] Normal Shots
+    Falta: multiplicador por nivel y ataques/ammo afectados.
+
+[ ] Piercing Shots
+    Falta: multiplicador por nivel y ataques/ammo afectados.
+
+[ ] Spread/Power Shots
+    Falta: multiplicador por nivel y ataques/ammo afectados.
+
+[ ] Rapid Fire Up
+    Falta: multiplicador por nivel y tipos de rapid fire afectados.
+
+[ ] Special Ammo Boost
+    Falta: multiplicador por nivel para cada special ammo/ataque compatible.
+
+[ ] Tetrad Shot
+    Falta: afinidad y ataque por nivel, numero de disparo y reglas de reinicio.
+
+[ ] Slicked Blade
+    Falta: afinidad por nivel para wet, bubbleblight y ambos efectos combinados.
+
+[ ] Power Stone
+    Falta: ataque por nivel, duracion y condicion/cooldown.
+
+[ ] Crackling Cornpopper
+    Falta: shelling y fire attack por nivel mientras el gauge esta rojo.
+
+[ ] Grillmaster
+    Falta: ataque, duracion y variacion segun resultado al cocinar.
+
+[ ] Darkside
+    Falta: ataque por nivel, duracion, ataques compatibles y self-damage.
+
+[ ] Synergy
+    Falta: afinidad por nivel, duracion y condicion exacta.
+
+[ ] Self-Improvement
+    Falta: progresion de ataque/defensa por nivel y por tiempo de mision.
+
+[ ] Rice Ball
+    Falta: multiplicador de ataque y stun para acciones de Akuma.
+
+[ ] Whiteflame Torrent
+    Falta: probabilidad, cooldown y componentes de dano del impacto adicional.
+
+[ ] Flayer
+    Falta: buildup, dano no elemental del proc, cooldown y ataques excluidos.
+
+[ ] Partbreaker
+    Falta: multiplicador de Focus Strike al destruir una herida por nivel.
+
+[ ] Convert Thunder Resistance
+    Falta: formula que convierte thunder resistance en elemento del arma.
+
+[ ] Convert Element
+    Falta: elemento otorgado, niveles, duracion y cooldown.
+
+[ ] Elemental Absorption
+    Falta: efectos por elemento recibido, niveles, duracion y cooldown.
+
+
+2. SHARPNESS Y UPTIME
+=====================
+
+[ ] Handicraft
+    Falta: longitud agregada al gauge por nivel y datos de sharpness del arma.
+
+[ ] Razor Sharp
+    Falta: probabilidad de no consumir sharpness por nivel.
+
+[ ] Protective Polish
+    Falta: duracion por nivel.
+
+[ ] Master's Touch
+    Falta: probabilidad de no consumir sharpness en criticos por nivel.
+
+[ ] Bladescale Honing
+    Falta: sharpness recuperado, duracion/cooldown y probabilidad por nivel.
+
+Datos generales necesarios para rankear sharpness:
+[ ] Golpes por minuto o perfil de consumo por tipo de arma.
+[ ] Segmentos y longitud de sharpness del arma.
+[ ] Frecuencia estimada de afilado.
+
+
+3. SET BONUSES
+==============
+
+[ ] Nu Udra's Mutiny / Bad Blood
+    Conocido: requiere Resentment; cooldown aproximado de 2-3 segundos.
+    Conocido en training dummy:
+      Bad Blood I: hard 9, weak 36, wound 45.
+      Bad Blood II: hard 17, weak 68, wound 85.
+    Falta: valor base/formula exacta antes del raw hitzone y cooldown exacto.
+
+[ ] Leviathan's Fury / Azure Bolt - proc de thunder
+    Conocido:
+      Ambos niveles: +15 afinidad.
+      Nivel I: 20 s; nivel II: 30 s; cooldown aproximado 30 s.
+      Proc I: 30 fijo + 70 thunder.
+      Proc II: 60 fijo + 200 thunder.
+    Falta: formula exacta de Thunder Attack sobre el proc, buildup necesario,
+    ataques excluidos y tratamiento del hitzone thunder.
+
+[ ] Blangonga's Spirit / War Cry
+    Falta: ataque por nivel, duracion y si afecta al usuario igual que aliados.
+
+[ ] Rey Dau's Voltage / Thunderous Roar
+    Falta: extension de duracion de Latent Power por nivel.
+
+[ ] Seregios's Tenacity / Razer's Edge
+    Falta: extension de Adrenaline Rush por nivel y maximo de refrescos.
+
+[ ] Soul of the Dark Knight / Dark Arts / The Blackest Knight
+    Falta: elemento por nivel con recoverable damage y multiplicador de GS Lv.3
+    charged slashes, incluidos ataques compatibles.
+
+[ ] Omega Resonance / Resonance
+    Falta: ataque/afinidad de Local y Remote Resonance, condiciones, duraciones
+    y patron de alternancia.
+
+
+4. GROUP SKILLS OFENSIVOS
+=========================
+
+[ ] Buttery Leathercraft / Affinity Sliding
+    Falta: afinidad y duracion tras deslizarse.
+
+[ ] Fortifying Pelt / Fortify
+    Falta: ataque y defensa tras cada faint, duracion y maximo acumulable.
+
+[ ] Lord's Favor / Inspiration
+    Falta: ataque, duracion y efectos que pueden activarlo.
+
+[ ] Lord's Fury / Resuscitate
+    Falta: ataque mientras existe una ailment y condiciones compatibles.
+
+[ ] Master of the Fist / Satsui No Hado
+    Falta: multiplicadores de acciones especiales y Offset attacks.
+
+
+5. STATUS Y DATOS GLOBALES
+==========================
+
+Para convertir status y procs en DPS comparable faltan:
+
+[ ] Hitzones raw y elementales configurables del monstruo.
+[ ] Multiplicadores de wound/front/back o parte seleccionada.
+[ ] Ataques o impactos por segundo para cada arma/rotacion.
+[ ] Motion values o una rotacion de referencia por arma.
+[ ] Umbral inicial e incremento de poison/paralysis/sleep/blast del monstruo.
+[ ] Dano/duracion de cada activacion de status.
+[ ] Elemental cap y orden exacto de aplicacion de flat y porcentajes.
+
+
+6. YA MODELADO - NO HACE FALTA ENVIAR DE NUEVO
+================================================
+
+- Attack Boost, Critical Eye, Critical Boost.
+- Weakness Exploit, Agitator, Maximum Might, Latent Power.
+- Peak Performance, Resentment, Adrenaline Rush, Counterstrike, Foray.
+- Offensive Guard, Critical Draw, Antivirus, Burst.
+- Fire/Water/Thunder/Ice/Dragon Attack.
+- Coalescence (multiplicadores por grupo de arma).
+- Heroics y Ambush.
+- Gore Magala's Tyranny, Ebony Odogaron's Power, Xu Wu's Vigor.
+- Jin Dahaad's Revolt, Gogmapocalypse.
+- Rathalos's Flare (proc aproximado 33%).
+- Doshaguma's Might / Powerhouse.
+- Leviathan's Fury / Azure Bolt: afinidad y duracion (proc pendiente).
+- Lord's Soul / Guts (Tenacity).

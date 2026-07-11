@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import SkillsPicker from "../components/SkillsPicker";
-import { searchAndSpeed, test as testArmorSet } from "../util/logic";
+import { searchAndSpeed } from "../util/logic";
 import SKILLS from '../data/compact/skills.json';
 import GROUP_SKILLS from '../data/compact/group-skills.json';
 import SET_SKILLS from '../data/compact/set-skills.json';
@@ -8,11 +8,6 @@ import SKILLS_DB from '../data/detailed/skills.json';
 import SET_SKILLS_DB from '../data/detailed/set-skills.json';
 import GROUP_SKILLS_DB from '../data/detailed/group-skills.json';
 import DECORATIONS from '../data/compact/decoration.json';
-import HEAD from '../data/compact/head.json';
-import CHEST from '../data/compact/chest.json';
-import ARMS from '../data/compact/arms.json';
-import WAIST from '../data/compact/waist.json';
-import LEGS from '../data/compact/legs.json';
 import {
     getSearchUrl, generateStyle,
     generateWikiString, getMaxLevel, getSkillPopup,
@@ -25,7 +20,6 @@ import ArrowLeft from '@mui/icons-material/ArrowBackIos';
 import Delete from '@mui/icons-material/DeleteForever';
 import styled from "styled-components";
 import { getInclusiveRemainingSlots, getSearchParameters, isEmpty } from "../util/tools";
-import { _x } from "../util/armorAccessor";
 import {
     Accordion,
     AccordionDetails,
@@ -61,7 +55,8 @@ const WEAPON_SLOT_OPTIONS = [];
 const SHARPNESS_OPTIONS = ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'White', 'Purple'];
 const WEAPON_TYPE_OPTIONS = [
     { value: 'other', label: 'Other' },
-    { value: 'great_sword_hunting_horn', label: 'GS / HH' },
+  { value: 'great_sword_hunting_horn', label: 'GS / HH' },
+  { value: 'hammer_gunlance_switch_axe_charge_blade', label: 'Hammer / GL / SA / CB' },
     { value: 'dual_blades', label: 'Dual Blades' },
     { value: 'ranged', label: 'Ranged' }
 ];
@@ -73,38 +68,6 @@ const OPTIMIZATION_GOALS = [
     { value: 'highest_affinity', label: 'Highest Affinity' },
     { value: 'balanced', label: 'Balanced' }
 ];
-const BONUS_PROBE_LIMIT = 8;
-const BONUS_PROBE_MS = 6000;
-const SKILL_LEVEL_PROBE_LIMIT = 10;
-const SKILL_LEVEL_PROBE_MS = 6000;
-const PROBE_SEARCH_MS = 1800;
-const BONUS_PROBE_PRIORITY = [
-    "Jin Dahaad's Revolt",
-    "Rathalos's Flare",
-    "Ebony Odogaron's Power",
-    "Gore Magala's Tyranny",
-    "Gogmapocalypse",
-    "Xu Wu's Vigor",
-    "Fulgur Anjanath's Will"
-];
-const SKILL_PROBE_PRIORITY = [
-    'Antivirus',
-    'Earplugs',
-    'Agitator',
-    'Attack Boost',
-    'Weakness Exploit',
-    'Critical Boost',
-    'Maximum Might',
-    'Burst',
-    'Dragon Attack',
-    'Focus',
-    'Rapid Morph',
-    'Load Shells',
-    'Offensive Guard',
-    'Counterstrike',
-    'Coalescence'
-];
-const ARMOR_DATA_BY_SLOT = [HEAD, CHEST, ARMS, WAIST, LEGS];
 for (let a = 0; a <= 3; a++) {
     for (let b = 0; b <= a; b++) {
         for (let c = 0; c <= b; c++) {
@@ -124,6 +87,11 @@ const Search = () => {
     const [moreElapsedSeconds, setMoreElapsedSeconds] = useState(-1);
     const [loadProgress, setLoadProgress] = useState(0);
     const [optimizerProfile, setOptimizerProfile] = useState(null);
+    const bonusWorkerRef = useRef(null);
+    const bonusStartedAtRef = useRef(0);
+    const [isExploringBonuses, setIsExploringBonuses] = useState(false);
+    const [bonusProgress, setBonusProgress] = useState(0);
+    const [bonusRoutes, setBonusRoutes] = useState([]);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [showConditions, setShowConditions] = useState(false);
@@ -140,7 +108,14 @@ const Search = () => {
         }
     }, [isGenerating]);
 
+    useEffect(() => () => bonusWorkerRef.current?.terminate(), []);
+
     const prepareSearch = ({ resetElapsed = true } = {}) => {
+        bonusWorkerRef.current?.terminate();
+        bonusWorkerRef.current = null;
+        setIsExploringBonuses(false);
+        setBonusProgress(0);
+        setBonusRoutes([]);
         if (resetElapsed) {
             setElapsedSeconds(-1);
         }
@@ -242,8 +217,8 @@ const Search = () => {
         setShowMore(false);
         updateField('searchedSkills', fields.skills);
         updateField('lastParams', params);
-        // Find multiple results but cap at 20 valid builds
-        params.limit = 20;
+        // Find multiple results but cap at 100 valid builds
+        params.limit = 100;
         params.findOne = false;
         // console.log('params', params);
         const cache = searchAndSpeed(params, same);
@@ -265,11 +240,6 @@ const Search = () => {
 
     const canUseDecoForCurrentElement = decoSkills => {
         return !Object.keys(decoSkills || {}).some(isOffElementSkill);
-    };
-
-    const hasMatchingSlot = (slotsBySize, decoSize) => {
-        return [decoSize, decoSize + 1, decoSize + 2]
-            .some(slotSize => (slotsBySize[slotSize] || 0) > 0);
     };
 
     const addSocketableSkill = (nextMoreResults, skillName, level, slotType, searchedLevel = 0) => {
@@ -356,30 +326,75 @@ const Search = () => {
         });
     };
 
+    const getMaximumDecoPoints = (slotsBySize, candidates, usedDecos, decoInventory) => {
+        const slots = Object.entries(slotsBySize || {})
+            .flatMap(([size, amount]) => Array(amount).fill(Number(size)))
+            .sort((a, b) => b - a);
+        if (!slots.length || !candidates.length) { return 0; }
+
+        const limits = candidates.map(candidate => {
+            if (!Object.prototype.hasOwnProperty.call(decoInventory, candidate.name)) { return slots.length; }
+            return Math.max(0, decoInventory[candidate.name] - (usedDecos[candidate.name] || 0));
+        });
+        const memo = new Map();
+        const visit = (slotIndex, remaining) => {
+            if (slotIndex >= slots.length) { return 0; }
+            const key = `${slotIndex}:${remaining.join(',')}`;
+            if (memo.has(key)) { return memo.get(key); }
+
+            let best = visit(slotIndex + 1, remaining);
+            candidates.forEach((candidate, index) => {
+                if (remaining[index] <= 0 || candidate.size > slots[slotIndex]) { return; }
+                const nextRemaining = [...remaining];
+                nextRemaining[index]--;
+                best = Math.max(best, candidate.level + visit(slotIndex + 1, nextRemaining));
+            });
+            memo.set(key, best);
+            return best;
+        };
+
+        return visit(0, limits);
+    };
+
     const collectSocketableSkills = (result, freeSlots, searchedSkills, nextMoreResults) => {
         const currentSkills = result.skills || {};
         const decoInventory = fields.decoInventory || {};
+        const usedDecos = (result.decoNames || []).reduce((counts, decoName) => ({
+            ...counts,
+            [decoName]: (counts[decoName] || 0) + 1
+        }), {});
+        const candidatesBySkill = {};
 
         Object.entries(DECORATIONS).forEach(([decoName, [decoType, decoSkills, decoSize]]) => {
-            if (Object.prototype.hasOwnProperty.call(decoInventory, decoName) && decoInventory[decoName] <= 0) {
-                return;
-            }
             if (!canUseDecoForCurrentElement(decoSkills)) { return; }
-
-            const slotPool = decoType === 'weapon' ? freeSlots.weapon : freeSlots.armor;
-            if (!hasMatchingSlot(slotPool, decoSize)) { return; }
-
             Object.entries(decoSkills).forEach(([skillName, level]) => {
                 if (!SKILLS[skillName] || isOffElementSkill(skillName)) { return; }
-
-                const maxSkillLevel = SKILLS[skillName];
-                const searchedLevel = searchedSkills[skillName] || 0;
-                const currentLevel = currentSkills[skillName] || searchedLevel;
-                const addableLevel = Math.min(maxSkillLevel, currentLevel + level);
-                if (addableLevel <= searchedLevel) { return; }
-
-                addSocketableSkill(nextMoreResults, skillName, addableLevel, decoType, searchedLevel);
+                candidatesBySkill[skillName] ??= { armor: [], weapon: [] };
+                candidatesBySkill[skillName][decoType].push({
+                    name: decoName,
+                    size: decoSize,
+                    level
+                });
             });
+        });
+
+        Object.entries(candidatesBySkill).forEach(([skillName, candidates]) => {
+            const searchedLevel = searchedSkills[skillName] || 0;
+            const currentLevel = currentSkills[skillName] || searchedLevel;
+            const armorPoints = getMaximumDecoPoints(
+                freeSlots.armor, candidates.armor, usedDecos, decoInventory
+            );
+            const weaponPoints = getMaximumDecoPoints(
+                freeSlots.weapon, candidates.weapon, usedDecos, decoInventory
+            );
+            const level = Math.min(SKILLS[skillName], currentLevel + armorPoints + weaponPoints);
+            if (level <= searchedLevel) { return; }
+            if (armorPoints > 0) {
+                addSocketableSkill(nextMoreResults, skillName, level, 'armor', searchedLevel);
+            }
+            if (weaponPoints > 0) {
+                addSocketableSkill(nextMoreResults, skillName, level, 'weapon', searchedLevel);
+            }
         });
     };
 
@@ -435,258 +450,16 @@ const Search = () => {
         Object.entries(skills || {}).filter(([skillName]) => GROUP_SKILLS[skillName])
     );
 
-    const getBonusProbePriority = skillName => {
-        const index = BONUS_PROBE_PRIORITY.indexOf(skillName);
-        return index === -1 ? 0 : BONUS_PROBE_PRIORITY.length - index;
-    };
-
-    const scoreBonusCandidate = (skillName, sourceType, searchedSkills) => {
-        const skillAccessor = sourceType === 'set' ? _x.setSkills : _x.groupSkills;
-        let score = getBonusProbePriority(skillName) * 100;
-
-        ARMOR_DATA_BY_SLOT.forEach(slotData => {
-            Object.values(slotData).forEach(piece => {
-                if (!skillAccessor(piece)?.includes(skillName)) { return; }
-
-                const pieceSkills = _x.skills(piece) || {};
-                const matchingSkillScore = Object.entries(pieceSkills).reduce((total, [name, level]) => {
-                    return total + (searchedSkills[name] ? level * 10 : 0);
-                }, 0);
-                const slotScore = (_x.slots(piece) || []).reduce((total, slot) => total + slot, 0);
-                score += matchingSkillScore + slotScore;
-            });
-        });
-
-        return score;
-    };
-
-    const getBonusProbeCandidates = (searchedSkills, searchedSetSkills, searchedGroupSkills) => {
-        const setCandidates = Object.keys(SET_SKILLS)
-            .filter(skillName => !searchedSetSkills[skillName])
-            .map(skillName => ({
-                skillName,
-                sourceType: 'set',
-                level: 1,
-                score: scoreBonusCandidate(skillName, 'set', searchedSkills)
-            }));
-        const groupCandidates = Object.keys(GROUP_SKILLS)
-            .filter(skillName => !searchedGroupSkills[skillName])
-            .map(skillName => ({
-                skillName,
-                sourceType: 'group',
-                level: 1,
-                score: scoreBonusCandidate(skillName, 'group', searchedSkills)
-            }));
-
-        return [...setCandidates, ...groupCandidates]
-            .filter(candidate => candidate.score > 0)
-            .sort((a, b) => b.score - a.score || a.skillName.localeCompare(b.skillName))
-            .slice(0, BONUS_PROBE_LIMIT);
-    };
-
-    const collectSearchProbeBonusSkills = async(
-        searchedSkills,
-        searchedSetSkills,
-        searchedGroupSkills,
-        nextMoreResults,
-        started
-    ) => {
-        const baseParams = fields.lastParams || getSearchParameters({
-            skills: searchedSkills,
-            setSkills: searchedSetSkills,
-            groupSkills: searchedGroupSkills,
-            slotFilters: fields.slotFilters,
-            weaponSlots: fields.weaponSlots,
-            weaponBaseRaw: fields.weaponBaseRaw,
-            weaponBaseAffinity: fields.weaponBaseAffinity,
-            weaponType: fields.weaponType,
-            weaponElementType: fields.weaponElementType,
-            weaponElementValue: fields.weaponElementValue,
-            weaponSharpness: fields.weaponSharpness,
-            optimizationGoal: fields.optimizationGoal,
-            setSkillBonus: fields.setSkillBonus,
-            groupSkillBonus: fields.groupSkillBonus,
-            customTalismans: fields.customTalismans,
-            useOnlyOwnedTalismans: fields.useOnlyOwnedTalismans,
-            mandatoryArmor: fields.mandatoryArmor,
-            blacklistedArmor: fields.blacklistedArmor,
-            blacklistedArmorTypes: fields.blacklistedArmorTypes,
-            decoMods: fields.decoInventory
-        });
-
-        for (const candidate of getBonusProbeCandidates(searchedSkills, searchedSetSkills, searchedGroupSkills)) {
-            if (cancelledRef.current || performance.now() - started > BONUS_PROBE_MS) { break; }
-
-            const setSkills = candidate.sourceType === 'set' ?
-                { ...baseParams.setSkills, [candidate.skillName]: candidate.level } :
-                baseParams.setSkills;
-            const groupSkills = candidate.sourceType === 'group' ?
-                { ...baseParams.groupSkills, [candidate.skillName]: candidate.level } :
-                baseParams.groupSkills;
-            const ret = await searchAndSpeed({
-                ...baseParams,
-                setSkills,
-                groupSkills,
-                limit: 1,
-                findOne: true,
-                maxSearchMs: PROBE_SEARCH_MS,
-                cancelToken: cancelledRef
-            });
-
-            if (!ret.results?.length) { continue; }
-
-            const searchedLevel = candidate.sourceType === 'set' ?
-                searchedSetSkills[candidate.skillName] || 0 :
-                searchedGroupSkills[candidate.skillName] || 0;
-            addSocketableSkill(
-                nextMoreResults,
-                candidate.skillName,
-                candidate.level,
-                candidate.sourceType === 'set' ? 'search-set-bonus' : 'search-group-bonus',
-                searchedLevel
-            );
-        }
-    };
-
-    const getSharedProbeParams = (searchedSkills, searchedSetSkills, searchedGroupSkills) => {
-        return fields.lastParams || getSearchParameters({
-            skills: searchedSkills,
-            setSkills: searchedSetSkills,
-            groupSkills: searchedGroupSkills,
-            slotFilters: fields.slotFilters,
-            weaponSlots: fields.weaponSlots,
-            weaponBaseRaw: fields.weaponBaseRaw,
-            weaponBaseAffinity: fields.weaponBaseAffinity,
-            weaponType: fields.weaponType,
-            weaponElementType: fields.weaponElementType,
-            weaponElementValue: fields.weaponElementValue,
-            weaponSharpness: fields.weaponSharpness,
-            optimizationGoal: fields.optimizationGoal,
-            setSkillBonus: fields.setSkillBonus,
-            groupSkillBonus: fields.groupSkillBonus,
-            customTalismans: fields.customTalismans,
-            useOnlyOwnedTalismans: fields.useOnlyOwnedTalismans,
-            mandatoryArmor: fields.mandatoryArmor,
-            blacklistedArmor: fields.blacklistedArmor,
-            blacklistedArmorTypes: fields.blacklistedArmorTypes,
-            decoMods: fields.decoInventory
-        });
-    };
-
-    const getSkillProbePriority = skillName => {
-        const index = SKILL_PROBE_PRIORITY.indexOf(skillName);
-        return index === -1 ? 0 : SKILL_PROBE_PRIORITY.length - index;
-    };
-
-    const getSkillLevelProbeCandidates = (nextMoreResults, searchedSkills) => {
-        return Object.entries(nextMoreResults)
-            .filter(([skillName, skillInfo]) => {
-                if (!SKILLS[skillName] || isOffElementSkill(skillName)) { return false; }
-                const searchedLevel = searchedSkills[skillName] || 0;
-                const currentSuggestedLevel = skillInfo.level || 0;
-                return currentSuggestedLevel > searchedLevel && currentSuggestedLevel < SKILLS[skillName];
-            })
-            .map(([skillName, skillInfo]) => ({
-                skillName,
-                skillInfo,
-                score: getSkillProbePriority(skillName) * 100 + (skillInfo.level || 0) * 10
-            }))
-            .sort((a, b) => b.score - a.score || a.skillName.localeCompare(b.skillName))
-            .slice(0, SKILL_LEVEL_PROBE_LIMIT);
-    };
-
-    const collectSearchProbeSkillLevels = async(
-        searchedSkills,
-        searchedSetSkills,
-        searchedGroupSkills,
-        nextMoreResults,
-        started
-    ) => {
-        const baseParams = getSharedProbeParams(searchedSkills, searchedSetSkills, searchedGroupSkills);
-
-        for (const candidate of getSkillLevelProbeCandidates(nextMoreResults, searchedSkills)) {
-            if (cancelledRef.current || performance.now() - started > SKILL_LEVEL_PROBE_MS) { break; }
-
-            const searchedLevel = searchedSkills[candidate.skillName] || 0;
-            const currentSuggestedLevel = candidate.skillInfo.level || searchedLevel;
-            for (let level = SKILLS[candidate.skillName]; level > currentSuggestedLevel; level--) {
-                if (cancelledRef.current || performance.now() - started > SKILL_LEVEL_PROBE_MS) { break; }
-
-                const ret = await searchAndSpeed({
-                    ...baseParams,
-                    skills: {
-                        ...baseParams.skills,
-                        [candidate.skillName]: level
-                    },
-                    limit: 1,
-                    findOne: true,
-                    maxSearchMs: PROBE_SEARCH_MS,
-                    cancelToken: cancelledRef
-                });
-
-                if (!ret.results?.length) { continue; }
-
-                addSocketableSkill(
-                    nextMoreResults,
-                    candidate.skillName,
-                    level,
-                    'search-skill-path',
-                    searchedLevel
-                );
-                break;
-            }
-        }
-    };
-
-    const validateSocketableSkillsForResult = (result, candidateResults, searchedSkills) => {
-        if (isEmpty(candidateResults)) { return candidateResults; }
-
-        const armorSet = {
-            names: result.armorNames || [],
-            slots: result.slots || [],
-            weaponSlots: result.weaponSlots || [],
-            skills: result.baseSkills || result.skills || {},
-            setSkills: result.setSkills || {},
-            groupSkills: result.groupSkills || {}
-        };
-        const validationParams = {
-            weaponElementType: fields.weaponElementType,
-            weaponElementValue: fields.weaponElementValue
-        };
-        const validatedResults = {};
-
-        Object.entries(candidateResults).forEach(([skillName, skillInfo]) => {
-            if (!SKILLS[skillName]) {
-                validatedResults[skillName] = skillInfo;
-                return;
-            }
-
-            const searchedLevel = searchedSkills[skillName] || 0;
-            const maxTargetLevel = Math.min(skillInfo.level || 0, SKILLS[skillName] || 0);
-
-            for (let targetLevel = maxTargetLevel; targetLevel > searchedLevel; targetLevel--) {
-                const desiredSkills = {
-                    ...searchedSkills,
-                    [skillName]: targetLevel
-                };
-                if (!testArmorSet(armorSet, DECORATIONS, desiredSkills, validationParams)) {
-                    continue;
-                }
-
-                validatedResults[skillName] = {
-                    ...skillInfo,
-                    level: targetLevel,
-                    addedLevel: targetLevel - searchedLevel
-                };
-                break;
-            }
-        });
-
-        return validatedResults;
-    };
-
-    const getMoreSkills = async() => {
+    const getMoreSkills = () => {
         const started = performance.now();
+        if (!results.length) {
+            setMoreResults({});
+            setMoreSlots({});
+            setMoreElapsedSeconds((performance.now() - started) / 1000);
+            setShowMore(true);
+            return;
+        }
+
         const nextMoreResults = {};
         const nextMoreSlots = {
             armor: {},
@@ -745,41 +518,82 @@ const Search = () => {
             collectFlexibleRequiredWeaponBonuses(result, searchedSkills, resultMoreResults);
             collectBonusSelectorSkills(result, searchedSetSkills, searchedGroupSkills, resultMoreResults);
             collectPresentBonusSkills(result, searchedSetSkills, searchedGroupSkills, resultMoreResults);
-            mergeSocketableSkills(
-                nextMoreResults,
-                validateSocketableSkillsForResult(result, resultMoreResults, searchedSkills)
-            );
+            mergeSocketableSkills(nextMoreResults, resultMoreResults);
         });
 
         setMoreResults({ ...nextMoreResults });
         setMoreSlots(nextMoreSlots);
         setMoreElapsedSeconds((performance.now() - started) / 1000);
         setShowMore(true);
+    };
 
-        setIsGenerating(true);
-        cancelledRef.current = false;
-        try {
-            await collectSearchProbeSkillLevels(
-                searchedSkills,
-                searchedSetSkills,
-                searchedGroupSkills,
-                nextMoreResults,
-                started
-            );
-            await collectSearchProbeBonusSkills(
-                searchedSkills,
-                searchedSetSkills,
-                searchedGroupSkills,
-                nextMoreResults,
-                started
-            );
-        } finally {
-            setIsGenerating(false);
-        }
-        setMoreResults(nextMoreResults);
-        setMoreSlots(nextMoreSlots);
-        setMoreElapsedSeconds((performance.now() - started) / 1000);
-        setShowMore(true);
+    const stopBonusExploration = () => {
+        bonusWorkerRef.current?.terminate();
+        bonusWorkerRef.current = null;
+        setIsExploringBonuses(false);
+        setBonusProgress(0);
+    };
+
+    const exploreBonusPaths = () => {
+        if (!results.length || isExploringBonuses) { return; }
+
+        const searchedSkills = getNormalSkillTargets(fields.skills);
+        const searchedSetSkills = getSetSkillTargets(fields.skills);
+        const searchedGroupSkills = getGroupSkillTargets(fields.skills);
+        const params = getSearchParameters({
+            skills: searchedSkills,
+            setSkills: searchedSetSkills,
+            groupSkills: searchedGroupSkills,
+            slotFilters: fields.slotFilters,
+            weaponSlots: fields.weaponSlots,
+            weaponBaseRaw: fields.weaponBaseRaw,
+            weaponBaseAffinity: fields.weaponBaseAffinity,
+            weaponType: fields.weaponType,
+            weaponElementType: fields.weaponElementType,
+            weaponElementValue: fields.weaponElementValue,
+            weaponSharpness: fields.weaponSharpness,
+            optimizationGoal: fields.optimizationGoal,
+            conditions: fields.conditions,
+            setSkillBonus: fields.setSkillBonus,
+            groupSkillBonus: fields.groupSkillBonus,
+            customTalismans: fields.customTalismans,
+            useOnlyOwnedTalismans: fields.useOnlyOwnedTalismans,
+            mandatoryArmor: fields.mandatoryArmor,
+            blacklistedArmor: fields.blacklistedArmor,
+            blacklistedArmorTypes: fields.blacklistedArmorTypes,
+            decoMods: fields.decoInventory
+        });
+        const worker = new Worker(new URL('../workers/bonusExplorer.worker.js', import.meta.url));
+        bonusWorkerRef.current = worker;
+        bonusStartedAtRef.current = performance.now();
+        setIsExploringBonuses(true);
+        setBonusProgress(0);
+
+        worker.onmessage = event => {
+            const message = event.data;
+            if (message.type === 'result') {
+                setBonusRoutes(current => [...current, message.candidate]);
+                setShowMore(true);
+            } else if (message.type === 'progress') {
+                setBonusProgress(message.total ? message.completed / message.total * 100 : 100);
+            } else if (message.type === 'done') {
+                setMoreElapsedSeconds((performance.now() - bonusStartedAtRef.current) / 1000);
+                stopBonusExploration();
+            } else if (message.type === 'candidate-error' && DEBUG) {
+                console.warn(`Bonus exploration failed for ${message.skillName}: ${message.message}`);
+            }
+        };
+        worker.onerror = error => {
+            console.error('Bonus exploration worker failed:', error);
+            stopBonusExploration();
+        };
+        worker.postMessage(params);
+    };
+
+    const findImprovements = () => {
+        getMoreSkills();
+        setBonusRoutes([]);
+        exploreBonusPaths();
     };
 
     const addSkill = (skillName, level) => {
@@ -1208,12 +1022,27 @@ const Search = () => {
         mergeSocketableSkills(groupPathSkillResults, searchGroupBonusSkillResults);
         mergeSocketableSkills(groupPathSkillResults, groupBonusSkillResults);
         mergeSocketableSkills(groupPathSkillResults, presentGroupBonusSkillResults);
-        const hasMoreSkills = !isEmpty(filteredMoreResults);
+        const bonusImprovements = {};
+        [...Object.entries(setPathSkillResults), ...Object.entries(groupPathSkillResults)]
+            .forEach(([skillName, skillInfo]) => {
+                const level = Math.max(bonusImprovements[skillName]?.level || 0, skillInfo.level || 0);
+                bonusImprovements[skillName] = { ...skillInfo, level, addedLevel: level };
+            });
+        bonusRoutes.forEach(candidate => {
+            const level = Math.max(bonusImprovements[candidate.skillName]?.level || 0, candidate.level);
+            bonusImprovements[candidate.skillName] = {
+                level,
+                addedLevel: level,
+                slotTypes: [candidate.sourceType]
+            };
+        });
+        const hasAddableSkills = !isEmpty(weaponSkillResults) || !isEmpty(armorSkillResults);
+        const hasBonusImprovements = !isEmpty(bonusImprovements);
         const hasArmorSlots = !isEmpty(freeSlots.armor);
         const hasWeaponSlots = !isEmpty(freeSlots.weapon);
         const hasMoreSlots = hasArmorSlots || hasWeaponSlots;
-        const displayStr = hasMoreSkills || hasMoreSlots ?
-            `Addable skills from current result slots ${time}:` :
+        const displayStr = hasAddableSkills || hasBonusImprovements || hasMoreSlots ?
+            `Available improvements ${time}:` :
             `No extras found in the current results ${time}.`;
         const renderMoreSkillBubble = ([skillName, skillInfo], descriptionLine, gradientColor) => {
             const maxLevel = skillInfo.level;
@@ -1294,7 +1123,7 @@ const Search = () => {
                     )}
                 </div>
             </div>}
-            {hasMoreSkills && <div>
+            {hasAddableSkills && <div>
                 <div style={{ color: '#d2c4b8', fontWeight: 700, marginBottom: '0.25em' }}>
                     Skills that can be added:
                 </div>
@@ -1322,34 +1151,19 @@ const Search = () => {
                         )}
                     </div>
                 </div>}
-                {!isEmpty(setPathSkillResults) && <div style={{ marginTop: '0.45em' }}>
-                    <div style={{ color: '#f0c49e', fontWeight: 700, marginBottom: '0.2em' }}>
-                        Set bonus paths:
-                    </div>
-                    <div className="more-skills" style={{ alignItems: 'flex-start' }}>
-                        {Object.entries(setPathSkillResults).map(sk =>
-                            renderMoreSkillBubble(
-                                sk,
-                                `A valid path exists with this set bonus added. Click to take this path.`,
-                                "#f0c49e"
-                            )
-                        )}
-                    </div>
-                </div>}
-                {!isEmpty(groupPathSkillResults) && <div style={{ marginTop: '0.45em' }}>
-                    <div style={{ color: '#9ee8f0', fontWeight: 700, marginBottom: '0.2em' }}>
-                        Group skill paths:
-                    </div>
-                    <div className="more-skills" style={{ alignItems: 'flex-start' }}>
-                        {Object.entries(groupPathSkillResults).map(sk =>
-                            renderMoreSkillBubble(
-                                sk,
-                                `A valid path exists with this group skill added. Click to take this path.`,
-                                "#9ee8f0"
-                            )
-                        )}
-                    </div>
-                </div>}
+            </div>}
+            {(isExploringBonuses || hasBonusImprovements) && <div style={{ marginTop: '1em' }}>
+                <div style={{ color: '#f0c49e', fontWeight: 700, marginBottom: '0.4em' }}>
+                    Bonus improvements
+                    {isExploringBonuses ? ` — exploring ${Math.round(bonusProgress)}%` : ''}:
+                </div>
+                <div className="more-skills" style={{ alignItems: 'flex-start' }}>
+                    {Object.entries(bonusImprovements).map(sk => renderMoreSkillBubble(
+                        sk,
+                        `A valid build exists with this bonus. Click to add it to the search.`,
+                        SET_SKILLS[sk[0]] ? '#f0c49e' : '#9ee8f0'
+                    ))}
+                </div>
             </div>}
         </div>;
     };
@@ -1371,13 +1185,19 @@ return (
                     'Set Bonus +1', fields.setSkillBonus, updateSetSkillBonus, SET_SKILLS
                 )}
                 <Button variant="contained" disabled={isGenerating} onClick={getResults}>Search</Button>
-                <Button variant="outlined" disabled={isGenerating} onClick={() => getMoreSkills()}>Extra Skills</Button>
+                <Button variant="outlined"
+                    disabled={isGenerating || isExploringBonuses || results.length === 0}
+                    onClick={findImprovements}>Find Improvements</Button>
+                {isExploringBonuses && <Button variant="outlined" color="error"
+                    onClick={stopBonusExploration}>Cancel Bonus Search</Button>}
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
                     cancelledRef.current = true;
                 }}>Cancel</Button>}
             </div>
             {isGenerating && <LoadingBar className="loading-bar" value={loadProgress}
                 variant={loadProgress ? 'determinate' : 'indeterminate'} />}
+            {isExploringBonuses && <LoadingBar className="loading-bar" value={bonusProgress}
+                variant={bonusProgress ? 'determinate' : 'indeterminate'} />}
             <Results results={results} elapsedSeconds={elapsedSeconds} optimizerProfile={optimizerProfile} />
             {showMore && renderMoreResults()}
         </div>

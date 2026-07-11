@@ -25,7 +25,8 @@ describe('talisman slot formatting', () => {
 
     expect(generated[name]).toBeTruthy();
     expect(generated[name][1]).toEqual({ Artillery: 3, 'Weakness Exploit': 1 });
-    expect(generated[name][8]).toEqual([1, 1, 1]);
+    expect(generated[name][3]).toEqual([1, 1]);
+    expect(generated[name][8]).toEqual([1]);
   });
 
   it('prefers weapon-slot talismans when multiple slot combos are possible', () => {

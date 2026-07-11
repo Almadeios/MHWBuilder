@@ -472,6 +472,115 @@ describe('damage scoring', () => {
     expect(activeProfile.breakdown.unmodeledSkills).not.toContain('Gogmapocalypse');
   });
 
+  it('models Coalescence element multipliers by weapon type while active', () => {
+    const lightProfile = buildDamageProfile({
+      skills: { Coalescence: 3 },
+      conditions: { coalescence_active: true },
+      weaponType: 'other',
+      weaponElementType: 'Fire',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+    const heavyProfile = buildDamageProfile({
+      skills: { Coalescence: 3 },
+      conditions: { coalescence_active: true },
+      weaponType: 'hammer_gunlance_switch_axe_charge_blade',
+      weaponElementType: 'Fire',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+    const inactiveProfile = buildDamageProfile({
+      skills: { Coalescence: 3 },
+      conditions: { coalescence_active: false },
+      weaponType: 'great_sword_hunting_horn',
+      weaponElementType: 'Fire',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+
+    expect(lightProfile.breakdown.element.elementPercentBonus).toBe(0.15);
+    expect(lightProfile.breakdown.element.effectiveElement).toBeCloseTo(345);
+    expect(heavyProfile.breakdown.element.elementPercentBonus).toBe(0.30);
+    expect(heavyProfile.breakdown.element.effectiveElement).toBe(390);
+    expect(inactiveProfile.breakdown.element.elementPercentBonus).toBe(0);
+    expect(inactiveProfile.breakdown.unmodeledSkills).not.toContain('Coalescence');
+    expect(getConditionOptionsForSkills({ Coalescence: 1 })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'coalescence_active', displayLabel: 'Coalescence Active' })
+    ]));
+  });
+
+  it("models Rathalos's Flare as a separate expected fire proc", () => {
+    const levelOne = buildDamageProfile({
+      setSkills: { "Rathalos's Flare": 1 },
+      setSkillPoints: { "Rathalos's Flare": 2 },
+      weaponElementType: 'Fire',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+    const levelTwo = buildDamageProfile({
+      setSkills: { "Rathalos's Flare": 2 },
+      setSkillPoints: { "Rathalos's Flare": 4 },
+      weaponElementType: 'Fire',
+      weaponElementValue: 300,
+      weaponSharpness: 'White'
+    });
+
+    expect(levelOne.breakdown.element.effectiveElement).toBe(300);
+    expect(levelOne.proc_dps).toBeCloseTo(26.4);
+    expect(levelTwo.proc_dps).toBeCloseTo(52.8);
+    expect(levelTwo.breakdown.procs.contributions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        skill: 'Scorcher II',
+        fixedDamage: 40,
+        fireDamage: 120,
+        activationRate: 0.33
+      })
+    ]));
+    expect(levelTwo.breakdown.procs.contributions[0].expectedDamage).toBeCloseTo(52.8);
+    expect(levelTwo.breakdown.unmodeledSkills).not.toContain("Rathalos's Flare");
+  });
+
+  it('models Heroics and Ambush as conditional attack multipliers', () => {
+    const profile = buildDamageProfile({
+      skills: { Heroics: 5, Ambush: 3 },
+      conditions: { heroics_active: true, ambush_active: true },
+      weaponBaseRaw: 100,
+      weaponSharpness: 'White'
+    });
+
+    expect(profile.breakdown.raw.rawPercentBonus).toBe(0.30);
+    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.15);
+    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(149.5);
+    expect(profile.breakdown.unmodeledSkills).not.toEqual(expect.arrayContaining(['Heroics', 'Ambush']));
+  });
+
+  it('models Powerhouse and Azure Bolt behind their activation conditions', () => {
+    const profile = buildDamageProfile({
+      setSkills: { "Doshaguma's Might": 2, "Leviathan's Fury": 2 },
+      setSkillPoints: { "Doshaguma's Might": 4, "Leviathan's Fury": 4 },
+      conditions: { powerhouse_active: true, azure_bolt_active: true },
+      weaponBaseRaw: 100,
+      weaponBaseAffinity: 0,
+      weaponSharpness: 'White'
+    });
+
+    expect(profile.breakdown.raw.flatRaw).toBe(25);
+    expect(profile.final_affinity).toBe(15);
+    expect(profile.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ skill: 'Powerhouse II', flat: 25, active: true })
+    ]));
+    expect(profile.breakdown.affinity.contributions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ skill: 'Azure Bolt II', contribution: 15, active: true })
+    ]));
+    expect(getConditionOptionsForSkills({
+      "Doshaguma's Might": 1,
+      "Leviathan's Fury": 1
+    })).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'powerhouse_active' }),
+      expect.objectContaining({ id: 'azure_bolt_active' })
+    ]));
+  });
+
   it('shows set bonus conditions for Binding Counter and Mutual Hostility', () => {
     const options = getConditionOptionsForSkills({
       "Jin Dahaad's Revolt": 1,

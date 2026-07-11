@@ -665,12 +665,19 @@ const Results = ({
                     <span>DPS {formatFixed(result.damageProfile.expected_dps)}</span>
                     <span>Raw {formatFixed(result.damageProfile.raw_dps)}</span>
                     <span>Element {formatFixed(result.damageProfile.element_dps)}</span>
+                    {result.damageProfile.proc_dps > 0 &&
+                        <span>Procs {formatFixed(result.damageProfile.proc_dps)}</span>}
                     <span>Affinity {breakdown.affinity.final ?? 'N/A'}%</span>
                 </div>
                 {renderBreakdownLine('Raw', rawFormula, `${rawFinal}${statusExcludedDetails}`)}
                 {renderContributionLine('Raw boosts', breakdown.raw.skillContributions, formatRawContribution, 5)}
                 {renderBreakdownLine('Element', elementFormula, elementFinal)}
                 {renderContributionLine('Element boosts', breakdown.element.skillContributions, formatElementContribution, 4)}
+                {breakdown.procs?.contributions?.map(proc => renderBreakdownLine(
+                    proc.skill,
+                    `${proc.fixedDamage} fixed + ${proc.fireDamage} fire per proc`,
+                    `${Math.round(proc.activationRate * 100)}% activation = ${formatFixed(proc.expectedDamage)} expected`
+                ))}
                 {renderBreakdownLine(
                     'Affinity',
                     `${breakdown.affinity.base}% + ${activeAffinityTotal}% = ${breakdown.affinity.final}%`
