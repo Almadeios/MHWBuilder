@@ -2,6 +2,28 @@ import RULES from "../data/talisman-generator/rules.json";
 import SKILL_DB from "../data/compact/skills.json";
 
 const MAX_GENERATED_PER_TEMPLATE = 250;
+const MAX_FILLER_SKILLS_PER_GROUP = 3;
+const FILLER_SKILL_PRIORITY = [
+    'Attack Boost',
+    'Critical Eye',
+    'Agitator',
+    'Weakness Exploit',
+    'Critical Boost',
+    'Normal Shots',
+    'Piercing Shots',
+    'Spread/Power Shots',
+    'Rapid Fire Up',
+    'Opening Shot',
+    'Special Ammo Boost',
+    'Ballistics',
+    'Burst',
+    'Offensive Guard',
+    'Critical Element',
+    'Critical Status'
+];
+const FILLER_PRIORITY_INDEX = Object.fromEntries(
+    FILLER_SKILL_PRIORITY.map((skillName, index) => [skillName, index])
+);
 const RARITY_CHARM_NAMES = {
     'RARE[8]': 'Golden Age Charm'
 };
@@ -87,7 +109,16 @@ const buildName = (rarity, skills) => {
 const chooseRelevantEntries = (entries, desiredSkills, usedSkills) => {
     const desired = entries.filter(entry => desiredSkills[entry.skill] && !usedSkills.has(entry.skill));
     if (desired.length) { return desired; }
-    return [{ skill: null, maxLevel: 0 }];
+
+    const fillers = entries
+        .filter(entry => !usedSkills.has(entry.skill))
+        .sort((a, b) => {
+            const aPriority = FILLER_PRIORITY_INDEX[a.skill] ?? Number.MAX_SAFE_INTEGER;
+            const bPriority = FILLER_PRIORITY_INDEX[b.skill] ?? Number.MAX_SAFE_INTEGER;
+            return aPriority - bPriority || b.maxLevel - a.maxLevel || a.skill.localeCompare(b.skill);
+        })
+        .slice(0, MAX_FILLER_SKILLS_PER_GROUP);
+    return [{ skill: null, maxLevel: 0 }, ...fillers];
 };
 
 const buildSkillRolls = (groupIds, desiredSkills) => {

@@ -36,6 +36,25 @@ describe('talisman slot formatting', () => {
     expect(generatedEntries.some(entry => Array.isArray(entry[8]) && entry[8].length > 0)).toBe(true);
   });
 
+  it.each(['Normal Shots', 'Piercing Shots', 'Rapid Fire Up', 'Spread/Power Shots'])(
+    'generates legal bowgun talismans containing %s',
+    skillName => {
+      const generated = generateTalismans({ [skillName]: 1, 'Critical Boost': 5 });
+      const rolls = Object.values(generated);
+
+      expect(rolls.some(roll => roll[1]?.[skillName] === 1)).toBe(true);
+    }
+  );
+
+  it('fills otherwise empty legal positions with useful complementary skills', () => {
+    const generated = generateTalismans({ 'Critical Boost': 5 });
+    const criticalBoostRolls = Object.values(generated)
+      .filter(roll => roll[1]?.['Critical Boost'] === 1);
+
+    expect(criticalBoostRolls.some(roll => Object.keys(roll[1]).length > 1)).toBe(true);
+    expect(criticalBoostRolls.some(roll => roll[1]?.['Attack Boost'] === 1)).toBe(true);
+  });
+
   it('uses extra talisman data for slot rendering in results', () => {
     const armor = getArmorFromNames(['Custom Charm'], {
       'Custom Charm': {
