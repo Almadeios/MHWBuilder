@@ -11,6 +11,7 @@ import Settings from "./components/Settings";
 import { DEBUG } from "./util/constants";
 import { runAllTests } from "./util/logic";
 import { useStorage } from "./hooks/StorageContext";
+import VersionUpdater from "./components/VersionUpdater";
 // import { compareArmor } from "./util/kiranico";
 
 const App = () => {
@@ -56,6 +57,7 @@ const App = () => {
 
   return (
     <div className="App">
+      <VersionUpdater />
       <Tabs value={tab} onChange={handleTabChange} aria-label="tabs" variant="scrollable"
         allowScrollButtonsMobile className="tab-root">
         {Object.entries(tabs).map(([name, index]) => renderTab(name, index))}

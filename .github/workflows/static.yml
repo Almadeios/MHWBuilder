@@ -34,10 +34,14 @@ jobs:
       - name: Install NPM Packages
         uses: bahmutov/npm-install@v1
 
+      - name: Create deployment version
+        run: printf '{"version":"%s"}\n' "$GITHUB_SHA" > public/version.json
+
       - name: Build project
         run: npm run build
         env:
           CI: "false"
+          REACT_APP_BUILD_SHA: ${{ github.sha }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
