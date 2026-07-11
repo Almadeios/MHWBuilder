@@ -41,7 +41,7 @@
       "last 1 safari version"
     ]
   },
-  "homepage": ".",
+  "homepage": "/MHWBuilder",
   "main": "src/index.js",
   "devDependencies": {
     "@babel/plugin-transform-private-property-in-object": "^7.25.9"
