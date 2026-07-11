@@ -86,6 +86,7 @@ const Search = () => {
     const [moreElapsedSeconds, setMoreElapsedSeconds] = useState(-1);
     const [loadProgress, setLoadProgress] = useState(0);
     const [optimizerProfile, setOptimizerProfile] = useState(null);
+    const [searchError, setSearchError] = useState('');
     const bonusWorkerRef = useRef(null);
     const searchWorkerRef = useRef(null);
     const bonusStartedAtRef = useRef(0);
@@ -128,6 +129,7 @@ const Search = () => {
         setMoreResults({});
         setMoreSlots({});
         setOptimizerProfile(null);
+        setSearchError('');
         setIsGenerating(true);
 
         cancelledRef.current = false;
@@ -238,6 +240,8 @@ const Search = () => {
         worker.onmessage = eventData => {
             if (eventData.data.type === 'error') {
                 console.error("Search worker failed:", eventData.data.message, eventData.data.stack);
+                setSearchError(eventData.data.message || 'Search worker failed.');
+                setElapsedSeconds(0);
                 setIsGenerating(false);
                 searchWorkerRef.current = null;
                 worker.terminate();
@@ -254,6 +258,8 @@ const Search = () => {
         };
         worker.onerror = error => {
             console.error("Search worker failed:", error);
+            setSearchError(error?.message || 'Search worker failed to start.');
+            setElapsedSeconds(0);
             setIsGenerating(false);
             searchWorkerRef.current = null;
             worker.terminate();
@@ -1231,6 +1237,9 @@ return (
             {isExploringBonuses && <LoadingBar className="loading-bar" value={bonusProgress}
                 variant={bonusProgress ? 'determinate' : 'indeterminate'} />}
             <Results results={results} elapsedSeconds={elapsedSeconds} optimizerProfile={optimizerProfile} />
+            {searchError && <div className="warn" style={{ marginTop: '0.75em' }}>
+                Search failed: {searchError}
+            </div>}
             {showMore && renderMoreResults()}
         </div>
     );
