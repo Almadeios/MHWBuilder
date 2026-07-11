@@ -55,6 +55,18 @@ describe('talisman slot formatting', () => {
     expect(criticalBoostRolls.some(roll => roll[1]?.['Attack Boost'] === 1)).toBe(true);
   });
 
+  it('generates the legal Normal Shots and Agitator roll together', () => {
+    const generated = generateTalismans({
+      'Normal Shots': 1,
+      Agitator: 5,
+      'Critical Boost': 5
+    });
+
+    expect(Object.values(generated).some(roll =>
+      roll[1]?.['Normal Shots'] === 1 && roll[1]?.Agitator === 1
+    )).toBe(true);
+  });
+
   it('uses extra talisman data for slot rendering in results', () => {
     const armor = getArmorFromNames(['Custom Charm'], {
       'Custom Charm': {

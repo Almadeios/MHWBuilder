@@ -2,7 +2,7 @@ import RULES from "../data/talisman-generator/rules.json";
 import SKILL_DB from "../data/compact/skills.json";
 
 const MAX_GENERATED_PER_TEMPLATE = 250;
-const MAX_FILLER_SKILLS_PER_GROUP = 3;
+const MAX_FILLER_SKILLS_PER_GROUP = 2;
 const FILLER_SKILL_PRIORITY = [
     'Attack Boost',
     'Critical Eye',

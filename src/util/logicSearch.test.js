@@ -1,6 +1,20 @@
-import { buildSearchCacheKey, mergeUniqueResultGroups, searchAndSpeed } from './logic';
+import {
+  buildSearchCacheKey,
+  getDecorationReplacementCost,
+  mergeUniqueResultGroups,
+  searchAndSpeed
+} from './logic';
 
 describe('search feasibility and custom decorations', () => {
+  it('values expensive shot skills above cheap Critical Boost points on talismans', () => {
+    expect(getDecorationReplacementCost('Normal Shots')).toBe(3);
+    expect(getDecorationReplacementCost('Rapid Fire Up')).toBe(3);
+    expect(getDecorationReplacementCost('Piercing Shots')).toBe(3);
+    expect(getDecorationReplacementCost('Spread/Power Shots')).toBe(3);
+    expect(getDecorationReplacementCost('Agitator')).toBe(3);
+    expect(getDecorationReplacementCost('Critical Boost')).toBe(1);
+  });
+
   it('merges opportunistic result groups without favoring the first group', () => {
     const result = armorName => ({
       armorNames: [armorName],

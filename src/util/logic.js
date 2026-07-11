@@ -47,7 +47,7 @@ export let lastOptimizerProfile = null;
 
 const searchCache = new Map();
 const MAX_SEARCH_CACHE_ENTRIES = 50;
-const SEARCH_CACHE_VERSION = 13;
+const SEARCH_CACHE_VERSION = 14;
 const MAX_COMBO_SEARCH_MS = 12000;
 const talismanScoreCache = new Map();
 const MAX_TALISMAN_SCORE_CACHE_ENTRIES = 2000;
@@ -951,6 +951,23 @@ const getSearchSkillWeight = (skillName, optimizationGoal = 'highest_dps') => {
     return 1;
 };
 
+export const getDecorationReplacementCost = skillName => {
+    const costs = Object.values(currentDecorations).flatMap(decoData => {
+        const skillLevel = Number(decoData?.[1]?.[skillName] || 0);
+        const slotSize = Number(decoData?.[2] || 0);
+        return skillLevel > 0 && slotSize > 0 ? [slotSize / skillLevel] : [];
+    });
+    return costs.length ? Math.min(...costs) : 1;
+};
+
+const scoreTalismanDecorationSavings = (talismanData, params) => {
+    const talismanSkills = talismanData?.[1] || {};
+    return Object.entries(params.skills || {}).reduce((total, [skillName, targetLevel]) => {
+        const coveredLevel = Math.min(talismanSkills[skillName] || 0, targetLevel);
+        return total + coveredLevel * getDecorationReplacementCost(skillName);
+    }, 0);
+};
+
 const getDamageProfileForSkills = (skills, params) => buildDamageProfile({
     skills,
     conditions: params.conditions,
@@ -1088,7 +1105,8 @@ const scoreTalismanRequiredCoverage = (talismanData, params) => {
         armorSlots.reduce((total, slot) => total + slot, 0) +
         weaponSlots.reduce((total, slot) => total + slot * 1.5, 0);
 
-    return targetCoverage * 100000 + weightedCoverage * 1000 + socketValue;
+    const decorationSavings = scoreTalismanDecorationSavings(talismanData, params);
+    return targetCoverage * 100000 + decorationSavings * 10000 + weightedCoverage * 1000 + socketValue;
 };
 
 const sortTalismansForDamage = (gear, params) => {
@@ -1128,6 +1146,9 @@ const sortTalismansForDamage = (gear, params) => {
     const generatedCandidates = Array.from(new Map([...coverageCandidates, ...damageCandidates]));
 
     gear.talisman = Object.fromEntries([...fixedTalismans, ...generatedCandidates].sort((a, b) => {
+        const savingsCompare = scoreTalismanDecorationSavings(b[1], params) -
+            scoreTalismanDecorationSavings(a[1], params);
+        if (savingsCompare !== 0) { return savingsCompare; }
         const scoreCompare = scoreTalismanForDamageCached(b[1], params) - scoreTalismanForDamageCached(a[1], params);
         if (scoreCompare !== 0) { return scoreCompare; }
 
