@@ -67,6 +67,20 @@ describe('talisman slot formatting', () => {
     )).toBe(true);
   });
 
+  it('keeps the R7 Rapid Fire Up and Burst roll with its level 2 slot', () => {
+    const generated = generateTalismans({
+      'Rapid Fire Up': 1,
+      Agitator: 5,
+      'Weakness Exploit': 5
+    });
+    const roll = generated['RARE[7] Rapid Fire Up 1 / Burst 1'];
+
+    expect(roll).toBeTruthy();
+    expect(roll[1]).toEqual({ 'Rapid Fire Up': 1, Burst: 1 });
+    expect(roll[3]).toEqual([2]);
+    expect(roll[8]).toEqual([]);
+  });
+
   it('uses extra talisman data for slot rendering in results', () => {
     const armor = getArmorFromNames(['Custom Charm'], {
       'Custom Charm': {

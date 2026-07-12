@@ -60,13 +60,6 @@ const WEAPON_TYPE_OPTIONS = [
     { value: 'ranged', label: 'Ranged' }
 ];
 const ELEMENT_OPTIONS = ['None', 'Fire', 'Water', 'Thunder', 'Ice', 'Dragon', 'Poison', 'Sleep', 'Paralysis', 'Blast'];
-const OPTIMIZATION_GOALS = [
-    { value: 'highest_dps', label: 'Highest DPS' },
-    { value: 'highest_raw', label: 'Highest Raw' },
-    { value: 'highest_element', label: 'Highest Element' },
-    { value: 'highest_affinity', label: 'Highest Affinity' },
-    { value: 'balanced', label: 'Balanced' }
-];
 for (let a = 0; a <= 3; a++) {
     for (let b = 0; b <= a; b++) {
         for (let c = 0; c <= b; c++) {
@@ -89,6 +82,7 @@ const Search = () => {
     const [searchError, setSearchError] = useState('');
     const bonusWorkerRef = useRef(null);
     const searchWorkerRef = useRef(null);
+    const recommendationSeedResultsRef = useRef([]);
     const bonusStartedAtRef = useRef(0);
     const [isExploringBonuses, setIsExploringBonuses] = useState(false);
     const [bonusProgress, setBonusProgress] = useState(0);
@@ -176,6 +170,7 @@ const Search = () => {
             blacklistedArmorTypes: fields.blacklistedArmorTypes,
             decoMods: fields.decoInventory,
             customDecorations: fields.customDecorations,
+            priorResults: recommendationSeedResultsRef.current,
             cancelToken: cancelledRef
         });
 
@@ -271,6 +266,7 @@ const Search = () => {
             worker.terminate();
         };
         worker.postMessage({ params: workerParams, useCached: same });
+        recommendationSeedResultsRef.current = [];
     };
 
     const isOffElementSkill = skillName => {
@@ -559,6 +555,25 @@ const Search = () => {
             collectFlexibleRequiredWeaponBonuses(result, searchedSkills, resultMoreResults);
             collectBonusSelectorSkills(result, searchedSetSkills, searchedGroupSkills, resultMoreResults);
             collectPresentBonusSkills(result, searchedSetSkills, searchedGroupSkills, resultMoreResults);
+            Object.entries(result.talismanFlex?.options || {}).forEach(([skillName, level]) => {
+                const compatibleSlotTypes = new Set(
+                    Object.values(DECORATIONS)
+                        .filter(([, decoSkills]) => decoSkills?.[skillName])
+                        .map(([decoType]) => decoType === 'weapon' ? 'weapon' : 'armor')
+                );
+                // Charm alternatives belong in the existing decoration categories.
+                // Armor is the safe fallback for a skill without a known decoration.
+                if (!compatibleSlotTypes.size) { compatibleSlotTypes.add('armor'); }
+                compatibleSlotTypes.forEach(slotType => {
+                    addSocketableSkill(
+                        resultMoreResults,
+                        skillName,
+                        level,
+                        slotType,
+                        searchedSkills[skillName] || 0
+                    );
+                });
+            });
             mergeSocketableSkills(nextMoreResults, resultMoreResults);
         });
 
@@ -602,7 +617,8 @@ const Search = () => {
             mandatoryArmor: fields.mandatoryArmor,
             blacklistedArmor: fields.blacklistedArmor,
             blacklistedArmorTypes: fields.blacklistedArmorTypes,
-            decoMods: fields.decoInventory
+            decoMods: fields.decoInventory,
+            priorResults: results
         });
         const worker = new Worker(new URL('../workers/bonusExplorer.worker.js', import.meta.url));
         bonusWorkerRef.current = worker;
@@ -613,7 +629,21 @@ const Search = () => {
         worker.onmessage = event => {
             const message = event.data;
             if (message.type === 'result') {
-                setBonusRoutes(current => [...current, message.candidate]);
+                if (message.candidate.sourceType === 'skill') {
+                    setMoreResults(current => {
+                        const next = { ...current };
+                        addSocketableSkill(
+                            next,
+                            message.candidate.skillName,
+                            message.candidate.level,
+                            'armor',
+                            searchedSkills[message.candidate.skillName] || 0
+                        );
+                        return next;
+                    });
+                } else {
+                    setBonusRoutes(current => [...current, message.candidate]);
+                }
                 setShowMore(true);
             } else if (message.type === 'progress') {
                 setBonusProgress(message.total ? message.completed / message.total * 100 : 100);
@@ -655,8 +685,12 @@ const Search = () => {
     };
 
     const updateWeaponNumber = (field, value) => {
+        if (value === '') {
+            updateField(field, '');
+            return;
+        }
         const parsed = Number(value);
-        updateField(field, Number.isFinite(parsed) ? parsed : 0);
+        updateField(field, Number.isFinite(parsed) ? parsed : '');
     };
 
     const updateSetSkillBonus = value => {
@@ -870,17 +904,6 @@ const Search = () => {
             <TextField
                 select
                 size="small"
-                label="Goal"
-                value={fields.optimizationGoal || 'highest_dps'}
-                onChange={ev => updateField('optimizationGoal', ev.target.value)}
-                sx={{ minWidth: '150px' }}
-                title="How to rank the resulting builds"
-            >
-                {OPTIMIZATION_GOALS.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
-            </TextField>
-            <TextField
-                select
-                size="small"
                 label="Weapon Type"
                 value={fields.weaponType || 'other'}
                 onChange={ev => updateField('weaponType', ev.target.value)}
@@ -895,8 +918,9 @@ const Search = () => {
                 type="number"
                 value={fields.weaponBaseRaw ?? 0}
                 onChange={ev => updateWeaponNumber('weaponBaseRaw', ev.target.value)}
+                placeholder="100"
                 sx={{ minWidth: '110px' }}
-                title="Weapon base attack"
+                title="Weapon base attack; an empty value uses 100"
             />
             <TextField
                 size="small"
@@ -924,8 +948,9 @@ const Search = () => {
                 type="number"
                 value={fields.weaponElementValue ?? 0}
                 onChange={ev => updateWeaponNumber('weaponElementValue', ev.target.value)}
+                placeholder="100"
                 sx={{ minWidth: '120px' }}
-                title="Weapon element damage"
+                title="Weapon element damage; an empty value uses 100"
             />
             <TextField
                 select
@@ -1006,6 +1031,8 @@ const Search = () => {
     };
 
     const renderMoreResults = () => {
+        const alphabeticalEntries = object => Object.entries(object || {})
+            .sort(([a], [b]) => a.localeCompare(b));
         const time = moreElapsedSeconds > -1 ? `(${moreElapsedSeconds.toFixed(2)} seconds)` : '';
 
         const freeSlotsByType = normalizeMoreSlots(moreSlots);
@@ -1122,7 +1149,12 @@ const Search = () => {
 
             const gradientStyle = generateStyle(gradientColor);
             return <div className={`skills-search-bubble more skill-gradient`}
-                onClick={() => addSkill(skillName, maxLevel)}
+                onClick={() => {
+                    recommendationSeedResultsRef.current = results.flatMap(result =>
+                        [result].concat(result.recommendationSeedResults || [])
+                    );
+                    addSkill(skillName, maxLevel);
+                }}
                 style={{
                     ...gradientStyle,
                     alignSelf: 'flex-start',
@@ -1148,7 +1180,7 @@ const Search = () => {
                 </div>}
                 {!hasWeaponSlots && !isEmpty(usedWeaponDecos) && <div style={{ color: '#d2c4b8', marginBottom: '0.4em' }}>
                     Weapon slots are already used by:{' '}
-                    {Object.entries(usedWeaponDecos).map(([decoName, amount], index, arr) => {
+                    {alphabeticalEntries(usedWeaponDecos).map(([decoName, amount], index, arr) => {
                         const suffix = index < arr.length - 1 ? ', ' : '';
                         return <span key={decoName} title={decoName}>
                             {formatDecoSkills(decoName)} x{amount}{suffix}
@@ -1171,7 +1203,7 @@ const Search = () => {
                 {!isEmpty(weaponSkillResults) && <div style={{ marginBottom: '0.45em' }}>
                     <div style={{ color: '#9ee8f0', fontWeight: 700, marginBottom: '0.2em' }}>Weapon-slot skills:</div>
                     <div className="more-skills" style={{ alignItems: 'flex-start' }}>
-                        {Object.entries(weaponSkillResults).map(sk =>
+                        {alphabeticalEntries(weaponSkillResults).map(sk =>
                             renderMoreSkillBubble(
                                 sk,
                                 `A compatible weapon decoration can fit in an open slot. Click to add it to the search.`,
@@ -1183,7 +1215,7 @@ const Search = () => {
                 {!isEmpty(armorSkillResults) && <div>
                     <div style={{ color: '#d2c4b8', fontWeight: 700, marginBottom: '0.2em' }}>Armor-slot skills:</div>
                     <div className="more-skills" style={{ alignItems: 'flex-start' }}>
-                        {Object.entries(armorSkillResults).map(sk =>
+                        {alphabeticalEntries(armorSkillResults).map(sk =>
                             renderMoreSkillBubble(
                                 sk,
                                 `A compatible armor decoration can fit in an open slot. Click to add it to the search.`,
@@ -1203,7 +1235,7 @@ const Search = () => {
                     Click one to add it to the search.
                 </div>
                 <div className="more-skills" style={{ alignItems: 'flex-start' }}>
-                    {Object.entries(bonusImprovements).map(sk => renderMoreSkillBubble(
+                    {alphabeticalEntries(bonusImprovements).map(sk => renderMoreSkillBubble(
                         sk,
                         `A valid build exists with this bonus. Click to add it to the search.`,
                         SET_SKILLS[sk[0]] ? '#f0c49e' : '#9ee8f0'

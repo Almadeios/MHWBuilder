@@ -67,8 +67,10 @@ const splitSlotCombo = combo => {
 
 const getSlotComboPriority = combo => {
     const { armorSlots, weaponSlots } = splitSlotCombo(combo);
-    const weaponPriority = weaponSlots.length ? 100 + weaponSlots.length : 0;
-    const armorPriority = armorSlots.length ? 10 + armorSlots.length : 0;
+    const weaponPriority = weaponSlots.length ?
+        1000 + weaponSlots.reduce((total, slot) => total + slot * 10, 0) + Math.max(...weaponSlots) : 0;
+    const armorPriority = armorSlots.length ?
+        armorSlots.reduce((total, slot) => total + slot * 10, 0) + Math.max(...armorSlots) : 0;
     return weaponPriority + armorPriority;
 };
 
@@ -108,16 +110,15 @@ const buildName = (rarity, skills) => {
 
 const chooseRelevantEntries = (entries, desiredSkills, usedSkills) => {
     const desired = entries.filter(entry => desiredSkills[entry.skill] && !usedSkills.has(entry.skill));
-    if (desired.length) { return desired; }
-
     const fillers = entries
-        .filter(entry => !usedSkills.has(entry.skill))
+        .filter(entry => !usedSkills.has(entry.skill) && !desiredSkills[entry.skill])
         .sort((a, b) => {
             const aPriority = FILLER_PRIORITY_INDEX[a.skill] ?? Number.MAX_SAFE_INTEGER;
             const bPriority = FILLER_PRIORITY_INDEX[b.skill] ?? Number.MAX_SAFE_INTEGER;
             return aPriority - bPriority || b.maxLevel - a.maxLevel || a.skill.localeCompare(b.skill);
         })
         .slice(0, MAX_FILLER_SKILLS_PER_GROUP);
+    if (desired.length) { return [...desired, ...fillers]; }
     return [{ skill: null, maxLevel: 0 }, ...fillers];
 };
 

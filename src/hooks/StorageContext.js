@@ -24,13 +24,13 @@ const DEFAULTS = {
     skills: {},
     slotFilters: {},
     weaponSlots: [],
-    weaponBaseRaw: 0,
+    weaponBaseRaw: '',
     weaponBaseAffinity: 0,
     weaponType: 'other',
     weaponElementType: 'None',
-    weaponElementValue: 0,
+    weaponElementValue: '',
     weaponSharpness: 'White',
-    optimizationGoal: 'highest_dps',
+    optimizationGoal: 'efficient',
     setSkillBonus: '',
     groupSkillBonus: '',
     customTalismans: [],
@@ -74,6 +74,9 @@ export const StorageProvider = ({ children }) => {
         for (const [fieldName, defaultValue] of Object.entries(DEFAULTS)) {
             tempFields[fieldName] = getFromLocalStorage(fieldName, defaultValue);
         }
+        // Efficiency is now the single search strategy; migrate older saved goals.
+        tempFields.optimizationGoal = 'efficient';
+        saveToLocalStorage('optimizationGoal', tempFields.optimizationGoal);
         tempFields.customTalismans = normalizeCustomTalismans(tempFields.customTalismans);
         saveToLocalStorage('customTalismans', tempFields.customTalismans);
 

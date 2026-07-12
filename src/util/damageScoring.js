@@ -1110,6 +1110,15 @@ export const rankBuildsByDamage = (rolls, goal = 'highest_dps') => {
   return [...rolls].sort((a, b) => {
     const profileA = buildDamageProfile(a);
     const profileB = buildDamageProfile(b);
+    if (goal === 'efficient') {
+      const slotValue = roll => [].concat(
+        roll?.freeSlots || [],
+        roll?.freeWeaponSlots || []
+      ).reduce((total, size) => total + 4 ** size, 0);
+      const slotDiff = slotValue(b) - slotValue(a);
+      const decoDiff = (a?.requiredDecoNames?.length || 0) - (b?.requiredDecoNames?.length || 0);
+      return slotDiff || decoDiff || profileB.expected_dps - profileA.expected_dps;
+    }
     const scoreDiff = getSortScore(profileB, goal) - getSortScore(profileA, goal);
     return scoreDiff || profileB.expected_dps - profileA.expected_dps || Object.keys(b?.skills || {}).length - Object.keys(a?.skills || {}).length;
   });

@@ -327,15 +327,20 @@ const Results = ({
     const renderCompactTalisman = result => {
         const talismanName = result?.armorNames?.[5];
         const talismanData = getTalismanDataForResult(result);
-        const skills = talismanData?.skills || talismanData?.[1] || {};
+        const skills = result.talismanFlex?.requestedSkills || talismanData?.skills || talismanData?.[1] || {};
         const slots = talismanData?.slots || talismanData?.[3] || [];
         const weaponSlots = talismanData?.weaponSlots || talismanData?.[8] || [];
-        const skillText = Object.entries(skills)
-            .map(([skillName, level]) => `${skillName} ${level}`)
-            .join(' / ');
+        const skillTextParts = Object.entries(skills)
+            .map(([skillName, level]) => `${skillName} ${level}`);
+        if (result.talismanFlex) { skillTextParts.push('Flex'); }
+        const skillText = skillTextParts.join(' / ');
+        const rarityPrefix = talismanName?.match(/^RARE\[\d+\]/)?.[0];
+        const compactName = result.talismanFlex
+            ? `${rarityPrefix ? `${rarityPrefix} ` : ''}Flexible Charm`
+            : getCompactTalismanName(talismanName);
 
         return <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
-            <div style={{ fontWeight: 700 }}>{getCompactTalismanName(talismanName)}</div>
+            <div style={{ fontWeight: 700 }}>{compactName}</div>
             {skillText && <div style={{ color: '#b8d7ff', fontSize: '12px', whiteSpace: 'normal' }}>
                 {skillText}
             </div>}
@@ -788,6 +793,24 @@ const Results = ({
                         skills: matchingCustomTalisman.skills || {},
                         slots: matchingCustomTalisman.slots || [],
                         weaponSlots: matchingCustomTalisman.weaponSlots || []
+                    };
+                }
+            }
+
+            if (resolvedTalismanData && selectedResult.talismanFlex) {
+                if (Array.isArray(resolvedTalismanData)) {
+                    resolvedTalismanData = [...resolvedTalismanData];
+                    resolvedTalismanData[1] = {
+                        ...selectedResult.talismanFlex.requestedSkills,
+                        Flex: 1
+                    };
+                } else {
+                    resolvedTalismanData = {
+                        ...resolvedTalismanData,
+                        skills: {
+                            ...selectedResult.talismanFlex.requestedSkills,
+                            Flex: 1
+                        }
                     };
                 }
             }

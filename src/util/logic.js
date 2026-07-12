@@ -47,7 +47,7 @@ export let lastOptimizerProfile = null;
 
 const searchCache = new Map();
 const MAX_SEARCH_CACHE_ENTRIES = 50;
-const SEARCH_CACHE_VERSION = 14;
+const SEARCH_CACHE_VERSION = 20;
 const MAX_COMBO_SEARCH_MS = 12000;
 const talismanScoreCache = new Map();
 const MAX_TALISMAN_SCORE_CACHE_ENTRIES = 2000;
@@ -113,7 +113,7 @@ export const buildSearchCacheKey = parameters => {
         weaponElementValue: params.weaponElementValue || 0,
         weaponSharpness: params.weaponSharpness || "White",
         conditions: params.conditions || {},
-        optimizationGoal: params.optimizationGoal || 'highest_dps',
+        optimizationGoal: params.optimizationGoal || 'efficient',
         setSkillBonus: params.setSkillBonus || "",
         groupSkillBonus: params.groupSkillBonus || "",
         mandatoryArmor: normalizeList(params.mandatoryArmor),
@@ -968,6 +968,30 @@ const scoreTalismanDecorationSavings = (talismanData, params) => {
     }, 0);
 };
 
+export const sortTalismanCandidatesBySlotSavings = (entries, desiredSkills) => {
+    const params = { skills: desiredSkills || {} };
+    const targetCoverage = talismanData => Object.entries(desiredSkills || {}).reduce(
+        (total, [skillName, targetLevel]) =>
+            total + Math.min(talismanData?.[1]?.[skillName] || 0, targetLevel),
+        0
+    );
+    return [...entries].sort((a, b) => {
+        const savingsCompare = scoreTalismanDecorationSavings(b[1], params) -
+            scoreTalismanDecorationSavings(a[1], params);
+        if (savingsCompare !== 0) { return savingsCompare; }
+        const coverageCompare = targetCoverage(b[1]) - targetCoverage(a[1]);
+        if (coverageCompare !== 0) { return coverageCompare; }
+        return a[0].localeCompare(b[0]);
+    });
+};
+
+export const prioritizeTalismanSearchOrder = (slots, candidateLists) => {
+    const remaining = [...slots]
+        .filter(slot => slot !== 'talisman')
+        .sort((a, b) => candidateLists[a].length - candidateLists[b].length);
+    return slots.includes('talisman') ? ['talisman', ...remaining] : remaining;
+};
+
 const getDamageProfileForSkills = (skills, params) => buildDamageProfile({
     skills,
     conditions: params.conditions,
@@ -989,8 +1013,10 @@ const scoreSkillGain = (currentSkills, addedSkills, params) => {
         return total + Math.min(level, missingLevel) * getSearchSkillWeight(skillName, params.optimizationGoal) * 1000;
     }, 0);
 
+    const modeledDamageGain = params.optimizationGoal === 'efficient' ? 0 :
+        Math.max(0, (nextProfile.expected_dps || 0) - (currentProfile.expected_dps || 0));
     return {
-        score: targetScore + Math.max(0, (nextProfile.expected_dps || 0) - (currentProfile.expected_dps || 0)),
+        score: targetScore + modeledDamageGain,
         nextSkills
     };
 };
@@ -1228,7 +1254,7 @@ const pruneDominatedCandidateList = (candidateEntries, desiredSkills) => {
 
 const getSortedCandidateList = (gear, slot, desiredSkills, optimizationGoal = 'highest_dps') => {
     if (slot === "talisman") {
-        return Object.entries(gear[slot]);
+        return sortTalismanCandidatesBySlotSavings(Object.entries(gear[slot]), desiredSkills);
     }
 
     return pruneDominatedCandidateList(
@@ -1257,8 +1283,16 @@ const buildSearchGear = (params, setSkills = params.setSkills, groupSkills = par
     return sortTalismansForDamage(gear, params);
 };
 
+export const shouldExploreOpportunisticSetSkills = params => {
+    const hasExplicitBonus = Object.keys(params.setSkills || {}).length > 0 ||
+        Object.keys(params.groupSkills || {}).length > 0 ||
+        Boolean(params.setSkillBonus) ||
+        Boolean(params.groupSkillBonus);
+    return !params.findOne && !hasExplicitBonus && Object.keys(params.skills || {}).length >= 8;
+};
+
 const getOpportunisticSetSkillSeeds = params => {
-    if (params.findOne || params.setSkills?.["Jin Dahaad's Revolt"] || Object.keys(params.skills || {}).length < 8) {
+    if (!shouldExploreOpportunisticSetSkills(params)) {
         return [];
     }
 
@@ -1269,6 +1303,30 @@ const getOpportunisticSetSkillSeeds = params => {
             setSkills: { ...params.setSkills, [skillName]: 1 },
             groupSkills: params.groupSkills
         }));
+};
+
+const getFairTalismanSeeds = (gear, params) => {
+    const sorted = sortTalismanCandidatesBySlotSavings(
+        Object.entries(gear.talisman || {}),
+        params.skills
+    );
+    if (sorted.length < 2) { return []; }
+
+    const selected = new Map(sorted.slice(0, 4));
+    Object.keys(params.skills || {}).forEach(skillName => {
+        const representative = sorted.find(([, talismanData]) => talismanData?.[1]?.[skillName] > 0);
+        if (representative) { selected.set(representative[0], representative[1]); }
+    });
+
+    return [...selected].map(([talismanName, talismanData]) => ({
+        label: `talisman:${talismanName}`,
+        gear: {
+            ...gear,
+            talisman: { [talismanName]: talismanData }
+        },
+        setSkills: params.setSkills,
+        groupSkills: params.groupSkills
+    }));
 };
 
 const buildSuffixAvailability = (candidateLists, armorSlots, requiredNames, getNames) => {
@@ -1288,20 +1346,23 @@ const buildSuffixAvailability = (candidateLists, armorSlots, requiredNames, getN
 };
 
 const getPieceSkillPotential = (slot, piece, skillName, decos, baseWeaponSlots = []) => {
-    let points = piece[1]?.[skillName] || 0;
+    const points = piece[1]?.[skillName] || 0;
     const armorSlots = piece[3] || [];
     const weaponSlots = slot === "talisman" ? [...baseWeaponSlots, ..._x.weaponSlots(piece)] : [];
+    let bestDecoPotential = 0;
 
     for (const deco of Object.values(decos)) {
         const validSlots = deco[0] === "weapon" ? weaponSlots : armorSlots;
         const decoSkillLevel = deco[1]?.[skillName];
         if (decoSkillLevel && validSlots.length) {
-            points += decoSkillLevel * validSlots.filter(slotSize => slotSize >= deco[2]).length;
-            break;
+            bestDecoPotential = Math.max(
+                bestDecoPotential,
+                decoSkillLevel * validSlots.filter(slotSize => slotSize >= deco[2]).length
+            );
         }
     }
 
-    return points;
+    return points + bestDecoPotential;
 };
 
 const buildSkillPotentialSuffix = (candidateLists, armorSlots, desiredSkills, decos, baseWeaponSlots = []) => {
@@ -1396,7 +1457,7 @@ const rollCombosDfs = async(
     const candidateLists = Object.fromEntries(
         armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal)])
     );
-    const searchOrder = [...armorSlots].sort((a, b) => candidateLists[a].length - candidateLists[b].length);
+    const searchOrder = prioritizeTalismanSearchOrder(armorSlots, candidateLists);
 
     // Calculate total possible combinations
     totalPossibleCombinations = armorSlots
@@ -1684,7 +1745,7 @@ const rollCombosNewEngine = async(
     const candidateLists = Object.fromEntries(
         armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal)])
     );
-    const searchOrder = [...armorSlots].sort((a, b) => candidateLists[a].length - candidateLists[b].length);
+    const searchOrder = prioritizeTalismanSearchOrder(armorSlots, candidateLists);
 
     totalPossibleCombinations = armorSlots
         .map(slot => candidateLists[slot].length)
@@ -1918,6 +1979,7 @@ export const test = (armorSet, decos, desiredSkills, params = {}) => {
             skills: armorSet.skills,
             setSkills: armorSet.setSkills,
             groupSkills: armorSet.groupSkills,
+            talismanData: armorSet.talismanData,
             freeSlots: armorSet.slots,
             freeWeaponSlots: armorSet.weaponSlots,
             // defense: armorSet.defense
@@ -1943,6 +2005,7 @@ export const test = (armorSet, decos, desiredSkills, params = {}) => {
             skills: combinedSkills,
             setSkills: armorSet.setSkills,
             groupSkills: armorSet.groupSkills,
+            talismanData: armorSet.talismanData,
             freeSlots: decosUsed.freeSlots,
             freeWeaponSlots: decosUsed.freeWeaponSlots,
             // defense: armorSet.defense
@@ -2000,9 +2063,136 @@ const resultSignature = result => [
     [...result.freeWeaponSlots].sort((a, b) => b - a).join("|")
 ].join("::");
 
+const getResultTalismanData = result => {
+    const talismanName = result?.armorNames?.[5];
+    return talismanName ? result?.talismanData?.[talismanName] : null;
+};
+
+export const collapseFlexibleTalismanResults = (results, desiredSkills = {}) => {
+    const groups = new Map();
+    results.forEach((result, resultIndex) => {
+        const talismanData = getResultTalismanData(result);
+        const talismanSkills = talismanData?.[1] || talismanData?.skills || {};
+        const requestedTalismanSkills = Object.fromEntries(
+            Object.entries(talismanSkills).filter(([skillName]) => desiredSkills[skillName])
+        );
+        const optionalTalismanSkills = Object.fromEntries(
+            Object.entries(talismanSkills).filter(([skillName]) => !desiredSkills[skillName])
+        );
+        const slots = talismanData?.[3] || talismanData?.slots || [];
+        const weaponSlots = talismanData?.[8] || talismanData?.weaponSlots || [];
+        const hasOptionalSkills = Object.keys(optionalTalismanSkills).length > 0;
+        const effectiveSkills = Object.assign({}, result.skills || {});
+        Object.entries(optionalTalismanSkills).forEach(([skillName, level]) => {
+            const remaining = (effectiveSkills[skillName] || 0) - level;
+            if (remaining > 0) {
+                effectiveSkills[skillName] = remaining;
+            } else {
+                delete effectiveSkills[skillName];
+            }
+        });
+        const key = JSON.stringify({
+            // Results without a flexible talisman must remain independent builds.
+            standalone: hasOptionalSkills ? null : resultIndex,
+            armor: result.armorNames?.slice(0, 5),
+            effectiveSkills: Object.entries(effectiveSkills).sort(([a], [b]) => a.localeCompare(b)),
+            slots,
+            weaponSlots,
+            freeSlots: [].concat(result.freeSlots || []).sort((a, b) => b - a),
+            freeWeaponSlots: [].concat(result.freeWeaponSlots || []).sort((a, b) => b - a),
+            setSkills: result.setSkills,
+            groupSkills: result.groupSkills,
+            dps: Number(result.damageProfile?.expected_dps || 0).toFixed(6)
+        });
+        const group = groups.get(key) || [];
+        group.push({ result, requestedTalismanSkills, optionalTalismanSkills });
+        groups.set(key, group);
+    });
+
+    const freeSlotScore = result => [].concat(
+        result.freeSlots || [],
+        result.freeWeaponSlots || []
+    ).reduce((total, slotSize) => total + 4 ** slotSize, 0);
+
+    return [...groups.values()].map(group => {
+        group.sort((a, b) => freeSlotScore(b.result) - freeSlotScore(a.result));
+        const flexOptions = {};
+        group.forEach(({ optionalTalismanSkills }) => {
+            Object.entries(optionalTalismanSkills).forEach(([skillName, level]) => {
+                flexOptions[skillName] = Math.max(flexOptions[skillName] || 0, level);
+            });
+        });
+        if (!Object.keys(flexOptions).length) { return group[0].result; }
+
+        const removeFlexibleSkills = skills => {
+            const cleaned = { ...skills };
+            Object.entries(group[0].optionalTalismanSkills).forEach(([skillName, level]) => {
+                const remaining = (cleaned[skillName] || 0) - level;
+                if (remaining > 0) {
+                    cleaned[skillName] = remaining;
+                } else {
+                    delete cleaned[skillName];
+                }
+            });
+            return cleaned;
+        };
+        return {
+            ...group[0].result,
+            skills: removeFlexibleSkills(group[0].result.skills),
+            baseSkills: removeFlexibleSkills(group[0].result.baseSkills),
+            // Keep the concrete variants out of the table, but available as proven
+            // starting points when the user selects one of the Flex recommendations.
+            recommendationSeedResults: group.map(({ result }) => result),
+            talismanFlex: {
+                requestedSkills: group[0].requestedTalismanSkills,
+                options: flexOptions,
+                variantCount: group.length
+            }
+        };
+    });
+};
+
 export const mergeUniqueResultGroups = resultGroups => Array.from(new Map(
     resultGroups.flat().map(result => [resultSignature(result), result])
 ).values());
+
+export const extendPriorResults = (priorResults, params, decos = currentDecorations) => {
+    if (!Array.isArray(priorResults) || !priorResults.length) { return []; }
+
+    return priorResults.flatMap(priorResult => {
+        const hasRequiredSetSkills = Object.entries(params.setSkills || {}).every(
+            ([skillName, level]) => (priorResult.setSkills?.[skillName] || 0) >= level
+        );
+        const hasRequiredGroupSkills = Object.entries(params.groupSkills || {}).every(
+            ([skillName, level]) => (priorResult.groupSkills?.[skillName] || 0) >= level
+        );
+        if (!hasRequiredSetSkills || !hasRequiredGroupSkills) { return []; }
+
+        const extension = test({
+            names: priorResult.armorNames,
+            slots: priorResult.freeSlots || [],
+            weaponSlots: priorResult.freeWeaponSlots || [],
+            skills: priorResult.skills || {},
+            setSkills: priorResult.setSkills || {},
+            groupSkills: priorResult.groupSkills || {},
+            talismanData: priorResult.talismanData || {}
+        }, decos, params.skills || {}, params);
+        if (!extension) { return []; }
+
+        return [{
+            ...priorResult,
+            decoNames: [].concat(priorResult.decoNames || [], extension.decoNames || []),
+            requiredDecoNames: [].concat(
+                priorResult.requiredDecoNames || priorResult.decoNames || [],
+                extension.requiredDecoNames || extension.decoNames || []
+            ),
+            freeSlots: extension.freeSlots,
+            freeWeaponSlots: extension.freeWeaponSlots,
+            skills: extension.skills,
+            talismanData: priorResult.talismanData || extension.talismanData
+        }];
+    });
+};
 
 const warnIfEngineMismatch = (oldResults, newResults) => {
     const oldSet = new Set(oldResults.map(resultSignature));
@@ -2177,6 +2367,10 @@ export const search = async parameters => {
     recordOptimizerStage(profile, "decoInventory", stageStartedAt);
 
     stageStartedAt = performance.now();
+    const seededRolls = extendPriorResults(params.priorResults, params, currentDecorations);
+    recordOptimizerStage(profile, "priorResultExtension", stageStartedAt);
+
+    stageStartedAt = performance.now();
     let gear = buildSearchGear(params);
     recordOptimizerStage(profile, "candidatePrep", stageStartedAt);
 
@@ -2228,6 +2422,7 @@ export const search = async parameters => {
     };
 
     const opportunisticSeeds = getOpportunisticSetSkillSeeds(params);
+    const talismanSeeds = getFairTalismanSeeds(gear, params);
     const searchVariants = [
         {
             label: 'base',
@@ -2238,10 +2433,12 @@ export const search = async parameters => {
         ...opportunisticSeeds.map(seed => ({
             ...seed,
             gear: buildSearchGear(params, seed.setSkills, seed.groupSkills)
-        }))
+        })),
+        ...talismanSeeds
     ];
-    const variantTimeBudget = Math.max(100, Math.floor(maxComboSearchMs / searchVariants.length));
-    const resultGroups = [];
+    const comboBudget = seededRolls.length ? Math.min(maxComboSearchMs, 3000) : maxComboSearchMs;
+    const variantTimeBudget = Math.max(100, Math.floor(comboBudget / searchVariants.length));
+    const resultGroups = seededRolls.length ? [seededRolls] : [];
     for (const variant of searchVariants) {
         stageStartedAt = performance.now();
         const variantRolls = await runComboSearch(
@@ -2254,9 +2451,9 @@ export const search = async parameters => {
         resultGroups.push(variantRolls);
     }
     let rolls = mergeUniqueResultGroups(resultGroups);
-    if (opportunisticSeeds.length) {
+    if (opportunisticSeeds.length || talismanSeeds.length) {
         profile.engine = `${engineName}+fair-seeds`;
-        profile.seeds = opportunisticSeeds.map(seed => seed.label);
+        profile.seeds = [...opportunisticSeeds, ...talismanSeeds].map(seed => seed.label);
         profile.seedTimeBudgetMs = variantTimeBudget;
     }
     profile.timedOut = !rolls.length && searchTimedOut;
@@ -2340,8 +2537,8 @@ export const search = async parameters => {
     recordOptimizerStage(profile, "damageScoring", stageStartedAt);
 
     stageStartedAt = performance.now();
-    const rankedRolls = rankBuildsByDamage(rolls, params.optimizationGoal || 'highest_dps');
-    rolls = reorder(rankedRolls).slice(0, params.limit);
+    const rankedRolls = rankBuildsByDamage(rolls, params.optimizationGoal || 'efficient');
+    rolls = collapseFlexibleTalismanResults(reorder(rankedRolls), params.skills).slice(0, params.limit);
     recordOptimizerStage(profile, "rankAndReorder", stageStartedAt);
 
     stageStartedAt = performance.now();

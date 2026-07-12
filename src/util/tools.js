@@ -11,6 +11,11 @@ import { getArmorTypeList } from "./util";
 import { _x } from "./armorAccessor";
 
 export const getSearchParameters = parameters => {
+    const numberOrDefault = (value, fallback) => {
+        if (value === '' || value === null || value === undefined) { return fallback; }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    };
     return {
         skills: parameters.skills || {},
         setSkills: parameters.setSkills || {},
@@ -23,13 +28,13 @@ export const getSearchParameters = parameters => {
         blacklistedArmorTypes: parameters.blacklistedArmorTypes || [], // don't use thes armor types (head, chest, etc)
         dontUseDecos: parameters.dontUseDecos || false, // if true, excludes decorations from results
         weaponSlots: parameters.weaponSlots || [],
-        weaponBaseRaw: parameters.weaponBaseRaw || 0,
-        weaponBaseAffinity: parameters.weaponBaseAffinity || 0,
+        weaponBaseRaw: numberOrDefault(parameters.weaponBaseRaw, 100),
+        weaponBaseAffinity: numberOrDefault(parameters.weaponBaseAffinity, 0),
         weaponType: parameters.weaponType || 'other',
         weaponElementType: parameters.weaponElementType || 'None',
-        weaponElementValue: parameters.weaponElementValue || 0,
+        weaponElementValue: numberOrDefault(parameters.weaponElementValue, 100),
         weaponSharpness: parameters.weaponSharpness || 'White',
-        optimizationGoal: parameters.optimizationGoal || 'highest_dps',
+        optimizationGoal: parameters.optimizationGoal || 'efficient',
         conditions: parameters.conditions || {},
         setSkillBonus: parameters.setSkillBonus || '',
         groupSkillBonus: parameters.groupSkillBonus || '',
@@ -489,6 +494,13 @@ export const getSkillTestOrderBinary = (maxLevel, currentLevel = 0) => {
     return result;
 };
 
+const getMaxDecorationPotential = (decos, slotType, slots, skillName) => Object.values(decos)
+    .filter(deco => deco[0] === slotType && deco[1]?.[skillName])
+    .reduce((best, deco) => Math.max(
+        best,
+        deco[1][skillName] * slots.filter(slotSize => slotSize >= deco[2]).length
+    ), 0);
+
 export const canArmorFulfillSkill = (armor, armorPool, decos, skillName, skillLevel) => {
     const poolTypeList = getArmorTypeList().filter(type => !armor[type]);
     const baseWeaponSlots = armorPool.weaponSlots || [];
@@ -501,16 +513,8 @@ export const canArmorFulfillSkill = (armor, armorPool, decos, skillName, skillLe
             let points = armorData[1][skillName] || 0;
             const armorSlots = armorData[3] || [];
             const weaponSlots = [...baseWeaponSlots, ..._x.weaponSlots(armorData)];
-            for (const deco of Object.values(decos)) {
-                const validSlots = deco[0] === "weapon" ? weaponSlots : armorSlots;
-                if (validSlots.length) {
-                    const decoSkillLevel = deco[1][skillName];
-                    if (decoSkillLevel) {
-                        points += decoSkillLevel * validSlots.filter(slotSize => slotSize >= deco[2]).length;
-                        break;
-                    }
-                }
-            }
+            points += getMaxDecorationPotential(decos, 'armor', armorSlots, skillName);
+            points += getMaxDecorationPotential(decos, 'weapon', weaponSlots, skillName);
 
             bestPointsOfType = Math.max(points, bestPointsOfType);
         }
@@ -528,14 +532,8 @@ export const canArmorFulfillSkill = (armor, armorPool, decos, skillName, skillLe
             [...baseWeaponSlots, ..._x.weaponSlots(armorData)] :
             [];
 
-        for (const deco of Object.values(decos)) {
-            const validSlots = deco[0] === "weapon" ? weaponSlots : armorSlots;
-            const decoSkillLevel = deco[1][skillName];
-            if (decoSkillLevel && validSlots.length) {
-                totalPoints += decoSkillLevel * validSlots.filter(slotSize => slotSize >= deco[2]).length;
-                break;
-            }
-        }
+        totalPoints += getMaxDecorationPotential(decos, 'armor', armorSlots, skillName);
+        totalPoints += getMaxDecorationPotential(decos, 'weapon', weaponSlots, skillName);
     }
 
     return totalPoints >= skillLevel;
