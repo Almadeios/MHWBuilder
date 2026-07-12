@@ -24,7 +24,6 @@ import Paper from '@mui/material/Paper';
 import { styled } from '@mui/material/styles';
 import TablePagination from '@mui/material/TablePagination';
 import TablePaginationActions from './TablePaginationActions';
-import Swap from '@mui/icons-material/Sync';
 import { Button, IconButton, TextField } from '@mui/material';
 import SKILLS from '../data/detailed/skills.json';
 import SET_SKILLS_COMPACT from '../data/compact/set-skills.json';
@@ -89,15 +88,6 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 const PaginationBox = styled(Box)`
   display: flex;
 `;
-const SwapIcon = styled(Swap)`
-    width: 12px;
-    color: white;
-    cursor: pointer;
-    vertical-align: middle;
-    margin-left: 6px;
-    transform: translateY(-2px) scale(1.2);
-`;
-
 export const iconCommon = `
     width: 24px;
     height: 24px;
@@ -146,7 +136,7 @@ const Results = ({
     const [selectedResult, setSelectedResult] = useState();
     const [page, setPage] = useState(-1);
     const [pageSize, setPageSize] = useState(100);
-    const [customSlot, setCustomSlot] = useState("slots"); // or defense
+    const customSlot = "slots";
     const [editingName, setEditingName] = useState(false);
 
     const [rIndex, setRIndex] = useState(0);
@@ -212,14 +202,6 @@ const Results = ({
             document.getElementById("edit-name").focus();
         }
     }, [editingName]);
-
-    const swapCustomSlot = () => {
-        if (customSlot === "defense") {
-            setCustomSlot("slots");
-        } else {
-            setCustomSlot("defense");
-        }
-    };
 
     const saveSet = () => {
         const tempSets = saveArmorSet({
@@ -335,9 +317,9 @@ const Results = ({
         if (result.talismanFlex) { skillTextParts.push('Flex'); }
         const skillText = skillTextParts.join(' / ');
         const rarityPrefix = talismanName?.match(/^RARE\[\d+\]/)?.[0];
-        const compactName = result.talismanFlex
-            ? `${rarityPrefix ? `${rarityPrefix} ` : ''}Flexible Charm`
-            : getCompactTalismanName(talismanName);
+        const compactName = result.talismanFlex ?
+            `${rarityPrefix ? `${rarityPrefix} ` : ''}Flexible Charm` :
+            getCompactTalismanName(talismanName);
 
         return <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
             <div style={{ fontWeight: 700 }}>{compactName}</div>
@@ -357,7 +339,11 @@ const Results = ({
         const rawValue = result?.damageProfile?.raw_dps?.toFixed(1) ?? '—';
         const elementValue = result?.damageProfile?.element_dps?.toFixed(1) ?? '—';
         const affinityValue = result?.damageProfile?.final_affinity?.toFixed(0) ?? '—';
-        const goalLabel = fields.optimizationGoal === 'highest_raw' ? 'Raw' : fields.optimizationGoal === 'highest_element' ? 'Element' : fields.optimizationGoal === 'highest_affinity' ? 'Affinity' : fields.optimizationGoal === 'balanced' ? 'Balanced' : 'DPS';
+        let goalLabel = 'DPS';
+        if (fields.optimizationGoal === 'highest_raw') { goalLabel = 'Raw'; }
+        if (fields.optimizationGoal === 'highest_element') { goalLabel = 'Element'; }
+        if (fields.optimizationGoal === 'highest_affinity') { goalLabel = 'Affinity'; }
+        if (fields.optimizationGoal === 'balanced') { goalLabel = 'Balanced'; }
         let cls = "";
         if (!save && savedMatch) { cls += 'striped'; }
         if (highlighted) { cls += ' row-shine'; }
@@ -1119,6 +1105,18 @@ const Results = ({
             optimizerProfile.seed ? `guided by ${optimizerProfile.seed}` : null,
             `nodes ${Number(optimizerProfile.nodes || 0).toLocaleString()}`,
             `pruned ${Number(optimizerProfile.pruned || 0).toLocaleString()}`,
+            optimizerProfile.engine === 'mitm' ? `halves ${[
+                Number(optimizerProfile.leftStates || 0).toLocaleString(),
+                Number(optimizerProfile.rightStates || 0).toLocaleString()
+            ].join('+')}` : null,
+            optimizerProfile.priorResults ? `extensions ${[
+                Number(optimizerProfile.priorExtensions || 0).toLocaleString(),
+                Number(optimizerProfile.priorResults).toLocaleString()
+            ].join('/')}` : null,
+            optimizerProfile.skillBoundPruned ?
+                `skill-bound ${Number(optimizerProfile.skillBoundPruned).toLocaleString()}` : null,
+            optimizerProfile.feasibilityCacheHits ?
+                `deco-cache ${Number(optimizerProfile.feasibilityCacheHits).toLocaleString()}` : null,
             ...stages
         ].filter(Boolean).join(' | ');
 
@@ -1144,10 +1142,16 @@ const Results = ({
     const resultCountText = results.length.toLocaleString('en', { useGrouping: true });
     const timedOutWithoutResults = optimizerProfile?.timedOut && results.length === 0;
     const impossibleWithoutResults = optimizerProfile?.impossible && results.length === 0;
-    const resultStatusText = impossibleWithoutResults ?
-        `combination is not possible (${elapsedSeconds.toFixed(2)} seconds)` : timedOutWithoutResults ?
-        `timed out before finding results in ${elapsedSeconds.toFixed(2)} seconds` :
-        `${resultCountText} hits in ${elapsedSeconds.toFixed(2)} seconds`;
+    let resultStatusText = `${resultCountText} hits in ${elapsedSeconds.toFixed(2)} seconds`;
+    if (optimizerProfile?.partial) {
+        resultStatusText = `${resultCountText} hits so far in ${elapsedSeconds.toFixed(2)} seconds`;
+    }
+    if (timedOutWithoutResults) {
+        resultStatusText = `timed out before finding results in ${elapsedSeconds.toFixed(2)} seconds`;
+    }
+    if (impossibleWithoutResults) {
+        resultStatusText = `combination is not possible (${elapsedSeconds.toFixed(2)} seconds)`;
+    }
     const displayStr = `Results for ${searchList} (${resultStatusText}):`;
     const displayStrEmpty = `No skills specified. Showing best slotted armor combos (${resultStatusText}):`;
     const someArmorBlacklisted = fields.blacklistedArmor.length > 0;

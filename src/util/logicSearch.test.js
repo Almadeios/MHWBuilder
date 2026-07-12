@@ -1,14 +1,23 @@
 import {
+  armorCombo,
   buildSearchCacheKey,
   collapseFlexibleTalismanResults,
+  extendPriorResults,
   getDecorationReplacementCost,
   mergeUniqueResultGroups,
   prioritizeTalismanSearchOrder,
   searchAndSpeed,
   shouldExploreOpportunisticSetSkills,
   sortTalismanCandidatesBySlotSavings
+  , test
 } from './logic';
 import { generateTalismans } from './talismanGenerator';
+import HEAD from '../data/compact/head.json';
+import CHEST from '../data/compact/chest.json';
+import ARMS from '../data/compact/arms.json';
+import WAIST from '../data/compact/waist.json';
+import LEGS from '../data/compact/legs.json';
+import DECORATIONS from '../data/compact/decoration.json';
 
 describe('search feasibility and custom decorations', () => {
   it('collapses equivalent optional charm skills into one Flex result', () => {
@@ -182,7 +191,48 @@ describe('search feasibility and custom decorations', () => {
     expect(buildSearchCacheKey(params)).not.toBe(buildSearchCacheKey({ ...params, customDecorations: [] }));
   });
 
+  it('extends a proven result through consecutive recommended armor skills', () => {
+    const baseSkills = {
+      'Maximum Might': 3,
+      'Evade Window': 3
+    };
+    const baseResult = {
+      armorNames: ['head', 'chest', 'arms', 'waist', 'legs', 'charm'],
+      skills: baseSkills,
+      setSkills: { "Gore Magala's Tyranny": 1 },
+      groupSkills: { "Lord's Soul": 1 },
+      freeSlots: [1, 1],
+      freeWeaponSlots: [],
+      decoNames: [],
+      talismanData: {}
+    };
+    const params = {
+      skills: {
+        ...baseSkills,
+        'Shock Absorber': 1,
+        'Item Prolonger': 1
+      },
+      setSkills: { "Gore Magala's Tyranny": 1 },
+      groupSkills: { "Lord's Soul": 1 }
+    };
+    const decos = {
+      'Shockproof Jewel 1': ['armor', { 'Shock Absorber': 1 }, 1],
+      'Enduring Jewel 1': ['armor', { 'Item Prolonger': 1 }, 1]
+    };
+
+    const extended = extendPriorResults([baseResult], params, decos);
+
+    expect(extended).toHaveLength(1);
+    expect(extended[0].skills).toEqual(expect.objectContaining({
+      'Evade Window': 3,
+      'Shock Absorber': 1,
+      'Item Prolonger': 1
+    }));
+    expect(extended[0].freeSlots).toEqual([]);
+  });
+
   it('completes the reported Burst gunlance-style search', async() => {
+    const partialBatches = [];
     const response = await searchAndSpeed({
       skills: {
         'Attack Boost': 5,
@@ -197,6 +247,7 @@ describe('search feasibility and custom decorations', () => {
       weaponElementValue: 100,
       weaponSharpness: 'White',
       groupSkillBonus: "Lord's Soul",
+      partialResultFunc: results => partialBatches.push(results),
       limit: 100
     });
 
@@ -206,22 +257,40 @@ describe('search feasibility and custom decorations', () => {
       profile: expect.any(Object)
     }));
     expect(() => JSON.parse(JSON.stringify(response))).not.toThrow();
+    expect(partialBatches).toHaveLength(1);
+    expect(partialBatches[0].length).toBeGreaterThan(0);
+    expect(partialBatches[0].length).toBeLessThanOrEqual(20);
   }, 20000);
 
   it('finds the reported ranged build with the R7 Rapid Fire Up and Burst charm', async() => {
     const charmName = 'Reported R7 Rapid Burst Charm';
-    const response = await searchAndSpeed({
-      skills: {
+    const skills = {
         'Maximum Might': 3,
         'Rapid Fire Up': 1,
         'Normal Shots': 1,
+        Burst: 1,
         'Weakness Exploit': 5,
         Agitator: 5,
-        Antivirus: 3,
         'Adrenaline Rush': 2,
         'Critical Boost': 5,
         Earplugs: 2
+    };
+    const directSet = armorCombo(
+      { name: 'Arkvulcan Helm Gamma', data: HEAD['Arkvulcan Helm Gamma'] },
+      { name: 'Gogmazios Mail Beta', data: CHEST['Gogmazios Mail Beta'] },
+      { name: 'G Rathalos Vambraces Beta+', data: ARMS['G Rathalos Vambraces Beta+'] },
+      { name: 'Dahaad Shardcoil Gamma', data: WAIST['Dahaad Shardcoil Gamma'] },
+      { name: 'Sororal Boots Alpha', data: LEGS['Sororal Boots Alpha'] },
+      {
+        name: charmName,
+        data: ['talisman', { 'Rapid Fire Up': 1, Burst: 1 }, [], [2], 0, [], 'high', [], []]
       },
+      [3, 3, 3], "Gore Magala's Tyranny", "Lord's Soul"
+    );
+    expect(test(directSet, DECORATIONS, skills, {})).not.toBeNull();
+
+    const response = await searchAndSpeed({
+      skills,
       setSkills: {
         "Gore Magala's Tyranny": 1,
         "Rathalos's Flare": 1
@@ -231,8 +300,8 @@ describe('search feasibility and custom decorations', () => {
       groupSkillBonus: "Lord's Soul",
       weaponSlots: [3, 3, 3],
       mandatoryArmor: [
-        'G Rathalos Helm Beta+',
-        'Dahaad Shardmail Gamma',
+        'Arkvulcan Helm Gamma',
+        'Gogmazios Mail Beta',
         'G Rathalos Vambraces Beta+',
         'Dahaad Shardcoil Gamma',
         'Sororal Boots Alpha',

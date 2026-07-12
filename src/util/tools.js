@@ -48,7 +48,8 @@ export const getSearchParameters = parameters => {
         updateProgressFunc: parameters.updateProgressFunc, // callback function to pass progress value to
         exhaustive: parameters.exhaustive || false,
         cancelToken: parameters.cancelToken,
-        addMoreFunc: parameters.addMoreFunc
+        addMoreFunc: parameters.addMoreFunc,
+        partialResultFunc: parameters.partialResultFunc
     };
 };
 

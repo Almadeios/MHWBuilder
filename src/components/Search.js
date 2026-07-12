@@ -86,6 +86,7 @@ const Search = () => {
     const bonusStartedAtRef = useRef(0);
     const [isExploringBonuses, setIsExploringBonuses] = useState(false);
     const [bonusProgress, setBonusProgress] = useState(0);
+    const [improvementProgress, setImprovementProgress] = useState({ completed: 0, total: 0 });
     const [bonusRoutes, setBonusRoutes] = useState([]);
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -116,6 +117,7 @@ const Search = () => {
         bonusWorkerRef.current = null;
         setIsExploringBonuses(false);
         setBonusProgress(0);
+        setImprovementProgress({ completed: 0, total: 0 });
         setBonusRoutes([]);
         if (resetElapsed) {
             setElapsedSeconds(-1);
@@ -183,6 +185,8 @@ const Search = () => {
         window.location.replace(url.toString());
     };
 
+    const isLikelyStaleVersionError = (/importScripts|Loading chunk|ChunkLoadError|failed to load/i).test(searchError);
+
     const getResults = event => {
         if (event.ctrlKey) {
             const url = getSearchUrl(fields.skills, fields.slotFilters);
@@ -248,6 +252,13 @@ const Search = () => {
                 worker.terminate();
                 return;
             }
+            if (eventData.data.type === 'partial') {
+                const partial = eventData.data.response;
+                setElapsedSeconds(partial.seconds);
+                setResults(partial.results);
+                setOptimizerProfile(partial.profile || { engine: 'mitm', partial: true });
+                return;
+            }
             if (eventData.data.type !== 'done') { return; }
             const ret = eventData.data.response;
             setElapsedSeconds(ret.seconds);
@@ -279,15 +290,24 @@ const Search = () => {
         return !Object.keys(decoSkills || {}).some(isOffElementSkill);
     };
 
-    const addSocketableSkill = (nextMoreResults, skillName, level, slotType, searchedLevel = 0) => {
+    const addSocketableSkill = (
+        nextMoreResults, skillName, level, slotType, searchedLevel = 0, sourceResult = null
+    ) => {
         const current = nextMoreResults[skillName] || { level: 0, addedLevel: 0, slotTypes: [] };
         const nextLevel = Math.max(current.level || 0, level);
+        let seedResults = current.seedResults || [];
+        if (sourceResult && level > (current.level || 0)) {
+            seedResults = [sourceResult];
+        } else if (sourceResult && level === nextLevel) {
+            seedResults = Array.from(new Set([].concat(seedResults, sourceResult)));
+        }
         nextMoreResults[skillName] = {
             level: nextLevel,
             addedLevel: Math.max(current.addedLevel || 0, Math.max(0, nextLevel - searchedLevel)),
             slotTypes: current.slotTypes.includes(slotType) ?
                 current.slotTypes :
-                [...current.slotTypes, slotType]
+                [...current.slotTypes, slotType],
+            seedResults
         };
     };
 
@@ -358,6 +378,10 @@ const Search = () => {
                 slotTypes: Array.from(new Set([
                     ...current.slotTypes || [],
                     ...skillInfo.slotTypes || []
+                ])),
+                seedResults: Array.from(new Set([
+                    ...current.seedResults || [],
+                    ...skillInfo.seedResults || []
                 ]))
             };
         });
@@ -427,10 +451,10 @@ const Search = () => {
             const level = Math.min(SKILLS[skillName], currentLevel + armorPoints + weaponPoints);
             if (level <= searchedLevel) { return; }
             if (armorPoints > 0) {
-                addSocketableSkill(nextMoreResults, skillName, level, 'armor', searchedLevel);
+                addSocketableSkill(nextMoreResults, skillName, level, 'armor', searchedLevel, result);
             }
             if (weaponPoints > 0) {
-                addSocketableSkill(nextMoreResults, skillName, level, 'weapon', searchedLevel);
+                addSocketableSkill(nextMoreResults, skillName, level, 'weapon', searchedLevel, result);
             }
         });
     };
@@ -470,7 +494,10 @@ const Search = () => {
             Object.entries(bonusLevelsFromThisSlot).forEach(([skillName, level]) => {
                 const currentPossibleLevel = nextMoreResults[skillName]?.level || result.skills?.[skillName] || 0;
                 const combinedLevel = Math.min(SKILLS[skillName], currentPossibleLevel + level);
-                addSocketableSkill(nextMoreResults, skillName, combinedLevel, 'weapon', searchedSkills[skillName] || 0);
+                addSocketableSkill(
+                    nextMoreResults, skillName, combinedLevel, 'weapon',
+                    searchedSkills[skillName] || 0, result
+                );
             });
         });
     };
@@ -556,6 +583,7 @@ const Search = () => {
             collectBonusSelectorSkills(result, searchedSetSkills, searchedGroupSkills, resultMoreResults);
             collectPresentBonusSkills(result, searchedSetSkills, searchedGroupSkills, resultMoreResults);
             Object.entries(result.talismanFlex?.options || {}).forEach(([skillName, level]) => {
+                const flexSources = [result].concat(result.recommendationSeedResults || []);
                 const compatibleSlotTypes = new Set(
                     Object.values(DECORATIONS)
                         .filter(([, decoSkills]) => decoSkills?.[skillName])
@@ -565,13 +593,10 @@ const Search = () => {
                 // Armor is the safe fallback for a skill without a known decoration.
                 if (!compatibleSlotTypes.size) { compatibleSlotTypes.add('armor'); }
                 compatibleSlotTypes.forEach(slotType => {
-                    addSocketableSkill(
-                        resultMoreResults,
-                        skillName,
-                        level,
-                        slotType,
-                        searchedSkills[skillName] || 0
-                    );
+                    flexSources.forEach(sourceResult => addSocketableSkill(
+                        resultMoreResults, skillName, level, slotType,
+                        searchedSkills[skillName] || 0, sourceResult
+                    ));
                 });
             });
             mergeSocketableSkills(nextMoreResults, resultMoreResults);
@@ -625,6 +650,7 @@ const Search = () => {
         bonusStartedAtRef.current = performance.now();
         setIsExploringBonuses(true);
         setBonusProgress(0);
+        setImprovementProgress({ completed: 0, total: 0 });
 
         worker.onmessage = event => {
             const message = event.data;
@@ -632,13 +658,10 @@ const Search = () => {
                 if (message.candidate.sourceType === 'skill') {
                     setMoreResults(current => {
                         const next = { ...current };
-                        addSocketableSkill(
-                            next,
-                            message.candidate.skillName,
-                            message.candidate.level,
-                            'armor',
-                            searchedSkills[message.candidate.skillName] || 0
-                        );
+                        (message.seedResults || [null]).forEach(sourceResult => addSocketableSkill(
+                            next, message.candidate.skillName, message.candidate.level, 'armor',
+                            searchedSkills[message.candidate.skillName] || 0, sourceResult
+                        ));
                         return next;
                     });
                 } else {
@@ -647,6 +670,7 @@ const Search = () => {
                 setShowMore(true);
             } else if (message.type === 'progress') {
                 setBonusProgress(message.total ? message.completed / message.total * 100 : 100);
+                setImprovementProgress({ completed: message.completed, total: message.total });
             } else if (message.type === 'done') {
                 setMoreElapsedSeconds((performance.now() - bonusStartedAtRef.current) / 1000);
                 stopBonusExploration();
@@ -1150,9 +1174,9 @@ const Search = () => {
             const gradientStyle = generateStyle(gradientColor);
             return <div className={`skills-search-bubble more skill-gradient`}
                 onClick={() => {
-                    recommendationSeedResultsRef.current = results.flatMap(result =>
-                        [result].concat(result.recommendationSeedResults || [])
-                    );
+                    recommendationSeedResultsRef.current = skillInfo.seedResults?.length ?
+                        skillInfo.seedResults :
+                        results.flatMap(result => [result].concat(result.recommendationSeedResults || []));
                     addSkill(skillName, maxLevel);
                 }}
                 style={{
@@ -1225,10 +1249,15 @@ const Search = () => {
                     </div>
                 </div>}
             </div>}
-            {(isExploringBonuses || hasBonusImprovements) && <div style={{ marginTop: '1em' }}>
+            {isExploringBonuses && <div style={{ color: '#9ee8f0', marginTop: '0.8em' }}>
+                Exploring selected skill upgrades
+                {improvementProgress.total > 0 ?
+                    ` — ${improvementProgress.completed}/${improvementProgress.total}` :
+                    '…'}
+            </div>}
+            {hasBonusImprovements && <div style={{ marginTop: '1em' }}>
                 <div style={{ color: '#f0c49e', fontWeight: 700, marginBottom: '0.4em' }}>
-                    Bonus improvements
-                    {isExploringBonuses ? ` — exploring ${Math.round(bonusProgress)}%` : ''}:
+                    Bonus improvements:
                 </div>
                 <div style={{ color: '#d2c4b8', marginBottom: '0.45em' }}>
                     Orange recommendations are Set Bonuses; blue recommendations are Group Skills.
@@ -1266,7 +1295,7 @@ return (
                     Refresh App
                 </Button>
                 {isExploringBonuses && <Button variant="outlined" color="error"
-                    onClick={stopBonusExploration}>Cancel Bonus Search</Button>}
+                    onClick={stopBonusExploration}>Cancel Skill Search</Button>}
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
                     cancelledRef.current = true;
                     searchWorkerRef.current?.terminate();
@@ -1295,10 +1324,10 @@ return (
             </div>}
             {searchError && <div className="warn" style={{ marginTop: '0.75em' }}>
                 <div>Search failed: {searchError}</div>
-                <div style={{ marginTop: '0.5em' }}>
+                {isLikelyStaleVersionError && <div style={{ marginTop: '0.5em' }}>
                     If the app was recently updated, your browser may still be using an older version.
-                </div>
-                <Button
+                </div>}
+                {isLikelyStaleVersionError && <Button
                     variant="outlined"
                     color="warning"
                     size="small"
@@ -1306,7 +1335,7 @@ return (
                     sx={{ marginTop: '0.5em' }}
                 >
                     Load latest version
-                </Button>
+                </Button>}
             </div>}
             {showMore && renderMoreResults()}
         </div>

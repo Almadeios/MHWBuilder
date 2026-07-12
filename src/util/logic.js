@@ -18,7 +18,6 @@ import {
 import {
     CHOSEN_ARMOR_DEBUG,
     DEBUG,
-    DFS,
     DFS_DEBUG,
     OPTIMIZER_PROFILE,
     USE_NEW_ENGINE,
@@ -47,7 +46,7 @@ export let lastOptimizerProfile = null;
 
 const searchCache = new Map();
 const MAX_SEARCH_CACHE_ENTRIES = 50;
-const SEARCH_CACHE_VERSION = 20;
+const SEARCH_CACHE_VERSION = 22;
 const MAX_COMBO_SEARCH_MS = 12000;
 const talismanScoreCache = new Map();
 const MAX_TALISMAN_SCORE_CACHE_ENTRIES = 2000;
@@ -230,7 +229,7 @@ export const getBestArmor = (
 ) => {
     // const fullDataFile = getJsonFromType("armor");
     const fullDataFile = Object.fromEntries(
-        Object.entries(getJsonFromType("armor")).filter(([name, _]) => !INTERNAL_BLACKMAP[name])
+        Object.entries(getJsonFromType("armor")).filter(([name]) => !INTERNAL_BLACKMAP[name])
     );
 
     const mandatory = {};
@@ -375,7 +374,7 @@ export const getBestArmor = (
 
     const bareMinimum = firsts;
     for (const [category, data] of Object.entries(maxPossibleSkillPotential)) {
-        for (const [skillName, statData] of Object.entries(data)) {
+        for (const statData of Object.values(data)) {
             for (const key of ["best", "more"]) {
                 if (statData[key]) {
                     if (key === "more" && statData[key].length) {
@@ -392,7 +391,7 @@ export const getBestArmor = (
 
     // now handle set/group skills
     const groupiesAlt = Object.fromEntries(Object.entries(dataFile)
-        .filter(([k, v]) => isInSets(v, setSkills) || isInGroups(v, groupSkills))
+        .filter(([, v]) => isInSets(v, setSkills) || isInGroups(v, groupSkills))
         .sort((a, b) => {
             return slottageSizeCompare(a[1][3], b[1][3], b[1][4] - a[1][4]);
         })
@@ -411,7 +410,7 @@ export const getBestArmor = (
         modPointMap = {};
         for (const skillName of Object.keys(skills)) {
             for (const [category, data] of Object.entries(bestGroupiesAlt)) {
-                const [groupiesGrouped, _] = groupArmorIntoSets(data, setSkills, groupSkills);
+                const [groupiesGrouped] = groupArmorIntoSets(data, setSkills, groupSkills);
 
                 for (const [groupName, groupArmors] of Object.entries(groupiesGrouped)) {
                     for (const [armorName, armorData] of Object.entries(groupArmors)) {
@@ -429,8 +428,8 @@ export const getBestArmor = (
         }
 
         for (const [category, data] of Object.entries(maxPossibleSkillPotentialSet)) {
-            for (const [groupName, groupData] of Object.entries(data)) {
-                for (const [skillName, statData] of Object.entries(groupData)) {
+            for (const groupData of Object.values(data)) {
+                for (const statData of Object.values(groupData)) {
                     for (const key of ["best", "more"]) {
                         if (key in statData) {
                             if (key === "more" && statData[key].length) {
@@ -629,7 +628,14 @@ const getDecoCandidateList = decos => Object.entries(decos).map(([decoName, data
 const getDecosToFulfillSkillsSearch = (
     decos, skillsNeeded, slotsAvailable, weaponSlotsAvailable, usedDecosCount = {}, params = {}, desiredSkills = {}
 ) => {
-    const candidates = getDecoCandidateList(decos);
+    const candidates = getDecoCandidateList(decos)
+        .filter(candidate => Object.keys(candidate.decoSkills).some(skillName => skillsNeeded[skillName] > 0))
+        .filter(candidate => (decoInventory[candidate.decoName] || 0) > 0)
+        .filter(candidate => !hasBlockedOffElementAttackSkill(candidate.decoSkills, params, desiredSkills))
+        .filter(candidate => {
+            const pool = candidate.decoType === 'weapon' ? weaponSlotsAvailable : slotsAvailable;
+            return pool.some(slotSize => slotSize >= candidate.decoSlot);
+        });
     const memo = new Set();
     const maxDepth = slotsAvailable.length + weaponSlotsAvailable.length;
 
@@ -734,14 +740,22 @@ const getDecosToFulfillSkillsGreedy = (
     const weaponSlotPool = [...weaponSlotsAvailable].sort((a, b) => a - b);
 
     // Sort decorations: satisfy requested skills first. Bonus skills are offered as extras, not auto-selected.
-    const sortedDecos = Object.entries(decos).sort((a, b) => {
-        const [_, __, slotA] = a[1];
-        const [___, ____, slotB] = b[1];
+    const sortedDecos = Object.entries(decos)
+        .filter(([, decoData]) => getUsefulDecoPoints(decoData[1], skillsNeeded) > 0)
+        .filter(([decoName]) => (decoInventory[decoName] || 0) > 0)
+        .filter(([, decoData]) => !hasBlockedOffElementAttackSkill(decoData[1], params, desiredSkills))
+        .filter(([, decoData]) => {
+            const pool = decoData[0] === 'weapon' ? weaponSlotsAvailable : slotsAvailable;
+            return pool.some(slotSize => slotSize >= decoData[2]);
+        })
+        .sort((a, b) => {
+        const slotA = a[1][2];
+        const slotB = b[1][2];
         const usefulSkillA = getUsefulDecoPoints(a[1][1], skillsNeeded);
         const usefulSkillB = getUsefulDecoPoints(b[1][1], skillsNeeded);
         if (usefulSkillB !== usefulSkillA) { return usefulSkillB - usefulSkillA; }
         return slotA - slotB;
-    });
+        });
 
     const usedDecos = [];
     const usedDecosCount = { ...startingUsedDecosCount };
@@ -865,7 +879,8 @@ export const reorder = dataList => {
 
     damnSort.forEach(d => d.slots.sort((a, b) => b - a));
 
-    let pre = [], post = [];
+    const pre = [];
+    const post = [];
     const bestPerThree = {}; // Tracks the best (longest) list per (numThrees, numTwos)
 
     const sortedDamnSort = damnSort.sort((a, b) => {
@@ -901,8 +916,8 @@ export const reorder = dataList => {
         }
     });
 
-    pre = [...pre, ...post];
-    const excludeIds = new Set(pre.map(obj => obj.id));
+    const ordered = [...pre, ...post];
+    const excludeIds = new Set(ordered.map(obj => obj.id));
 
     const longestSlots = [...indexedData]
         .filter(v => !excludeIds.has(v.id))
@@ -923,18 +938,18 @@ export const reorder = dataList => {
             );
         });
 
-    return [...pre, ...longestSlots];
+    return [...ordered, ...longestSlots];
 };
 
 const RAW_SEARCH_SKILL_WEIGHTS = {
     'Attack Boost': 4,
-    Agitator: 4,
-    Burst: 4,
+    "Agitator": 4,
+    "Burst": 4,
     'Peak Performance': 3,
-    Resentment: 3,
+    "Resentment": 3,
     'Adrenaline Rush': 3,
-    Counterstrike: 3,
-    Foray: 3,
+    "Counterstrike": 3,
+    "Foray": 3,
     'Offensive Guard': 3,
     'Critical Eye': 2,
     'Weakness Exploit': 2,
@@ -1291,6 +1306,7 @@ export const shouldExploreOpportunisticSetSkills = params => {
     return !params.findOne && !hasExplicitBonus && Object.keys(params.skills || {}).length >= 8;
 };
 
+// eslint-disable-next-line no-unused-vars
 const getOpportunisticSetSkillSeeds = params => {
     if (!shouldExploreOpportunisticSetSkills(params)) {
         return [];
@@ -1305,6 +1321,7 @@ const getOpportunisticSetSkillSeeds = params => {
         }));
 };
 
+// eslint-disable-next-line no-unused-vars
 const getFairTalismanSeeds = (gear, params) => {
     const sorted = sortTalismanCandidatesBySlotSavings(
         Object.entries(gear.talisman || {}),
@@ -1486,7 +1503,7 @@ const rollCombosDfs = async(
         candidateLists, searchOrder, desiredSkills, gear.decos, gear.weaponSlots
     );
 
-    let counter = 1, inc = 1, allCounter = 0;
+    let allCounter = 0;
 
     // Precompute best-case future values for skill projection
     const dfs = async(index, currentArmor, usedNames, setCounts, groupCounts, skillPotentialCounts) => {
@@ -1510,13 +1527,10 @@ const rollCombosDfs = async(
             if (result) {
                 // dangerous assumption that decoNames are sorted
                 result.id = stringToId(`${result.armorNames.join(",")}_${result.decoNames.join(",")}`);
-                result._id = inc;
-                inc++;
                 results.push(result);
                 if (findOne || results.length >= limit) { return true; }
             }
 
-            counter++;
             return false;
         }
 
@@ -1763,7 +1777,7 @@ const rollCombosNewEngine = async(
         requiredGroupPoints[name] = Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0));
     }
 
-    let inc = 1, allCounter = 0;
+    let allCounter = 0;
 
     const dfs = async index => {
         profile.nodes++;
@@ -1783,8 +1797,6 @@ const rollCombosNewEngine = async(
             const result = test(fullSet, gear.decos, desiredSkills, gear);
             if (result) {
                 result.id = stringToId(`${result.armorNames.join(",")}_${result.decoNames.join(",")}`);
-                result._id = inc;
-                inc++;
                 results.push(result);
                 if (findOne || results.length >= limit) { return true; }
             }
@@ -1839,6 +1851,268 @@ const rollCombosNewEngine = async(
     return results;
 };
 
+const getMitmSlotKey = slots => [...slots].sort((a, b) => b - a).join(',');
+
+const getMitmStateKey = (state, desiredSkills, requiredSetPoints, requiredGroupPoints) => JSON.stringify({
+    skills: Object.entries(desiredSkills).map(([name, level]) =>
+        [name, Math.min(level, state.skills[name] || 0)]
+    ),
+    sets: Object.entries(requiredSetPoints).map(([name, points]) =>
+        [name, Math.min(points, state.setCounts[name] || 0)]
+    ),
+    groups: Object.entries(requiredGroupPoints).map(([name, points]) =>
+        [name, Math.min(points, state.groupCounts[name] || 0)]
+    ),
+    armorSlots: getMitmSlotKey(state.slots),
+    weaponSlots: getMitmSlotKey(state.weaponSlots)
+});
+
+const getMitmBonusKey = (state, requiredSetPoints, requiredGroupPoints) => JSON.stringify({
+    sets: Object.entries(requiredSetPoints).map(([name, points]) =>
+        [name, Math.min(points, state.setCounts[name] || 0)]
+    ),
+    groups: Object.entries(requiredGroupPoints).map(([name, points]) =>
+        [name, Math.min(points, state.groupCounts[name] || 0)]
+    )
+});
+
+const getMitmCoverageScore = (state, desiredSkills) => {
+    const skillScore = Object.entries(desiredSkills).reduce((total, [name, level]) =>
+        total + Math.min(level, state.skills[name] || 0), 0
+    );
+    return skillScore * 100 + state.slots.reduce((total, size) => total + size, 0) +
+        state.weaponSlots.reduce((total, size) => total + size, 0);
+};
+
+const canMitmReachDesiredSkills = (skills, armorSlots, weaponSlots, desiredSkills, decos) => {
+    return Object.entries(desiredSkills).every(([skillName, targetLevel]) => {
+        const missingLevel = targetLevel - (skills[skillName] || 0);
+        if (missingLevel <= 0) { return true; }
+
+        let bestArmorPotential = 0;
+        let bestWeaponPotential = 0;
+        Object.values(decos || {}).forEach(([decoType, decoSkills, decoSize]) => {
+            const level = decoSkills?.[skillName] || 0;
+            if (!level) { return; }
+            const compatibleSlots = decoType === 'weapon' ? weaponSlots : armorSlots;
+            const potential = level * compatibleSlots.filter(slotSize => slotSize >= decoSize).length;
+            if (decoType === 'weapon') {
+                bestWeaponPotential = Math.max(bestWeaponPotential, potential);
+            } else {
+                bestArmorPotential = Math.max(bestArmorPotential, potential);
+            }
+        });
+        return bestArmorPotential + bestWeaponPotential >= missingLevel;
+    });
+};
+
+const getMitmFeasibilityKey = (skills, armorSlots, weaponSlots, desiredSkills) => JSON.stringify({
+    skills: Object.entries(desiredSkills).map(([name, level]) => [name, Math.min(level, skills[name] || 0)]),
+    armorSlots: getMitmSlotKey(armorSlots),
+    weaponSlots: getMitmSlotKey(weaponSlots)
+});
+
+const buildMitmHalf = async(
+    slotsToBuild, candidateLists, desiredSkills, requiredSetPoints, requiredGroupPoints, cancelToken, profile
+) => {
+    let states = [{
+        pieces: {},
+        names: new Set(),
+        skills: {},
+        setCounts: {},
+        groupCounts: {},
+        slots: [],
+        weaponSlots: []
+    }];
+
+    for (const slot of slotsToBuild) {
+        const nextByKey = new Map();
+        let operations = 0;
+        for (const state of states) {
+            for (const [name, piece] of candidateLists[slot]) {
+                if (name !== 'None' && state.names.has(name)) { continue; }
+                const next = {
+                    pieces: { ...state.pieces, [slot]: [name, piece] },
+                    names: new Set(state.names),
+                    skills: mergeSumMaps([state.skills, _x.skills(piece) || {}]),
+                    setCounts: { ...state.setCounts },
+                    groupCounts: { ...state.groupCounts },
+                    slots: state.slots.concat(_x.slots(piece) || []),
+                    weaponSlots: state.weaponSlots.concat(
+                        slot === 'talisman' ? _x.weaponSlots(piece) : []
+                    )
+                };
+                if (name !== 'None') { next.names.add(name); }
+                (_x.setSkills(piece) || []).forEach(skillName => {
+                    if (requiredSetPoints[skillName] !== undefined) {
+                        next.setCounts[skillName] = (next.setCounts[skillName] || 0) + 1;
+                    }
+                });
+                (_x.groupSkills(piece) || []).forEach(skillName => {
+                    if (requiredGroupPoints[skillName] !== undefined) {
+                        next.groupCounts[skillName] = (next.groupCounts[skillName] || 0) + 1;
+                    }
+                });
+                const key = getMitmStateKey(next, desiredSkills, requiredSetPoints, requiredGroupPoints);
+                if (!nextByKey.has(key)) { nextByKey.set(key, next); }
+                profile.nodes++;
+                operations++;
+                if (operations % 1000 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                    if (cancelToken?.current) { return []; }
+                }
+            }
+        }
+        states = [...nextByKey.values()];
+    }
+    return states;
+};
+
+const rollCombosMeetInMiddle = async(
+    gear, desiredSkills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined,
+    optimizationGoal = 'efficient', profile = createOptimizerProfile('mitm'), partialResultFunc = null
+) => {
+    if (!gear) { return []; }
+    profile.engine = 'mitm';
+    const armorSlots = getArmorTypeList();
+    const candidateLists = Object.fromEntries(
+        armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal)])
+    );
+    const requiredSetPoints = Object.fromEntries(Object.entries(setSkills).map(([name, level]) => [
+        name, Math.max(0, level * 2 - (gear.setSkillBonus === name ? 1 : 0))
+    ]));
+    const requiredGroupPoints = Object.fromEntries(Object.keys(groupSkills).map(name => [
+        name, Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0))
+    ]));
+
+    const leftStates = await buildMitmHalf(
+        ['head', 'chest', 'arms'], candidateLists, desiredSkills,
+        requiredSetPoints, requiredGroupPoints, cancelToken, profile
+    );
+    const rightStates = await buildMitmHalf(
+        ['waist', 'legs', 'talisman'], candidateLists, desiredSkills,
+        requiredSetPoints, requiredGroupPoints, cancelToken, profile
+    );
+    profile.leftStates = leftStates.length;
+    profile.rightStates = rightStates.length;
+    leftStates.sort((a, b) => getMitmCoverageScore(b, desiredSkills) - getMitmCoverageScore(a, desiredSkills));
+    const rightBuckets = new Map();
+    rightStates.forEach(state => {
+        const key = getMitmBonusKey(state, requiredSetPoints, requiredGroupPoints);
+        const bucket = rightBuckets.get(key) || {
+            setCounts: state.setCounts,
+            groupCounts: state.groupCounts,
+            states: []
+        };
+        bucket.states.push(state);
+        rightBuckets.set(key, bucket);
+    });
+    const orderedRightBuckets = [...rightBuckets.values()];
+    orderedRightBuckets.forEach(bucket => bucket.states.sort(
+        (a, b) => getMitmCoverageScore(b, desiredSkills) - getMitmCoverageScore(a, desiredSkills)
+    ));
+    profile.rightBonusBuckets = orderedRightBuckets.length;
+    const results = [];
+    const decorationStateCache = new Map();
+    let emittedPartialResults = false;
+    let checked = 0;
+    for (const left of leftStates) {
+        for (const bucket of orderedRightBuckets) {
+            const combinedSets = mergeSumMaps([left.setCounts, bucket.setCounts]);
+            const combinedGroups = mergeSumMaps([left.groupCounts, bucket.groupCounts]);
+            if (Object.entries(requiredSetPoints).some(([name, points]) => (combinedSets[name] || 0) < points)) {
+                profile.pruned += bucket.states.length;
+                continue;
+            }
+            if (Object.entries(requiredGroupPoints).some(([name, points]) => (combinedGroups[name] || 0) < points)) {
+                profile.pruned += bucket.states.length;
+                continue;
+            }
+
+            for (const right of bucket.states) {
+                if ([...left.names].some(name => right.names.has(name))) { continue; }
+
+                const combinedSkills = mergeSumMaps([left.skills, right.skills]);
+                const combinedArmorSlots = [...left.slots, ...right.slots];
+                const combinedWeaponSlots = [].concat(
+                    gear.weaponSlots || [], left.weaponSlots, right.weaponSlots
+                );
+                if (!canMitmReachDesiredSkills(
+                    combinedSkills, combinedArmorSlots, combinedWeaponSlots, desiredSkills, gear.decos
+                )) {
+                    profile.pruned++;
+                    profile.skillBoundPruned = (profile.skillBoundPruned || 0) + 1;
+                    continue;
+                }
+                const feasibilityKey = getMitmFeasibilityKey(
+                    combinedSkills, combinedArmorSlots, combinedWeaponSlots, desiredSkills
+                );
+                if (decorationStateCache.has(feasibilityKey) && !decorationStateCache.get(feasibilityKey)) {
+                    profile.pruned++;
+                    profile.feasibilityCacheHits = (profile.feasibilityCacheHits || 0) + 1;
+                    continue;
+                }
+
+                const pieces = { ...left.pieces, ...right.pieces };
+                const fullSet = armorCombo(
+                    formatArmorC(pieces.head), formatArmorC(pieces.chest), formatArmorC(pieces.arms),
+                    formatArmorC(pieces.waist), formatArmorC(pieces.legs), formatArmorC(pieces.talisman),
+                    gear.weaponSlots, gear.setSkillBonus, gear.groupSkillBonus
+                );
+                profile.leaves++;
+                const cachedDecorationState = decorationStateCache.get(feasibilityKey);
+                let result;
+                if (cachedDecorationState) {
+                    const decoSkills = getRequestedDecoSkillsFromNames(
+                        cachedDecorationState.decoNames, desiredSkills
+                    );
+                    result = {
+                        armorNames: fullSet.names,
+                        slots: fullSet.slots,
+                        weaponSlots: fullSet.weaponSlots,
+                        decoNames: cachedDecorationState.decoNames.slice(),
+                        requiredDecoNames: cachedDecorationState.requiredDecoNames.slice(),
+                        autoDecoNames: cachedDecorationState.autoDecoNames.slice(),
+                        baseSkills: fullSet.skills,
+                        skills: mergeSumMaps([fullSet.skills, decoSkills]),
+                        setSkills: fullSet.setSkills,
+                        groupSkills: fullSet.groupSkills,
+                        talismanData: fullSet.talismanData,
+                        freeSlots: cachedDecorationState.freeSlots.slice(),
+                        freeWeaponSlots: cachedDecorationState.freeWeaponSlots.slice()
+                    };
+                    profile.feasibilityCacheHits = (profile.feasibilityCacheHits || 0) + 1;
+                } else {
+                    result = test(fullSet, gear.decos, desiredSkills, gear);
+                    decorationStateCache.set(feasibilityKey, result ? {
+                        decoNames: result.decoNames.slice(),
+                        requiredDecoNames: result.requiredDecoNames.slice(),
+                        autoDecoNames: result.autoDecoNames.slice(),
+                        freeSlots: result.freeSlots.slice(),
+                        freeWeaponSlots: result.freeWeaponSlots.slice()
+                    } : null);
+                }
+                if (result) {
+                    result.id = stringToId(`${result.armorNames.join(',')}_${result.decoNames.join(',')}`);
+                    results.push(result);
+                    if (!emittedPartialResults && results.length >= 20 && limit > 20 && partialResultFunc) {
+                        emittedPartialResults = true;
+                        partialResultFunc(results.slice());
+                    }
+                    if (findOne || results.length >= limit) { return results; }
+                }
+                checked++;
+                if (checked % 250 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                    if (cancelToken?.current) { return results; }
+                }
+            }
+        }
+    }
+    return results;
+};
+
+// eslint-disable-next-line no-unused-vars
 const rollCombos = async(
     gear, skills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined,
     optimizationGoal = 'highest_dps',
@@ -1850,7 +2124,7 @@ const rollCombos = async(
         return [];
     }
 
-    let counter = 0, inc = 0, allCounter = 0;
+    let counter = 0, allCounter = 0;
     const ret = [];
 
     // Convert gear categories into arrays for efficient iteration
@@ -1946,8 +2220,6 @@ const rollCombos = async(
         const result = test(testSet, gear.decos, skills, gear);
         if (result) {
             result.id = counter + 1;
-            result._id = inc + 1;
-            inc += 1;
             ret.push(result);
             if (findOne) { return ret; }
         }
@@ -2156,6 +2428,51 @@ export const mergeUniqueResultGroups = resultGroups => Array.from(new Map(
     resultGroups.flat().map(result => [resultSignature(result), result])
 ).values());
 
+const preparePartialResults = (rolls, params) => {
+    let prepared = rolls.map(roll => ({
+        ...roll,
+        armorNames: [...roll.armorNames],
+        slots: [...roll.slots],
+        weaponSlots: [...roll.weaponSlots],
+        decoNames: [...roll.decoNames],
+        requiredDecoNames: [...roll.requiredDecoNames],
+        autoDecoNames: [...roll.autoDecoNames],
+        baseSkills: { ...roll.baseSkills },
+        skills: { ...roll.skills },
+        setSkills: { ...roll.setSkills },
+        groupSkills: { ...roll.groupSkills },
+        freeSlots: [...roll.freeSlots],
+        freeWeaponSlots: [...roll.freeWeaponSlots]
+    }));
+    if (!isEmpty(params.slotFilters)) {
+        const desiredSlots = Object.entries(params.slotFilters)
+            .flatMap(([num, count]) => Array(count).fill(Number(num)))
+            .sort((a, b) => b - a);
+        prepared = prepared.filter(roll => {
+            const freeSlots = [...roll.freeSlots].sort((a, b) => b - a);
+            return desiredSlots.every((wanted, index) => freeSlots[index] >= wanted);
+        });
+    }
+    prepared = prepared.map(roll => {
+        const enrichedRoll = {
+            ...roll,
+            conditions: params.conditions || {},
+            weaponBaseRaw: params.weaponBaseRaw,
+            weaponBaseAffinity: params.weaponBaseAffinity,
+            weaponType: params.weaponType,
+            weaponElementType: params.weaponElementType,
+            weaponElementValue: params.weaponElementValue,
+            weaponSharpness: params.weaponSharpness
+        };
+        const damageProfile = buildDamageProfile(enrichedRoll);
+        return { ...enrichedRoll, damageProfile, tags: damageProfile.tags };
+    });
+    return collapseFlexibleTalismanResults(
+        reorder(rankBuildsByDamage(prepared, params.optimizationGoal || 'efficient')),
+        params.skills
+    ).slice(0, params.limit);
+};
+
 export const extendPriorResults = (priorResults, params, decos = currentDecorations) => {
     if (!Array.isArray(priorResults) || !priorResults.length) { return []; }
 
@@ -2216,9 +2533,9 @@ export const getAddableSkills = async parameters => {
 
     currentSlotFilters = { ...params.slotFilters };
     params.slotFilters = {};
-    const priorResults = Array.isArray(params.priorResults) && params.priorResults.length
-        ? params.priorResults
-        : await search(parameters);
+    const priorResults = Array.isArray(params.priorResults) && params.priorResults.length ?
+        params.priorResults :
+        await search(parameters);
     const armorSkillsList = getArmorSkillNames();
 
     if (DEBUG) { console.log("beginning skill iterations..."); }
@@ -2368,10 +2685,12 @@ export const search = async parameters => {
 
     stageStartedAt = performance.now();
     const seededRolls = extendPriorResults(params.priorResults, params, currentDecorations);
+    profile.priorResults = params.priorResults.length;
+    profile.priorExtensions = seededRolls.length;
     recordOptimizerStage(profile, "priorResultExtension", stageStartedAt);
 
     stageStartedAt = performance.now();
-    let gear = buildSearchGear(params);
+    const gear = buildSearchGear(params);
     recordOptimizerStage(profile, "candidatePrep", stageStartedAt);
 
     stageStartedAt = performance.now();
@@ -2385,17 +2704,8 @@ export const search = async parameters => {
         return [];
     }
 
-    let comboFunc = USE_NEW_ENGINE ? rollCombosNewEngine : rollCombosDfs;
-    if (!USE_NEW_ENGINE && !DFS) {
-        comboFunc = rollCombos;
-    }
-
-    let engineName = "dfs";
-    if (USE_NEW_ENGINE) {
-        engineName = "new-engine";
-    } else if (!DFS) {
-        engineName = "cartesian";
-    }
+    const comboFunc = rollCombosMeetInMiddle;
+    const engineName = "mitm";
     profile.engine = engineName;
     const searchLimit = params.findOne ? params.limit : Math.max(params.limit, Math.min(params.limit * 3, 60));
     const maxComboSearchMs = params.maxSearchMs || MAX_COMBO_SEARCH_MS;
@@ -2410,7 +2720,10 @@ export const search = async parameters => {
         }, timeBudget);
         const searchRolls = await comboFunc(
             searchGear, params.skills, setSkills, groupSkills, searchLimit,
-            params.findOne, effectiveCancelToken, params.optimizationGoal, profile
+            params.findOne, effectiveCancelToken, params.optimizationGoal, profile,
+            params.partialResultFunc ? partialRolls => params.partialResultFunc(
+                preparePartialResults(partialRolls, params), { ...profile, partial: true }
+            ) : null
         );
         clearTimeout(timeoutId);
         recordOptimizerStage(profile, stageName, comboStartTime);
@@ -2421,20 +2734,13 @@ export const search = async parameters => {
         return searchRolls;
     };
 
-    const opportunisticSeeds = getOpportunisticSetSkillSeeds(params);
-    const talismanSeeds = getFairTalismanSeeds(gear, params);
     const searchVariants = [
         {
             label: 'base',
             gear,
             setSkills: params.setSkills,
             groupSkills: params.groupSkills
-        },
-        ...opportunisticSeeds.map(seed => ({
-            ...seed,
-            gear: buildSearchGear(params, seed.setSkills, seed.groupSkills)
-        })),
-        ...talismanSeeds
+        }
     ];
     const comboBudget = seededRolls.length ? Math.min(maxComboSearchMs, 3000) : maxComboSearchMs;
     const variantTimeBudget = Math.max(100, Math.floor(comboBudget / searchVariants.length));
@@ -2451,11 +2757,7 @@ export const search = async parameters => {
         resultGroups.push(variantRolls);
     }
     let rolls = mergeUniqueResultGroups(resultGroups);
-    if (opportunisticSeeds.length || talismanSeeds.length) {
-        profile.engine = `${engineName}+fair-seeds`;
-        profile.seeds = [...opportunisticSeeds, ...talismanSeeds].map(seed => seed.label);
-        profile.seedTimeBudgetMs = variantTimeBudget;
-    }
+    profile.engine = engineName;
     profile.timedOut = !rolls.length && searchTimedOut;
 
     if (VALIDATE_NEW_ENGINE && !profile.timedOut) {
