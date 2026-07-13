@@ -51,7 +51,7 @@ export const armorNameFormat = name => {
     const beta = "β";
     const gamma = "γ";
 
-    return name.replaceAll("Alpha", alpha).replaceAll("Beta", beta).replaceAll("Gamma", gamma);
+    return name.replace(/\bAlpha\b/gi, alpha).replace(/\bBeta\b/gi, beta).replace(/\bGamma\b/gi, gamma);
 };
 
 export const allArmorMaps = () => {

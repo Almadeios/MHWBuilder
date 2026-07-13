@@ -24,6 +24,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "armor-importer": "node tools/armor-importer/cli.mjs",
+    "test:armor-importer": "node --test --experimental-test-isolation=none tools/armor-importer/test/*.test.mjs",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

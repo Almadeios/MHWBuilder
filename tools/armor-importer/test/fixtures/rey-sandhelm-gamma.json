@@ -1,0 +1,23 @@
+{
+    "name": "Rey Sandhelm Gamma",
+    "type": "head",
+    "rarity": 8,
+    "rank": "high",
+    "defense": 68,
+    "slots": [3],
+    "resistances": {
+        "fire": 0,
+        "water": -2,
+        "thunder": 4,
+        "ice": -3,
+        "dragon": 0
+    },
+    "skills": {
+        "Weakness Exploit": 1,
+        "Maximum Might": 1,
+        "Stamina Surge": 1
+    },
+    "setSkills": ["Rey Dau's Voltage"],
+    "groupSkills": ["Lord's Soul"],
+    "description": ""
+}
