@@ -64,7 +64,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
     const [foundSkillNames, setFoundSkillNames] = useState([]);
     const [allSkills, setAllSkills] = useState([]);
     const [showIcons, setShowIcons] = useState(true);
-    const [hideBlur, setHideBlur] = useState(false);
+    const [hideBlur] = useState(false);
     const [expanded, setExpanded] = useState(false);
 
     const combinedSkills = () => {

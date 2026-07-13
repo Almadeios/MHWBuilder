@@ -38,6 +38,8 @@ import { ELEMENT_SKILL_TABLES, filterConditionsForSkills, getConditionOptionsFor
 const ArrowL = styled(ArrowLeft)`
     width: 16px !important;
 `;
+const BONUS_EXPLORER_WORKER_COUNT = 3;
+const MAX_BONUS_EXPLORATION_CACHE_ENTRIES = 10;
 const ArrowR = styled(ArrowRight)`
     width: 16px !important;
 `;
@@ -80,13 +82,17 @@ const Search = () => {
     const [loadProgress, setLoadProgress] = useState(0);
     const [optimizerProfile, setOptimizerProfile] = useState(null);
     const [searchError, setSearchError] = useState('');
-    const bonusWorkerRef = useRef(null);
+    const bonusWorkersRef = useRef([]);
+    const bonusWorkerStatsRef = useRef(null);
+    const bonusExplorationCacheRef = useRef(new Map());
     const searchWorkerRef = useRef(null);
     const recommendationSeedResultsRef = useRef([]);
     const bonusStartedAtRef = useRef(0);
     const [isExploringBonuses, setIsExploringBonuses] = useState(false);
     const [bonusProgress, setBonusProgress] = useState(0);
-    const [improvementProgress, setImprovementProgress] = useState({ completed: 0, total: 0 });
+    const [improvementProgress, setImprovementProgress] = useState({
+        completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0
+    });
     const [bonusRoutes, setBonusRoutes] = useState([]);
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -107,17 +113,23 @@ const Search = () => {
         }
     }, [isGenerating]);
 
+    const terminateBonusWorkers = () => {
+        bonusWorkersRef.current.forEach(worker => worker.terminate());
+        bonusWorkersRef.current = [];
+    };
+
     useEffect(() => () => {
-        bonusWorkerRef.current?.terminate();
+        terminateBonusWorkers();
         searchWorkerRef.current?.terminate();
     }, []);
 
     const prepareSearch = ({ resetElapsed = true } = {}) => {
-        bonusWorkerRef.current?.terminate();
-        bonusWorkerRef.current = null;
+        terminateBonusWorkers();
         setIsExploringBonuses(false);
         setBonusProgress(0);
-        setImprovementProgress({ completed: 0, total: 0 });
+        setImprovementProgress({
+            completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0
+        });
         setBonusRoutes([]);
         if (resetElapsed) {
             setElapsedSeconds(-1);
@@ -609,8 +621,8 @@ const Search = () => {
     };
 
     const stopBonusExploration = () => {
-        bonusWorkerRef.current?.terminate();
-        bonusWorkerRef.current = null;
+        terminateBonusWorkers();
+        bonusWorkerStatsRef.current = null;
         setIsExploringBonuses(false);
         setBonusProgress(0);
     };
@@ -645,44 +657,152 @@ const Search = () => {
             decoMods: fields.decoInventory,
             priorResults: results
         });
-        const worker = new Worker(new URL('../workers/bonusExplorer.worker.js', import.meta.url));
-        bonusWorkerRef.current = worker;
+        const cacheKey = JSON.stringify({
+            ...params,
+            priorResults: results.map(result => result.id || result.armorNames?.join('|'))
+        });
+        const applyResultMessage = message => {
+            if (message.candidate.sourceType === 'skill') {
+                setMoreResults(current => {
+                    const next = { ...current };
+                    (message.seedResults || [null]).forEach(sourceResult => addSocketableSkill(
+                        next, message.candidate.skillName, message.candidate.level, 'armor',
+                        searchedSkills[message.candidate.skillName] || 0, sourceResult
+                    ));
+                    return next;
+                });
+            } else {
+                setBonusRoutes(current => {
+                    const route = {
+                        ...message.candidate,
+                        seedResults: message.seedResults || []
+                    };
+                    const existingIndex = current.findIndex(candidate =>
+                        candidate.skillName === route.skillName
+                    );
+                    if (existingIndex < 0) { return [...current, route]; }
+                    const next = [...current];
+                    next[existingIndex] = route.level >= next[existingIndex].level ?
+                        route : next[existingIndex];
+                    return next;
+                });
+            }
+            setShowMore(true);
+        };
+        const cachedExploration = bonusExplorationCacheRef.current.get(cacheKey);
+        if (cachedExploration) {
+            cachedExploration.resultMessages.forEach(applyResultMessage);
+            setImprovementProgress(cachedExploration.progress);
+            setBonusProgress(100);
+            setMoreElapsedSeconds(cachedExploration.elapsedSeconds);
+            setShowMore(true);
+            return;
+        }
+
         bonusStartedAtRef.current = performance.now();
         setIsExploringBonuses(true);
         setBonusProgress(0);
-        setImprovementProgress({ completed: 0, total: 0 });
+        setImprovementProgress({
+            completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0
+        });
+        bonusWorkerStatsRef.current = {
+            workers: Array.from({ length: BONUS_EXPLORER_WORKER_COUNT }, () => ({
+                completed: 0, total: 0
+            })),
+            done: 0,
+            found: 0,
+            timedOut: 0,
+            initial: 0,
+            feasible: 0,
+            resultMessages: [],
+            cacheKey
+        };
 
-        worker.onmessage = event => {
+        const handleWorkerMessage = event => {
             const message = event.data;
             if (message.type === 'result') {
-                if (message.candidate.sourceType === 'skill') {
-                    setMoreResults(current => {
-                        const next = { ...current };
-                        (message.seedResults || [null]).forEach(sourceResult => addSocketableSkill(
-                            next, message.candidate.skillName, message.candidate.level, 'armor',
-                            searchedSkills[message.candidate.skillName] || 0, sourceResult
-                        ));
-                        return next;
-                    });
-                } else {
-                    setBonusRoutes(current => [...current, message.candidate]);
-                }
-                setShowMore(true);
+                bonusWorkerStatsRef.current?.resultMessages.push(message);
+                applyResultMessage(message);
+            } else if (message.type === 'init') {
+                const stats = bonusWorkerStatsRef.current;
+                if (!stats) { return; }
+                stats.workers[message.workerIndex].total = message.assigned;
+                stats.initial = message.initialCount;
+                stats.feasible = message.feasibleCount;
             } else if (message.type === 'progress') {
-                setBonusProgress(message.total ? message.completed / message.total * 100 : 100);
-                setImprovementProgress({ completed: message.completed, total: message.total });
+                const stats = bonusWorkerStatsRef.current;
+                if (!stats) { return; }
+                stats.workers[message.workerIndex].completed = message.completed;
+                stats.workers[message.workerIndex].total = message.total;
+                if (message.found) { stats.found++; }
+                if (message.timedOut) { stats.timedOut++; }
+                const completed = stats.workers.reduce((total, workerStats) =>
+                    total + workerStats.completed, 0
+                );
+                const total = stats.workers.reduce((sum, workerStats) => sum + workerStats.total, 0);
+                const progress = {
+                    completed,
+                    total,
+                    found: stats.found,
+                    timedOut: stats.timedOut,
+                    initial: stats.initial,
+                    feasible: stats.feasible
+                };
+                setBonusProgress(total ? completed / total * 100 : 0);
+                setImprovementProgress(progress);
             } else if (message.type === 'done') {
-                setMoreElapsedSeconds((performance.now() - bonusStartedAtRef.current) / 1000);
-                stopBonusExploration();
+                const stats = bonusWorkerStatsRef.current;
+                if (!stats) { return; }
+                stats.done++;
+                if (stats.done >= BONUS_EXPLORER_WORKER_COUNT) {
+                    const explorationElapsedSeconds = (performance.now() - bonusStartedAtRef.current) / 1000;
+                    const progress = {
+                        completed: stats.workers.reduce((total, workerStats) =>
+                            total + workerStats.completed, 0
+                        ),
+                        total: stats.workers.reduce((total, workerStats) => total + workerStats.total, 0),
+                        found: stats.found,
+                        timedOut: stats.timedOut,
+                        initial: stats.initial,
+                        feasible: stats.feasible
+                    };
+                    const cache = bonusExplorationCacheRef.current;
+                    if (cache.size >= MAX_BONUS_EXPLORATION_CACHE_ENTRIES) {
+                        cache.delete(cache.keys().next().value);
+                    }
+                    cache.set(stats.cacheKey, {
+                        resultMessages: stats.resultMessages,
+                        progress,
+                        elapsedSeconds: explorationElapsedSeconds
+                    });
+                    setMoreElapsedSeconds(explorationElapsedSeconds);
+                    setImprovementProgress(progress);
+                    setBonusProgress(100);
+                    terminateBonusWorkers();
+                    bonusWorkerStatsRef.current = null;
+                    setIsExploringBonuses(false);
+                }
             } else if (message.type === 'candidate-error' && DEBUG) {
                 console.warn(`Bonus exploration failed for ${message.skillName}: ${message.message}`);
             }
         };
-        worker.onerror = error => {
-            console.error('Bonus exploration worker failed:', error);
-            stopBonusExploration();
-        };
-        worker.postMessage(params);
+        bonusWorkersRef.current = Array.from(
+            { length: BONUS_EXPLORER_WORKER_COUNT },
+            (_, workerIndex) => {
+                const worker = new Worker(new URL('../workers/bonusExplorer.worker.js', import.meta.url));
+                worker.onmessage = handleWorkerMessage;
+                worker.onerror = error => {
+                    console.error('Bonus exploration worker failed:', error);
+                    stopBonusExploration();
+                };
+                worker.postMessage({
+                    ...params,
+                    workerIndex,
+                    workerCount: BONUS_EXPLORER_WORKER_COUNT
+                });
+                return worker;
+            }
+        );
     };
 
     const findImprovements = () => {
@@ -1125,7 +1245,8 @@ const Search = () => {
             bonusImprovements[candidate.skillName] = {
                 level,
                 addedLevel: level,
-                slotTypes: [candidate.sourceType]
+                slotTypes: [candidate.sourceType],
+                seedResults: candidate.seedResults || []
             };
         });
         const hasAddableSkills = !isEmpty(weaponSkillResults) || !isEmpty(armorSkillResults);
@@ -1250,9 +1371,16 @@ const Search = () => {
                 </div>}
             </div>}
             {isExploringBonuses && <div style={{ color: '#9ee8f0', marginTop: '0.8em' }}>
-                Exploring selected skill upgrades
+                Exploring skill and bonus recommendations
                 {improvementProgress.total > 0 ?
-                    ` — ${improvementProgress.completed}/${improvementProgress.total}` :
+                    ` — ${[
+                        `${improvementProgress.completed}/${improvementProgress.total}`,
+                        `${improvementProgress.found} found`,
+                        improvementProgress.initial ?
+                            `${improvementProgress.feasible}/${improvementProgress.initial} viable` : null,
+                        improvementProgress.timedOut ?
+                            `${improvementProgress.timedOut} timed out` : null
+                    ].filter(Boolean).join(' · ')}` :
                     '…'}
             </div>}
             {hasBonusImprovements && <div style={{ marginTop: '1em' }}>
@@ -1301,6 +1429,12 @@ return (
                     searchWorkerRef.current?.terminate();
                     searchWorkerRef.current = null;
                     setIsGenerating(false);
+                    if (results.length > 0) {
+                        setOptimizerProfile(current => Object.assign({}, current || { engine: 'mitm' }, {
+                            partial: false,
+                            cancelled: true
+                        }));
+                    }
                 }}>Cancel</Button>}
             </div>
             {isGenerating && <LoadingBar className="loading-bar" value={loadProgress}

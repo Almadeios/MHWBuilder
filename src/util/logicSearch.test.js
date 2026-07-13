@@ -1,13 +1,15 @@
 import {
   armorCombo,
+  canDecorationSlotsCoverTotalDeficit,
   buildSearchCacheKey,
   collapseFlexibleTalismanResults,
+  doesMitmStateDominate,
   extendPriorResults,
   getDecorationReplacementCost,
+  groupEquivalentArmorCandidates,
   mergeUniqueResultGroups,
-  prioritizeTalismanSearchOrder,
+  orderMitmSlotsByRestriction,
   searchAndSpeed,
-  shouldExploreOpportunisticSetSkills,
   sortTalismanCandidatesBySlotSavings
   , test
 } from './logic';
@@ -20,6 +22,85 @@ import LEGS from '../data/compact/legs.json';
 import DECORATIONS from '../data/compact/decoration.json';
 
 describe('search feasibility and custom decorations', () => {
+  it('orders each MITM half by its most restrictive armor slot', () => {
+    expect(orderMitmSlotsByRestriction(['head', 'chest', 'arms'], {
+      head: Array(12),
+      chest: Array(3),
+      arms: Array(7)
+    })).toEqual(['chest', 'arms', 'head']);
+  });
+
+  it('only dominates MITM states with at least the same skills and compatible slots', () => {
+    const superior = {
+      skillVector: Uint16Array.from([3, 1]),
+      armorSlots: [3, 2, 1],
+      weaponSlots: [3, 2]
+    };
+    expect(doesMitmStateDominate(superior, {
+      skillVector: Uint16Array.from([2, 1]),
+      armorSlots: [2, 2],
+      weaponSlots: [2]
+    })).toBe(true);
+    expect(doesMitmStateDominate(superior, {
+      skillVector: Uint16Array.from([3, 2]),
+      armorSlots: [2, 2],
+      weaponSlots: [2]
+    })).toBe(false);
+    expect(doesMitmStateDominate(superior, {
+      skillVector: Uint16Array.from([2, 1]),
+      armorSlots: [3, 3],
+      weaponSlots: [2]
+    })).toBe(false);
+  });
+
+  it('groups armor equivalent to the query while preserving required bonus differences', () => {
+    const makePiece = (extraSkill, setSkills = []) => [
+      'head', { Agitator: 1, [extraSkill]: 1 }, [], [2], 50, [0, 0, 0, 0, 0], 'high', setSkills
+    ];
+    const first = ['First', makePiece('Botanist')];
+    const second = ['Second', makePiece('Geologist')];
+    const gore = ['Gore', makePiece('Botanist', ["Gore Magala's Tyranny"])];
+    const grouped = groupEquivalentArmorCandidates(
+      [first, second, gore],
+      { Agitator: 5 },
+      { "Gore Magala's Tyranny": 2 },
+      {}
+    );
+
+    expect(grouped.representatives).toHaveLength(2);
+    expect(grouped.membersByPiece.get(first[1]).map(([name]) => name)).toEqual([
+      'First', 'Second'
+    ]);
+  });
+
+  it('rejects competing decoration deficits while allowing a dual-skill jewel', () => {
+    const desiredSkills = { Agitator: 1, Burst: 1 };
+    const separateDecos = {
+      Agitator: ['armor', { Agitator: 1 }, 1],
+      Burst: ['armor', { Burst: 1 }, 1]
+    };
+    const dualDeco = {
+      Combo: ['armor', { Agitator: 1, Burst: 1 }, 1]
+    };
+
+    expect(canDecorationSlotsCoverTotalDeficit(
+      {}, [1], [], desiredSkills, separateDecos
+    )).toBe(false);
+    expect(canDecorationSlotsCoverTotalDeficit(
+      {}, [1], [], desiredSkills, dualDeco
+    )).toBe(true);
+  });
+
+  it('detects two armor skills competing despite unrelated weapon-slot capacity', () => {
+    expect(canDecorationSlotsCoverTotalDeficit(
+      {}, [1], [3], { Agitator: 1, Burst: 1, Artillery: 1 }, {
+        Agitator: ['armor', { Agitator: 1 }, 1],
+        Burst: ['armor', { Burst: 1 }, 1],
+        Artillery: ['weapon', { Artillery: 10 }, 1]
+      }
+    )).toBe(false);
+  });
+
   it('collapses equivalent optional charm skills into one Flex result', () => {
     const makeResult = optionalSkills => ({
       armorNames: ['h', 'c', 'a', 'w', 'l', `charm-${Object.keys(optionalSkills)[0]}`],
@@ -53,43 +134,6 @@ describe('search feasibility and custom decorations', () => {
     });
     expect(collapsed[0].skills?.Botanist).toBeUndefined();
     expect(collapsed[0].skills?.Constitution).toBeUndefined();
-  });
-
-  it('explores efficient talismans before committing to armor combinations', () => {
-    const order = prioritizeTalismanSearchOrder(
-      ['head', 'chest', 'talisman', 'arms'],
-      {
-        head: Array(5),
-        chest: Array(2),
-        talisman: Array(300),
-        arms: Array(3)
-      }
-    );
-    expect(order).toEqual(['talisman', 'chest', 'arms', 'head']);
-  });
-
-  it('does not spend the search budget on opportunistic sets when bonuses are explicit', () => {
-    const base = {
-      skills: Object.fromEntries(Array.from({ length: 8 }, (_, index) => [`Skill ${index}`, 1])),
-      findOne: false
-    };
-    expect(shouldExploreOpportunisticSetSkills(base)).toBe(true);
-    expect(shouldExploreOpportunisticSetSkills({
-      ...base,
-      setSkills: { "Gore Magala's Tyranny": 1 }
-    })).toBe(false);
-    expect(shouldExploreOpportunisticSetSkills({
-      ...base,
-      groupSkills: { "Lord's Soul": 1 }
-    })).toBe(false);
-    expect(shouldExploreOpportunisticSetSkills({
-      ...base,
-      setSkillBonus: "Gore Magala's Tyranny"
-    })).toBe(false);
-    expect(shouldExploreOpportunisticSetSkills({
-      ...base,
-      groupSkillBonus: "Lord's Soul"
-    })).toBe(false);
   });
 
   it('values expensive shot skills above cheap Critical Boost points on talismans', () => {
@@ -142,7 +186,7 @@ describe('search feasibility and custom decorations', () => {
     expect(mergeUniqueResultGroups([[other, base], [dahaad, base]])).toEqual([other, base, dahaad]);
   });
 
-  it('proves an unreachable skill target impossible before entering the DFS', async() => {
+  it('proves an unreachable skill target impossible before entering MITM', async() => {
     const response = await searchAndSpeed({
       skills: { 'Attack Boost': 999 },
       limit: 1,
@@ -153,6 +197,24 @@ describe('search feasibility and custom decorations', () => {
     expect(response.profile.impossible).toBe(true);
     expect(response.profile.nodes).toBe(0);
     expect(response.profile.impossibleReasons[0]).toContain('Attack Boost Lv. 999');
+  });
+
+  it('reuses identical MITM halves across searches with a different time budget', async() => {
+    const parameters = {
+      skills: { Adaptability: 1 },
+      weaponSlots: [1],
+      useOnlyOwnedTalismans: true,
+      customTalismans: [],
+      limit: 1,
+      findOne: true
+    };
+    const first = await searchAndSpeed({ ...parameters, maxSearchMs: 1101 });
+    const second = await searchAndSpeed({ ...parameters, maxSearchMs: 1102 });
+
+    expect(first.results).toHaveLength(1);
+    expect(second.results).toHaveLength(1);
+    expect(second.profile.halfCacheHits).toBe(2);
+    expect(second.profile.halfCacheStatesReused).toBeGreaterThan(0);
   });
 
   it('uses the strongest compatible decoration in feasibility estimates', async() => {
@@ -166,6 +228,12 @@ describe('search feasibility and custom decorations', () => {
 
     expect(response.profile.impossible).not.toBe(true);
     expect(response.results).toHaveLength(1);
+    expect(response.profile.inputCandidateCount).toBeGreaterThan(0);
+    expect(response.profile.filteredCandidateCount).toBeLessThanOrEqual(
+      response.profile.inputCandidateCount
+    );
+    expect(response.profile.generatedHalfStates).toBeGreaterThan(0);
+    expect(response.profile.decorationSolverCalls).toBeGreaterThan(0);
   });
 
   it('uses a saved custom decoration in search and cache identity', async() => {
@@ -231,6 +299,50 @@ describe('search feasibility and custom decorations', () => {
     expect(extended[0].freeSlots).toEqual([]);
   });
 
+  it('does not extend a prior result that lacks a required bonus', () => {
+    const priorResult = {
+      armorNames: ['head', 'chest', 'arms', 'waist', 'legs', 'charm'],
+      skills: { 'Evade Window': 3 },
+      setSkills: {},
+      groupSkills: { "Lord's Soul": 1 },
+      freeSlots: [1],
+      freeWeaponSlots: [],
+      talismanData: {}
+    };
+    const extended = extendPriorResults([priorResult], {
+      skills: { 'Evade Window': 3, 'Shock Absorber': 1 },
+      setSkills: { "Gore Magala's Tyranny": 1 },
+      groupSkills: { "Lord's Soul": 1 }
+    }, {
+      'Shockproof Jewel 1': ['armor', { 'Shock Absorber': 1 }, 1]
+    });
+
+    expect(extended).toEqual([]);
+    expect(priorResult.freeSlots).toEqual([1]);
+  });
+
+  it('keeps prior results immutable while extending recommendations', () => {
+    const priorResult = {
+      armorNames: ['head', 'chest', 'arms', 'waist', 'legs', 'charm'],
+      skills: { 'Evade Window': 3 },
+      setSkills: {},
+      groupSkills: {},
+      freeSlots: [1],
+      freeWeaponSlots: [],
+      decoNames: [],
+      talismanData: {}
+    };
+    const snapshot = JSON.parse(JSON.stringify(priorResult));
+    const extended = extendPriorResults([priorResult], {
+      skills: { 'Evade Window': 3, 'Shock Absorber': 1 }
+    }, {
+      'Shockproof Jewel 1': ['armor', { 'Shock Absorber': 1 }, 1]
+    });
+
+    expect(extended).toHaveLength(1);
+    expect(priorResult).toEqual(snapshot);
+  });
+
   it('completes the reported Burst gunlance-style search', async() => {
     const partialBatches = [];
     const response = await searchAndSpeed({
@@ -257,9 +369,11 @@ describe('search feasibility and custom decorations', () => {
       profile: expect.any(Object)
     }));
     expect(() => JSON.parse(JSON.stringify(response))).not.toThrow();
-    expect(partialBatches).toHaveLength(1);
+    expect(partialBatches).toHaveLength(2);
     expect(partialBatches[0].length).toBeGreaterThan(0);
     expect(partialBatches[0].length).toBeLessThanOrEqual(20);
+    expect(partialBatches[1].length).toBeGreaterThan(partialBatches[0].length);
+    expect(partialBatches[1].length).toBeLessThanOrEqual(50);
   }, 20000);
 
   it('finds the reported ranged build with the R7 Rapid Fire Up and Burst charm', async() => {
@@ -322,4 +436,5 @@ describe('search feasibility and custom decorations', () => {
     expect(response.results).toHaveLength(1);
     expect(response.results[0].armorNames).toContain(charmName);
   }, 20000);
+
 });

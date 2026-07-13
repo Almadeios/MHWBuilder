@@ -6,12 +6,15 @@ const ATTEMPTED_VERSION_KEY = 'attemptedAppVersion';
 
 const VersionUpdater = () => {
   useEffect(() => {
+    // CRA injects these build-time values; they are not runtime environment access.
+    // eslint-disable-next-line no-process-env
     const currentVersion = process.env.REACT_APP_BUILD_SHA;
     if (!currentVersion) { return undefined; }
 
     let active = true;
     const checkForUpdate = async() => {
       try {
+        // eslint-disable-next-line no-process-env
         const base = process.env.PUBLIC_URL || '';
         const response = await fetch(`${base}/version.json?_=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok || !active) { return; }

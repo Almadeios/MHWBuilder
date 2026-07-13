@@ -1,3 +1,4 @@
+/* eslint-disable camelcase -- condition and result keys are persisted API field names */
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 export const CONDITION_LABELS = {
@@ -56,13 +57,13 @@ export const CONDITION_SKILL_TABLES = {
     weak_point: { field: 'affinity', values: [5, 10, 15, 20, 30] },
     wound: { field: 'affinity', values: [0, 0, 5, 10, 20] }
   },
-  Agitator: {
+  "Agitator": {
     monster_enraged: [
       { field: 'affinity', values: [3, 5, 7, 10, 15] },
       { field: 'flat_raw', values: [4, 8, 12, 16, 20] }
     ]
   },
-  Antivirus: {
+  "Antivirus": {
     frenzy_cured: { field: 'affinity', values: [3, 6, 10] }
   },
   'Maximum Might': {
@@ -74,16 +75,16 @@ export const CONDITION_SKILL_TABLES = {
   'Peak Performance': {
     full_health: { field: 'flat_raw', values: [3, 6, 10, 15, 20] }
   },
-  Resentment: {
+  "Resentment": {
     red_health: { field: 'flat_raw', values: [5, 10, 15, 20, 25] }
   },
   'Adrenaline Rush': {
     adrenaline_rush_active: { field: 'flat_raw', values: [10, 15, 20, 25, 30] }
   },
-  Counterstrike: {
+  "Counterstrike": {
     counterstrike_active: { field: 'flat_raw', values: [10, 15, 25] }
   },
-  Foray: {
+  "Foray": {
     monster_poisoned_or_paralyzed: [
       { field: 'affinity', values: [0, 5, 10, 15, 20] },
       { field: 'flat_raw', values: [6, 8, 10, 12, 15] }
@@ -95,19 +96,19 @@ export const CONDITION_SKILL_TABLES = {
   'Critical Draw': {
     draw_attack: { field: 'affinity', values: [50, 75, 100] }
   },
-  Burst: {
+  "Burst": {
     burst_active: []
   },
-  Coalescence: {
+  "Coalescence": {
     coalescence_active: []
   },
-  Heroics: {
+  "Heroics": {
     heroics_active: { field: 'raw_percent', values: [0, 0.05, 0.05, 0.10, 0.30] }
   },
-  Ambush: {
+  "Ambush": {
     ambush_active: { field: 'post_raw_percent', values: [0.05, 0.10, 0.15] }
   },
-  Airborne: {
+  "Airborne": {
     airborne_attack: { field: 'raw_percent', values: [0.10] }
   },
   'Normal Shots': {
@@ -139,7 +140,7 @@ const SET_SKILL_THRESHOLDS = {
   "Ebony Odogaron's Power": [2, 4],
   "Xu Wu's Vigor": [2, 4],
   "Jin Dahaad's Revolt": [2, 4],
-  Gogmapocalypse: [2, 4],
+  "Gogmapocalypse": [2, 4],
   "Rathalos's Flare": [2, 4],
   "Doshaguma's Might": [2, 4],
   "Leviathan's Fury": [2, 4],
@@ -752,12 +753,14 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     burstRawContributions.reduce((total, item) => total + item.contribution, 0) +
     setPostMultiplierRawContributions.reduce((total, item) => total + item.contribution, 0);
 
-  const unconditionalRawBreakdown = Object.entries(RAW_SKILL_TABLES).filter(([skillName]) => skills[skillName]).map(([skillName, table]) => ({
-    skill: skillName,
-    flat: getSkillValue(table.flat || [], skills[skillName] || 0),
-    rawPercent: table.rawPercent ? getSkillValue(table.rawPercent, skills[skillName] || 0) : 0,
-    active: true
-  }));
+  const unconditionalRawBreakdown = Object.entries(RAW_SKILL_TABLES)
+    .filter(([skillName]) => skills[skillName])
+    .map(([skillName, table]) => ({
+      skill: skillName,
+      flat: getSkillValue(table.flat || [], skills[skillName] || 0),
+      rawPercent: table.rawPercent ? getSkillValue(table.rawPercent, skills[skillName] || 0) : 0,
+      active: true
+    }));
 
   const conditionalRawBreakdown = conditionalRawContributions.map(item => ({
     skill: item.skill,
@@ -909,7 +912,7 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     postRawPercent,
     affinity: affinityContributions.reduce((total, item) => total + item.contribution, 0),
     critMultiplier,
-    utility: (skills['Evade Window'] || 0) * 2 + (skills['Marathon Runner'] || 0) * 1,
+    utility: (skills['Evade Window'] || 0) * 2 + Number(skills['Marathon Runner'] || 0),
     rawContributions,
     burstElementContributions: burstContributions.element,
     coalescenceElementContributions,
@@ -1120,6 +1123,7 @@ export const rankBuildsByDamage = (rolls, goal = 'highest_dps') => {
       return slotDiff || decoDiff || profileB.expected_dps - profileA.expected_dps;
     }
     const scoreDiff = getSortScore(profileB, goal) - getSortScore(profileA, goal);
-    return scoreDiff || profileB.expected_dps - profileA.expected_dps || Object.keys(b?.skills || {}).length - Object.keys(a?.skills || {}).length;
+    return scoreDiff || profileB.expected_dps - profileA.expected_dps ||
+      Object.keys(b?.skills || {}).length - Object.keys(a?.skills || {}).length;
   });
 };

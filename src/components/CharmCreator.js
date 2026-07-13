@@ -314,9 +314,9 @@ const CharmCreator = () => {
 
   const customTalismans = fields.customTalismans || [];
   const useOnlyOwnedTalismans = fields.useOnlyOwnedTalismans || false;
-  const generatedFromSearch = hasTalismanGeneratorRules() && Object.keys(fields.skills || {}).length
-    ? Object.entries(generateTalismans(fields.skills))
-    : [];
+  const generatedFromSearch = hasTalismanGeneratorRules() && Object.keys(fields.skills || {}).length ?
+    Object.entries(generateTalismans(fields.skills)) :
+    [];
   const allGeneratedCharms = dedupeGeneratedCharms(generatedFromSearch, fields.skills || {});
   const generatedTruncated = allGeneratedCharms.length > 20;
   const generatedCharms = allGeneratedCharms.slice(0, 20);
@@ -341,12 +341,8 @@ const CharmCreator = () => {
     const selectedOthers = normalizedSkillRows
       .map((row, index) => index === rowIndex ? null : row.name)
       .filter(Boolean);
-    const slotFilterActive = form.slots !== '0-0-0' || form.weaponSlots !== '0-0-0';
-    const currentArmorSlots = slotFilterActive ? parseSlots(form.slots) : null;
-    const currentWeaponSlots = slotFilterActive ? parseSlots(form.weaponSlots) : null;
-    
     const allSkills = new Set();
-    
+
     // Restrict groups by skill position based on template structure
     let allowedGroups;
     if (rowIndex === 0) {
@@ -356,7 +352,7 @@ const CharmCreator = () => {
     } else {
       allowedGroups = [4, 5, 6, 7, 8]; // Skill 3: utility-focused or secondary offensive
     }
-    
+
     allowedGroups.forEach(groupId => {
       getGroupEntries(groupId).forEach(entry => allSkills.add(entry.skill));
     });
@@ -375,20 +371,20 @@ const CharmCreator = () => {
 
   const supportsThreeSkills = () => {
     if (!normalizedSkillRows[1].name) { return false; }
-    
+
     const skill1Name = normalizedSkillRows[0].name;
     const skill1Level = normalizedSkillRows[0].level;
     const skill2Name = normalizedSkillRows[1].name;
     const skill2Level = normalizedSkillRows[1].level;
-    
+
     const allowedRow2Skills = getAllowedSkillsForRow(2);
     if (allowedRow2Skills.length === 0) { return false; }
-    
+
     // Check if ANY allowed skill for row 2 keeps current levels valid
     for (const skill3 of allowedRow2Skills) {
       const threeSkillSelection = [skill1Name, skill2Name, skill3];
       const threeSkillTemplates = getCompatibleTemplates(threeSkillSelection, currentArmorSlots, currentWeaponSlots);
-      
+
       // Check if current levels are valid in any 3-skill template
       for (const template of threeSkillTemplates) {
         const groupIds = getTemplateGroups(template);
@@ -399,20 +395,20 @@ const CharmCreator = () => {
             const entry = entries.find(e => e.skill === skill1Name);
             return entry ? entry.maxLevel : 0;
           }).reduce((a, b) => Math.max(a, b), 0);
-          
+
           const skill2MaxInTemplate = groupIds.map(gid => {
             const entries = getGroupEntries(gid);
             const entry = entries.find(e => e.skill === skill2Name);
             return entry ? entry.maxLevel : 0;
           }).reduce((a, b) => Math.max(a, b), 0);
-          
+
           if (skill1MaxInTemplate >= skill1Level && skill2MaxInTemplate >= skill2Level) {
             return true;
           }
         }
       }
     }
-    
+
     return false;
   };
 
@@ -421,20 +417,19 @@ const CharmCreator = () => {
     form.slots,
     form.weaponSlots
   );
-  const armorSlotOptions = compatibleSlotOptions.armorOptions.length
-    ? compatibleSlotOptions.armorOptions
-    : SLOT_OPTIONS;
-  const weaponSlotOptions = compatibleSlotOptions.weaponOptions.length
-    ? compatibleSlotOptions.weaponOptions
-    : SLOT_OPTIONS;
-
+  const armorSlotOptions = compatibleSlotOptions.armorOptions.length ?
+    compatibleSlotOptions.armorOptions :
+    SLOT_OPTIONS;
+  const weaponSlotOptions = compatibleSlotOptions.weaponOptions.length ?
+    compatibleSlotOptions.weaponOptions :
+    SLOT_OPTIONS;
 
   const updateForm = (key, value) => {
     setForm({ ...form, [key]: value });
   };
 
-  const sanitizeSlotSelection = (selectedSkillNames, slots, weaponSlots) => {
-    const compatible = getCompatibleTemplates(selectedSkillNames);
+  const sanitizeSlotSelection = (skillNames, slots, weaponSlots) => {
+    const compatible = getCompatibleTemplates(skillNames);
     const allowedArmor = new Set();
     const allowedWeapon = new Set();
 
@@ -462,8 +457,8 @@ const CharmCreator = () => {
       skillRows[index].level = 1;
     }
 
-    const selectedSkillNames = skillRows.map(row => row.name).filter(Boolean);
-    const sanitizedSlots = sanitizeSlotSelection(selectedSkillNames, form.slots, form.weaponSlots);
+    const updatedSkillNames = skillRows.map(row => row.name).filter(Boolean);
+    const sanitizedSlots = sanitizeSlotSelection(updatedSkillNames, form.slots, form.weaponSlots);
     setForm({ ...form, skillRows, ...sanitizedSlots });
   };
 
@@ -475,10 +470,10 @@ const CharmCreator = () => {
     if (!hasTalismanGeneratorRules()) { return true; }
     const skills = getFormSkills();
     if (Object.keys(skills).length === 0) { return false; }
-    
+
     const manualSlots = parseSlots(form.slots);
     const manualWeaponSlots = parseSlots(form.weaponSlots);
-    
+
     // Check if this skill + slot combo matches any template
     const validTemplates = compatibleTemplates.filter(template => {
       if (!isTemplateRollCompatible(getTemplateGroups(template), skills)) { return false; }
@@ -487,7 +482,7 @@ const CharmCreator = () => {
         return slotsMatch(comboArmor, manualSlots) && slotsMatch(comboWeapon, manualWeaponSlots);
       });
     });
-    
+
     return validTemplates.length > 0;
   };
 
@@ -590,9 +585,15 @@ const CharmCreator = () => {
         {normalizedSkillRows.map((row, index) => {
           const maxLevel = row.name ? getMaxAllowedLevelForSkill(row.name, selectedSkillNames) : 1;
           const allowedSkills = getAllowedSkillsForRow(index);
-          const isSkillRowDisabled = index === 1 ? !normalizedSkillRows[0].name : index === 2 ? !normalizedSkillRows[1].name || !supportsThreeSkills() : false;
+          const secondRowDisabled = index === 1 && !normalizedSkillRows[0].name;
+          const thirdRowDisabled = index === 2 &&
+            (!normalizedSkillRows[1].name || !supportsThreeSkills());
+          const isSkillRowDisabled = secondRowDisabled || thirdRowDisabled;
           return (
-            <div key={`skill-row-${index}`} style={{ display: 'flex', gap: '0.75em', flexWrap: 'wrap', opacity: isSkillRowDisabled ? 0.5 : 1 }}>
+            <div
+              key={`skill-row-${index}`}
+              style={{ display: 'flex', gap: '0.75em', flexWrap: 'wrap', opacity: isSkillRowDisabled ? 0.5 : 1 }}
+            >
               <TextField
                 select
                 size="small"
@@ -614,7 +615,9 @@ const CharmCreator = () => {
                 onChange={ev => updateSkillRow(index, 'level', Number(ev.target.value))}
                 sx={{ width: '90px' }}
               >
-                {Array.from({ length: maxLevel }, (_, i) => i + 1).map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
+                {Array.from({ length: maxLevel }, (_, i) => i + 1).map(level =>
+                  <MenuItem key={level} value={level}>{level}</MenuItem>
+                )}
               </TextField>
             </div>
           );

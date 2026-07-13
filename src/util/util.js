@@ -26,14 +26,14 @@ import SKILL_ID_MAP from '../data/ids/skill-ids.json';
 import ARMOR_ID_MAP from '../data/ids/armor-ids.json';
 import DECO_ID_MAP from '../data/ids/deco-ids.json';
 
-import { renderToStaticMarkup } from 'react-dom/server';
 import { isEmpty, mergeSumMaps } from './tools';
 import { _x } from './armorAccessor';
 
 export const getArmorTypeList = () => ['head', 'chest', 'arms', 'waist', 'legs', 'talisman'];
 export const isGroupSkill = skill => Boolean(skill.pieces);
 export const isSetSkill = skill => Boolean(skill.piecesPerLevel);
-export const isGroupSkillName = name => GROUP_SKILLS[name] || Object.values(GROUP_SKILLS_DB).filter(x => x.skill === name).length > 0;
+export const isGroupSkillName = name => GROUP_SKILLS[name] ||
+    Object.values(GROUP_SKILLS_DB).some(x => x.skill === name);
 export const isSetSkillName = name => SET_SKILLS[name] || Object.values(SET_SKILLS_DB).filter(x => x.skill === name).length > 0;
 export const getMaxLevel = skillName => {
     const isSet = SET_SKILLS[skillName];
@@ -491,7 +491,6 @@ export const getMaxDecoCount = deco => {
     const maxWeaponSlots = deco.type === "weapon" ? 3 : 99;
     const skillEntries = Object.entries(deco.skills);
     const skill1 = { name: skillEntries[0]?.[0], level: skillEntries[0]?.[1] };
-    const skill2 = { name: skillEntries[1]?.[0], level: skillEntries[1]?.[1] };
 
     const s1 = SKILLS_DB[skill1.name];
 
@@ -501,13 +500,6 @@ export const getMaxDecoCount = deco => {
     }
 
     const max1 = Math.ceil(s1.levels.length / skill1.level);
-    let max2 = 3;
-
-    if (skill2.name) {
-        const s2 = SKILLS_DB[skill2.name];
-        max2 = Math.ceil(s2.levels.length / skill2.level);
-    }
-
     return Math.min(max1, maxWeaponSlots);
 };
 

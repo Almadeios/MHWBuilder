@@ -115,7 +115,7 @@ export const offTheTop = (arr, amount, field) => {
 
 export const getBestDecos = skills => {
     return Object.fromEntries(Object.entries(DECORATIONS)
-        .filter(([k, v]) => ["armor", "weapon"].includes(v[0]) && hasNeededSkill(v[1], skills))
+        .filter(([, value]) => ["armor", "weapon"].includes(value[0]) && hasNeededSkill(value[1], skills))
         .sort((a, b) => Object.values(b[1][1])[0] - Object.values(a[1][1])[0])
     );
 };
@@ -194,8 +194,8 @@ export const groupArmorIntoSets = (armorPieces, setSkills, groupSkills) => {
 
 export const getSkillPotential = (armorData, skillName, decos, allSkills) => {
     const filteredDecos = Object.fromEntries(Object.entries(decos)
-        .filter(([k, v]) => skillName in v[1])
-        .map(([k, v]) => [k, [v[1][skillName], v[2]]]) // [name, [skill level, slot size]]
+        .filter(([, value]) => skillName in value[1])
+        .map(([name, value]) => [name, [value[1][skillName], value[2]]]) // [name, [skill level, slot size]]
         .sort((a, b) => {
             if (b[1][0] !== a[1][0]) { return b[1][0] - a[1][0]; } // Sort by skill level first (descending)
             return b[1][1] - a[1][1]; // otherwise, slot size (descending)
@@ -209,7 +209,7 @@ export const getSkillPotential = (armorData, skillName, decos, allSkills) => {
 
     const extraPoints = Object.entries(armorData[1])
         .filter(([skill]) => skill !== skillName)
-        .reduce((sum, [skill, level]) => sum + (allSkills[skill] ? 5 : 1), 0); // todo: improve this
+        .reduce((sum, [skill]) => sum + (allSkills[skill] ? 5 : 1), 0); // todo: improve this
 
     let maxPoints = 0;
     const armorSlots = armorData[3] || [];
@@ -313,7 +313,7 @@ export const hasLongerSlottage = (armors, challengerSlots, skillName = null) => 
 
     // Filter by skillName before sorting
     const filteredArmors = Object.fromEntries(
-        Object.entries(armors).filter(([_, v]) => !skillName || skillName in v[1])
+        Object.entries(armors).filter(([, value]) => !skillName || skillName in value[1])
     );
 
     // Sort by slottageLengthCompare (assumes it returns -1, 0, or 1 like Python's cmp_to_key)

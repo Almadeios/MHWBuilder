@@ -1109,6 +1109,18 @@ const Results = ({
                 Number(optimizerProfile.leftStates || 0).toLocaleString(),
                 Number(optimizerProfile.rightStates || 0).toLocaleString()
             ].join('+')}` : null,
+            optimizerProfile.inputCandidateCount ? `candidates ${[
+                Number(optimizerProfile.filteredCandidateCount || 0).toLocaleString(),
+                Number(optimizerProfile.inputCandidateCount).toLocaleString()
+            ].join('/')}` : null,
+            optimizerProfile.dominatedCandidateCount ?
+                `dominated ${Number(optimizerProfile.dominatedCandidateCount).toLocaleString()}` : null,
+            optimizerProfile.equivalentCandidateCount ?
+                `equivalent ${Number(optimizerProfile.equivalentCandidateCount).toLocaleString()}` : null,
+            optimizerProfile.compactedHalfStates ?
+                `compacted ${Number(optimizerProfile.compactedHalfStates).toLocaleString()}` : null,
+            optimizerProfile.decorationSolverCalls ?
+                `deco-checks ${Number(optimizerProfile.decorationSolverCalls).toLocaleString()}` : null,
             optimizerProfile.priorResults ? `extensions ${[
                 Number(optimizerProfile.priorExtensions || 0).toLocaleString(),
                 Number(optimizerProfile.priorResults).toLocaleString()
@@ -1145,6 +1157,9 @@ const Results = ({
     let resultStatusText = `${resultCountText} hits in ${elapsedSeconds.toFixed(2)} seconds`;
     if (optimizerProfile?.partial) {
         resultStatusText = `${resultCountText} hits so far in ${elapsedSeconds.toFixed(2)} seconds`;
+    }
+    if (optimizerProfile?.cancelled) {
+        resultStatusText = `search cancelled with ${resultCountText} partial hits`;
     }
     if (timedOutWithoutResults) {
         resultStatusText = `timed out before finding results in ${elapsedSeconds.toFixed(2)} seconds`;

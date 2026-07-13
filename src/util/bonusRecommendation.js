@@ -3,3 +3,72 @@ export const getUnsearchedSetBonusLevels = (currentLevel, maxLevel) => {
   const max = Math.max(current, Number(maxLevel) || 0);
   return Array.from({ length: max - current }, (_, index) => max - index);
 };
+
+const getRequestedBonusNames = (selectedBonuses, selectorBonus) => Array.from(new Set([
+  ...Object.keys(selectedBonuses || {}),
+  ...selectorBonus ? [selectorBonus] : []
+]));
+
+export const getRequestedBonusUpgradeCandidates = (params, setSkillDb, groupSkillDb) => {
+  const makeCandidates = (names, selectedLevels, database, sourceType, score) => names.flatMap(skillName => {
+    const currentLevel = Number(selectedLevels?.[skillName] || 0);
+    const maxLevel = Number(database?.[skillName]?.[1] || currentLevel);
+    if (!database?.[skillName] || currentLevel >= maxLevel) { return []; }
+
+    return [{ skillName, sourceType, currentLevel, maxLevel, score }];
+  });
+
+  const setCandidates = makeCandidates(
+    getRequestedBonusNames(params.setSkills, params.setSkillBonus),
+    params.setSkills,
+    setSkillDb,
+    'search-set-bonus',
+    3000000
+  );
+  const groupCandidates = makeCandidates(
+    getRequestedBonusNames(params.groupSkills, params.groupSkillBonus),
+    params.groupSkills,
+    groupSkillDb,
+    'search-group-bonus',
+    2900000
+  );
+  return [...setCandidates, ...groupCandidates];
+};
+
+const getKnownResultBonuses = (results, field) => new Set((results || []).flatMap(result =>
+  Object.entries(result?.[field] || {})
+    .filter(([, level]) => Number(level) > 0)
+    .map(([skillName]) => skillName)
+));
+
+export const getNewBonusDiscoveryCandidates = (params, setSkillDb, groupSkillDb) => {
+  const requestedSetNames = new Set(getRequestedBonusNames(params.setSkills, params.setSkillBonus));
+  const requestedGroupNames = new Set(getRequestedBonusNames(params.groupSkills, params.groupSkillBonus));
+  const knownSetNames = getKnownResultBonuses(params.priorResults, 'setSkills');
+  const knownGroupNames = getKnownResultBonuses(params.priorResults, 'groupSkills');
+  const makeCandidates = (database, excludedNames, knownNames, sourceType, score) =>
+    Object.keys(database || {}).flatMap(skillName => {
+      if (excludedNames.has(skillName) || knownNames.has(skillName)) { return []; }
+      const maxLevel = sourceType === 'discover-set-bonus' ?
+        Number(database[skillName]?.[1] || 1) : 1;
+      return [{
+        skillName,
+        sourceType,
+        currentLevel: 0,
+        maxLevel,
+        score,
+        maxSearchMs: 1500
+      }];
+    });
+
+  return [
+    ...makeCandidates(setSkillDb, requestedSetNames, knownSetNames, 'discover-set-bonus', 2500000),
+    ...makeCandidates(groupSkillDb, requestedGroupNames, knownGroupNames, 'discover-group-bonus', 1500000)
+  ];
+};
+
+export const partitionRecommendationCandidates = (candidates, workerIndex, workerCount) => {
+  const count = Math.max(1, Number(workerCount) || 1);
+  const index = Math.max(0, Number(workerIndex) || 0) % count;
+  return (candidates || []).filter((_, candidateIndex) => candidateIndex % count === index);
+};
