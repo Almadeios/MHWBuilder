@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { generateTalismans } from '../util/talismanGenerator';
 import {
@@ -39,6 +39,10 @@ import { useStorage } from '../hooks/StorageContext';
 import ArrowForward from '@mui/icons-material/ArrowForwardRounded';
 import ArrowBack from '@mui/icons-material/ArrowBackRounded';
 import { useWindowWidth } from '../hooks/useWindowWidth';
+import {
+    filterConditionsForSkills, getConditionOptionsForSkills, recalculateResultDamage
+} from '../util/damageScoring';
+import DamageConditions from './DamageConditions';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -147,6 +151,10 @@ const Results = ({
     const [isMouseInside, setIsMouseInside] = useState(false);
     const width = useWindowWidth();
     const isMobile = !fields.forceDesktop && width < 640;
+    const liveResults = useMemo(() => results.map(result => recalculateResultDamage(
+        result,
+        save ? result.conditions || {} : fields.conditions || {}
+    )), [fields.conditions, results, save]);
 
     useEffect(() => {
         const handleKeyDown = event => {
@@ -188,6 +196,12 @@ const Results = ({
             setSetId(undefined);
         }
     }, [results]);
+
+    useEffect(() => {
+        if (!selectedResult) { return; }
+        const updatedResult = liveResults.find(result => result.id === selectedResult.id);
+        if (updatedResult) { setSelectedResult(updatedResult); }
+    }, [liveResults]);
 
     useEffect(() => {
         if (!selectedResult) {
@@ -270,6 +284,19 @@ const Results = ({
                 <div className="slot-num">{numOnes}</div>
             </div>
         </div>;
+    };
+
+    const updateSavedResultConditions = (result, conditions) => {
+        const resultSkills = {
+            ...result.skills || {},
+            ...result.setSkills || {},
+            ...result.groupSkills || {}
+        };
+        const filteredConditions = filterConditionsForSkills(conditions, resultSkills);
+        const updatedSets = (fields.savedSets || []).map(savedSet =>
+            savedSet.id === result.id ? { ...savedSet, conditions: filteredConditions } : savedSet
+        );
+        updateField('savedSets', updatedSets);
     };
 
     const getCompactTalismanName = name => {
@@ -641,7 +668,7 @@ const Results = ({
         const rawFormula = `(${breakdown.raw.base ?? 'N/A'} x ${formatFixed(rawPercentMultiplier, 2)} + ` +
             `${breakdown.raw.flatRaw ?? 0}) x ${formatFixed(postRawPercentMultiplier, 2)} ` +
             `${breakdown.raw.postMultiplierRawFlat ? `+ ${breakdown.raw.postMultiplierRawFlat} ` : ''}= ` +
-            `${formatFixed(breakdown.raw.effectiveRaw)}`;
+            `${formatFixed(breakdown.raw.attackStatus ?? breakdown.raw.effectiveRaw)}`;
         const rawFinal = `x sharp ${formatFixed(breakdown.raw.sharpnessMultiplier, 2)} x crit ` +
             `${formatFixed(breakdown.raw.critExpectation, 3)} = ${formatFixed(result.damageProfile.raw_dps)}`;
         const elementFormula = `(${breakdown.element.base ?? 'N/A'} x ${elementMultiplierFormula}) + ` +
@@ -755,6 +782,7 @@ const Results = ({
         let setEffects = null;
         let groupSkills = null;
         let extraSkillsDiv = null;
+        let conditionControls = null;
         let freeSlots = null;
         let defenseTotal = null;
         if (selectedResult) {
@@ -859,6 +887,25 @@ const Results = ({
                 activeAffinityContributions,
                 activeAffinityTotal
             );
+            const selectedSkills = {
+                ...selectedResult.skills,
+                ...selectedResult.setSkills,
+                ...selectedResult.groupSkills
+            };
+            if (save && getConditionOptionsForSkills(selectedSkills).length) {
+                conditionControls = <div className="set-skills" style={{ marginTop: '0.75em' }}>
+                    <span className="set-label">Damage Conditions:</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                        <DamageConditions
+                            skills={selectedSkills}
+                            conditions={selectedResult.conditions || {}}
+                            onChange={conditions =>
+                                updateSavedResultConditions(selectedResult, conditions)
+                            }
+                        />
+                    </div>
+                </div>;
+            }
 
             all = <div className="all-skills">
                 {Object.entries(selectedResult.skills).map(x => {
@@ -968,6 +1015,7 @@ const Results = ({
                 {defenseTotal}
                 {setEffects}
                 {groupSkills}
+                {conditionControls}
                 {fields.showExtra && extraSkillsDiv}
                 <div className="free-slots-holder">
                     <span className="set-label">Free Slots:</span>
@@ -1061,7 +1109,8 @@ const Results = ({
                         </StyledTableRow>
                     </TableHead>
                     <TableBody>
-                        {paginate(results, page, pageSize).map((result, index, arr) => renderResult(result, index, arr))}
+                        {paginate(liveResults, page, pageSize)
+                            .map((result, index, arr) => renderResult(result, index, arr))}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -1070,7 +1119,7 @@ const Results = ({
                 component={PaginationBox}
                 rowsPerPageOptions={pageOptions}
                 colSpan={3}
-                count={results.length}
+                count={liveResults.length}
                 rowsPerPage={pageSize}
                 labelRowsPerPage="" // ideally add words if screen wide enough
                 page={page}

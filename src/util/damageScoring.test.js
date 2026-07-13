@@ -2,6 +2,7 @@ import {
   buildDamageProfile,
   filterConditionsForSkills,
   getConditionOptionsForSkills,
+  recalculateResultDamage,
   rankBuildsByDamage
 } from './damageScoring';
 
@@ -310,10 +311,10 @@ describe('damage scoring', () => {
     });
 
     expect(profile.breakdown.raw.flatRaw).toBe(6);
-    expect(profile.breakdown.raw.statusExcludedRawFlat).toBe(8);
+    expect(profile.breakdown.raw.statusExcludedRawFlat).toBe(5);
     expect(profile.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
       expect.objectContaining({ skill: 'Powercharm', flat: 6, active: true }),
-      expect.objectContaining({ skill: 'Food Attack Up', flat: 8, statusExcluded: true, active: true })
+      expect.objectContaining({ skill: 'Food Attack Up', flat: 5, statusExcluded: true, active: true })
     ]));
   });
 
@@ -336,12 +337,12 @@ describe('damage scoring', () => {
       weaponSharpness: 'White'
     });
 
-    expect(profile.breakdown.raw.rawPercentBonus).toBe(0.04);
     expect(profile.breakdown.raw.flatRaw).toBe(78);
-    expect(profile.breakdown.raw.statusExcludedRawFlat).toBe(8);
-    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.05);
-    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(23);
-    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(385.544);
+    expect(profile.breakdown.raw.statusExcludedRawFlat).toBe(5);
+    expect(profile.breakdown.raw.rawPercentBonus).toBe(0.09);
+    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0);
+    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(20);
+    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(378.13);
   });
 
   it('preserves permanent raw conditions when filtering stale skill conditions', () => {
@@ -508,6 +509,68 @@ describe('damage scoring', () => {
     expect(getConditionOptionsForSkills({ Coalescence: 1 })).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'coalescence_active', displayLabel: 'Coalescence Active' })
     ]));
+  });
+
+  it('matches the six verified ranged attack-status values from the game', () => {
+    const getStatus = ({ burst = false, adrenaline = false, agitator = false } = {}) => {
+      const skills = {
+        'Attack Boost': 1,
+        ...(burst ? { Burst: 1 } : {}),
+        ...(adrenaline ? { 'Adrenaline Rush': 1 } : {}),
+        ...(agitator ? { Agitator: 5 } : {})
+      };
+      const conditions = {
+        powercharm: true,
+        food_attack_up: true,
+        ...(burst ? { burst_active: true } : {}),
+        ...(adrenaline ? { adrenaline_rush_active: true } : {}),
+        ...(agitator ? { monster_enraged: true } : {})
+      };
+      const profile = buildDamageProfile({
+        skills,
+        setSkills: burst ? { "Ebony Odogaron's Power": 1 } : {},
+        setSkillPoints: burst ? { "Ebony Odogaron's Power": 2 } : {},
+        groupSkills: { "Lord's Soul": 1 },
+        groupSkillPoints: { "Lord's Soul": 3 },
+        conditions,
+        weaponBaseRaw: 257,
+        weaponType: 'ranged',
+        weaponSharpness: 'White'
+      });
+      return profile.breakdown.raw.attackStatus;
+    };
+
+    expect(getStatus()).toBe(283);
+    expect(getStatus({ burst: true })).toBe(297);
+    expect(getStatus({ agitator: true })).toBe(303);
+    expect(getStatus({ burst: true, adrenaline: true })).toBe(307);
+    expect(getStatus({ burst: true, agitator: true })).toBe(317);
+    expect(getStatus({ burst: true, adrenaline: true, agitator: true })).toBe(327);
+  });
+
+  it('recalculates an existing result immediately when conditions change', () => {
+    const result = {
+      skills: { 'Attack Boost': 1, Agitator: 5 },
+      groupSkills: { "Lord's Soul": 1 },
+      groupSkillPoints: { "Lord's Soul": 3 },
+      weaponBaseRaw: 257,
+      weaponType: 'ranged',
+      weaponSharpness: 'White'
+    };
+    const inactive = recalculateResultDamage(result, {
+      powercharm: true,
+      food_attack_up: true
+    });
+    const active = recalculateResultDamage(result, {
+      powercharm: true,
+      food_attack_up: true,
+      monster_enraged: true
+    });
+
+    expect(inactive.damageProfile.breakdown.raw.attackStatus).toBe(283);
+    expect(active.damageProfile.breakdown.raw.attackStatus).toBe(303);
+    expect(active.conditions.monster_enraged).toBe(true);
+    expect(result.conditions).toBeUndefined();
   });
 
   it('models confirmed attack-specific damage multipliers', () => {
@@ -766,12 +829,13 @@ describe('damage scoring', () => {
       weaponSharpness: 'White'
     });
 
-    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.05);
+    expect(profile.breakdown.raw.rawPercentBonus).toBe(0.05);
+    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0);
     expect(profile.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
       expect.objectContaining({
         skill: 'Guts (Tenacity)',
         sourceSkill: "Lord's Soul",
-        postRawPercent: 0.05,
+        rawPercent: 0.05,
         active: true
       })
     ]));
@@ -787,7 +851,7 @@ describe('damage scoring', () => {
 
     expect(afterGuts.breakdown.raw.postRawPercentBonus).toBe(0);
     expect(afterGuts.breakdown.raw.skillContributions).toEqual(expect.arrayContaining([
-      expect.objectContaining({ skill: 'Guts (Tenacity)', postRawPercent: 0, active: false })
+      expect.objectContaining({ skill: 'Guts (Tenacity)', rawPercent: 0, active: false })
     ]));
   });
 
@@ -818,9 +882,10 @@ describe('damage scoring', () => {
     });
 
     expect(profile.breakdown.raw.flatRaw).toBe(76);
-    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.20);
-    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(19);
-    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(418.6);
+    expect(profile.breakdown.raw.rawPercentBonus).toBe(0.05);
+    expect(profile.breakdown.raw.postRawPercentBonus).toBe(0.15);
+    expect(profile.breakdown.raw.postMultiplierRawFlat).toBe(16);
+    expect(profile.breakdown.raw.effectiveRaw).toBeCloseTo(413.7275);
   });
 
   it('models War Cry II as six post-multiplier true raw', () => {

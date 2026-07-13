@@ -49,7 +49,7 @@ const PERMANENT_RAW_CONDITIONS = {
 };
 
 const PERMANENT_STATUS_EXCLUDED_RAW_CONDITIONS = {
-  food_attack_up: { skill: 'Food Attack Up', value: 8 }
+  food_attack_up: { skill: 'Food Attack Up', value: 5 }
 };
 
 export const CONDITION_SKILL_TABLES = {
@@ -630,7 +630,7 @@ const estimateGroupSkillDamageContribution = (groupSkills = {}, conditions = {})
     conditionLabel: CONDITION_LABELS.guts_triggered,
     contribution: gutsTriggered ? 0 : 0.05,
     active: !gutsTriggered,
-    field: 'post_raw_percent'
+    field: 'raw_percent'
   }];
 };
 
@@ -719,7 +719,7 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
       elementPercent: item.elementPercent || 0,
       active: item.active
     }));
-  const groupPostRawPercentContributions = groupSkillContributions.filter(item => item.field === 'post_raw_percent');
+  const groupRawPercentContributions = groupSkillContributions.filter(item => item.field === 'raw_percent');
   const unconditionalRawContributions = Object.entries(RAW_SKILL_TABLES).reduce((contribs, [skillName, table]) => {
     const value = getSkillValue(table.flat || [], skills[skillName] || 0);
     if (value) {
@@ -743,11 +743,11 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     return total + getSkillValue(table.rawPercent || [], skills[skillName] || 0);
   }, 0) +
     conditionalRawPercentContributions.reduce((total, item) => total + item.contribution, 0) +
-    setRawPercentContributions.reduce((total, item) => total + item.contribution, 0);
+    setRawPercentContributions.reduce((total, item) => total + item.contribution, 0) +
+    groupRawPercentContributions.reduce((total, item) => total + item.contribution, 0);
 
   const postRawPercent = conditionalPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0) +
-    setPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0) +
-    groupPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0);
+    setPostRawPercentContributions.reduce((total, item) => total + item.contribution, 0);
   const postMultiplierRawFlat = permanentStatusExcludedRawContributions
     .reduce((total, item) => total + item.contribution, 0) +
     burstRawContributions.reduce((total, item) => total + item.contribution, 0) +
@@ -861,14 +861,13 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     active: item.active
   }));
 
-  const groupPostRawPercentBreakdown = groupPostRawPercentContributions.map(item => ({
+  const groupRawPercentBreakdown = groupRawPercentContributions.map(item => ({
     skill: item.skill,
     sourceSkill: item.sourceSkill,
     condition: item.condition,
     conditionLabel: item.conditionLabel,
     flat: 0,
-    rawPercent: 0,
-    postRawPercent: item.contribution,
+    rawPercent: item.contribution,
     active: item.active
   }));
 
@@ -884,7 +883,7 @@ const estimateSkillDamageContribution = (skills = {}, conditions = {}, setSkills
     ...setRawPercentBreakdown,
     ...setPostRawPercentBreakdown,
     ...setPostMultiplierRawBreakdown,
-    ...groupPostRawPercentBreakdown
+    ...groupRawPercentBreakdown
   ];
 
   const affinityContributions = [
@@ -1010,6 +1009,7 @@ export const buildDamageProfile = roll => {
   const effectiveElement = elementValue > 0 ? Math.min(uncappedElement, elementCap) : 0;
   const effectiveRaw = (baseRaw * (1 + skillContribution.rawPercent) + skillContribution.rawFlat) *
     (1 + skillContribution.postRawPercent) + skillContribution.postMultiplierRawFlat;
+  const attackStatus = Math.floor(effectiveRaw + Number.EPSILON);
   const critExpectation = affinity >= 0 ?
     1 + affinity / 100 * (skillContribution.critMultiplier - 1) :
     1 + Math.abs(affinity) / 100 * (NEGATIVE_CRIT_MULTIPLIER - 1);
@@ -1074,6 +1074,7 @@ export const buildDamageProfile = roll => {
         base: baseRaw,
         sharpnessMultiplier,
         effectiveRaw,
+        attackStatus,
         critExpectation,
         flatRaw: skillContribution.rawFlat,
         statusExcludedRawFlat: skillContribution.statusExcludedRawFlat,
@@ -1107,6 +1108,17 @@ export const buildDamageProfile = roll => {
       unmodeledSkills: skillContribution.unmodeledSkills
     }
   };
+};
+
+export const recalculateResultDamage = (result, conditions = {}) => {
+  const skills = {
+    ...result?.skills || {},
+    ...result?.setSkills || {},
+    ...result?.groupSkills || {}
+  };
+  const filteredConditions = filterConditionsForSkills(conditions, skills);
+  const liveResult = { ...result, conditions: filteredConditions };
+  return { ...liveResult, damageProfile: buildDamageProfile(liveResult) };
 };
 
 export const rankBuildsByDamage = (rolls, goal = 'highest_dps') => {

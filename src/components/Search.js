@@ -24,8 +24,6 @@ import {
     AccordionDetails,
     AccordionSummary,
     Button,
-    Checkbox,
-    FormControlLabel,
     MenuItem,
     TextField
 } from "@mui/material";
@@ -34,6 +32,7 @@ import Results from "./Results";
 import { DEBUG } from "../util/constants";
 import { useStorage } from "../hooks/StorageContext";
 import { ELEMENT_SKILL_TABLES, filterConditionsForSkills, getConditionOptionsForSkills } from "../util/damageScoring";
+import DamageConditions from './DamageConditions';
 
 const ArrowL = styled(ArrowLeft)`
     width: 16px !important;
@@ -845,26 +844,6 @@ const Search = () => {
         updateField('groupSkillBonus', value);
     };
 
-    const toggleCondition = conditionId => {
-        const nextConditions = { ...fields.conditions };
-        const currentValue = conditionId === 'wound' ?
-            Boolean(nextConditions.wound || nextConditions.weak_point_and_wound) :
-            Boolean(nextConditions[conditionId]);
-        nextConditions[conditionId] = !currentValue;
-        if (conditionId === 'wound') {
-            delete nextConditions.weak_point_and_wound;
-        }
-        updateField('conditions', nextConditions);
-    };
-
-    const isConditionChecked = conditionId => {
-        if (conditionId === 'wound') {
-            return Boolean(fields.conditions?.wound || fields.conditions?.weak_point_and_wound);
-        }
-
-        return Boolean(fields.conditions?.[conditionId]);
-    };
-
     const removeSkill = skillName => {
         const tempSkills = { ...fields.skills };
         delete tempSkills[skillName];
@@ -889,16 +868,11 @@ const Search = () => {
                 Conditions
             </AccordionSummary>
             <AccordionDetails>
-                {conditionOptions.map(condition =>
-                    <FormControlLabel
-                        key={condition.id}
-                        control={<Checkbox
-                            checked={isConditionChecked(condition.id)}
-                            onChange={() => toggleCondition(condition.id)}
-                        />}
-                        label={condition.displayLabel}
-                    />
-                )}
+                <DamageConditions
+                    skills={fields.skills}
+                    conditions={fields.conditions}
+                    onChange={conditions => updateField('conditions', conditions)}
+                />
             </AccordionDetails>
         </Accordion>;
     };

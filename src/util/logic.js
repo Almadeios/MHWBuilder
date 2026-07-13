@@ -1452,34 +1452,71 @@ const getMitmCoverageScore = state => {
         state.weaponSlots.reduce((total, size) => total + size, 0);
 };
 
-const getMitmHalfCacheKey = (slotsToBuild, candidateLists, vectorSchema) => {
+const getMitmHalfCacheKeys = (slotsToBuild, candidateLists, vectorSchema) => {
     const candidateSignature = slotsToBuild.map(slot => [
         slot,
-        candidateLists[slot].map(([name, piece]) => [name, piece])
+        candidateLists[slot].map(([name, piece]) =>
+            slot === 'talisman' ? [name, piece] : name
+        )
     ]);
-    return JSON.stringify([
+    const baseKey = JSON.stringify([
         slotsToBuild,
         vectorSchema.skillNames,
-        vectorSchema.skillTargets,
         vectorSchema.setNames,
-        vectorSchema.setTargets,
         vectorSchema.groupNames,
-        vectorSchema.groupTargets,
         candidateSignature
     ]);
+    const targetKey = JSON.stringify([
+        vectorSchema.skillTargets,
+        vectorSchema.setTargets,
+        vectorSchema.groupTargets
+    ]);
+    const baseHash = stringToId(baseKey);
+    return { baseKey, baseHash, cacheKey: `${baseHash}|${targetKey}` };
 };
 
-const cacheMitmHalf = (key, states) => {
+const cacheMitmHalf = (key, entry) => {
+    const { states } = entry;
     while (mitmHalfCache.size >= MAX_MITM_HALF_CACHE_ENTRIES ||
         mitmHalfCacheStateCount + states.length > MAX_MITM_HALF_CACHE_STATES) {
         const oldestKey = mitmHalfCache.keys().next().value;
         if (oldestKey === undefined) { break; }
-        mitmHalfCacheStateCount -= mitmHalfCache.get(oldestKey).length;
+        mitmHalfCacheStateCount -= mitmHalfCache.get(oldestKey).states.length;
         mitmHalfCache.delete(oldestKey);
     }
     if (states.length > MAX_MITM_HALF_CACHE_STATES) { return; }
-    mitmHalfCache.set(key, states);
+    mitmHalfCache.set(key, entry);
     mitmHalfCacheStateCount += states.length;
+};
+
+const doMitmTargetsCover = (cachedTargets, requestedTargets) =>
+    requestedTargets.every((target, index) => cachedTargets[index] >= target);
+
+const canProjectMitmHalfEntry = (entry, baseKey, baseHash, vectorSchema) =>
+    entry.baseHash === baseHash && entry.baseKey === baseKey &&
+    doMitmTargetsCover(entry.skillTargets, vectorSchema.skillTargets) &&
+    doMitmTargetsCover(entry.setTargets, vectorSchema.setTargets) &&
+    doMitmTargetsCover(entry.groupTargets, vectorSchema.groupTargets);
+
+const projectMitmHalfStates = (states, vectorSchema) => {
+    const projectedByKey = new Map();
+    states.forEach(state => {
+        const projected = {
+            ...state,
+            skillVector: Uint16Array.from(state.skillVector, (level, index) =>
+                Math.min(level, vectorSchema.skillTargets[index])
+            ),
+            setVector: Uint8Array.from(state.setVector, (level, index) =>
+                Math.min(level, vectorSchema.setTargets[index])
+            ),
+            groupVector: Uint8Array.from(state.groupVector, (level, index) =>
+                Math.min(level, vectorSchema.groupTargets[index])
+            )
+        };
+        const key = getMitmStateKey(projected);
+        if (!projectedByKey.has(key)) { projectedByKey.set(key, projected); }
+    });
+    return [...projectedByKey.values()];
 };
 
 export const canDecorationSlotsCoverTotalDeficit = (
@@ -1617,20 +1654,53 @@ const buildMitmHalf = async(
 const getOrBuildMitmHalf = async(
     slotsToBuild, candidateLists, vectorSchema, cancelToken, profile
 ) => {
-    const cacheKey = getMitmHalfCacheKey(slotsToBuild, candidateLists, vectorSchema);
-    const cachedStates = mitmHalfCache.get(cacheKey);
-    if (cachedStates) {
+    const { baseKey, baseHash, cacheKey } = getMitmHalfCacheKeys(
+        slotsToBuild, candidateLists, vectorSchema
+    );
+    const cachedEntry = mitmHalfCache.get(cacheKey);
+    if (cachedEntry?.baseKey === baseKey) {
         mitmHalfCache.delete(cacheKey);
-        mitmHalfCache.set(cacheKey, cachedStates);
+        mitmHalfCache.set(cacheKey, cachedEntry);
         profile.halfCacheHits = (profile.halfCacheHits || 0) + 1;
-        profile.halfCacheStatesReused = (profile.halfCacheStatesReused || 0) + cachedStates.length;
-        return cachedStates;
+        profile.halfCacheStatesReused = (profile.halfCacheStatesReused || 0) +
+            cachedEntry.states.length;
+        return cachedEntry.states;
+    }
+    const projectionSource = [...mitmHalfCache.values()]
+        .filter(entry => canProjectMitmHalfEntry(entry, baseKey, baseHash, vectorSchema))
+        .sort((left, right) => left.states.length - right.states.length)[0];
+    if (projectionSource) {
+        const states = projectMitmHalfStates(projectionSource.states, vectorSchema);
+        const entry = {
+            baseKey,
+            baseHash,
+            states,
+            skillTargets: vectorSchema.skillTargets,
+            setTargets: vectorSchema.setTargets,
+            groupTargets: vectorSchema.groupTargets
+        };
+        cacheMitmHalf(cacheKey, entry);
+        profile.halfProjectionCacheHits = (profile.halfProjectionCacheHits || 0) + 1;
+        profile.halfCacheStatesReused = (profile.halfCacheStatesReused || 0) +
+            projectionSource.states.length;
+        profile.halfProjectionStatesCompacted =
+            (profile.halfProjectionStatesCompacted || 0) + projectionSource.states.length - states.length;
+        return states;
     }
     profile.halfCacheMisses = (profile.halfCacheMisses || 0) + 1;
     const states = await buildMitmHalf(
         slotsToBuild, candidateLists, vectorSchema, cancelToken, profile
     );
-    if (!cancelToken?.current) { cacheMitmHalf(cacheKey, states); }
+    if (!cancelToken?.current) {
+        cacheMitmHalf(cacheKey, {
+            baseKey,
+            baseHash,
+            states,
+            skillTargets: vectorSchema.skillTargets,
+            setTargets: vectorSchema.setTargets,
+            groupTargets: vectorSchema.groupTargets
+        });
+    }
     return states;
 };
 

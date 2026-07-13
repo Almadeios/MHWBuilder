@@ -217,6 +217,39 @@ describe('search feasibility and custom decorations', () => {
     expect(second.profile.halfCacheStatesReused).toBeGreaterThan(0);
   });
 
+  it('projects cached MITM halves from higher targets to lower targets', async() => {
+    const parameters = {
+      mandatoryArmor: [
+        'Arkvulcan Helm Gamma',
+        'Gogmazios Mail Beta',
+        'G Rathalos Vambraces Beta+',
+        'Dahaad Shardcoil Gamma',
+        'Sororal Boots Alpha',
+        ''
+      ],
+      weaponSlots: [3, 3, 3],
+      useOnlyOwnedTalismans: true,
+      customTalismans: [],
+      limit: 1,
+      findOne: true
+    };
+    const higher = await searchAndSpeed({
+      ...parameters,
+      skills: { 'Water Resistance': 3 },
+      maxSearchMs: 1201
+    });
+    const lower = await searchAndSpeed({
+      ...parameters,
+      skills: { 'Water Resistance': 1 },
+      maxSearchMs: 1202
+    });
+
+    expect(higher.results).toHaveLength(1);
+    expect(lower.results).toHaveLength(1);
+    expect(lower.profile.halfProjectionCacheHits).toBeGreaterThanOrEqual(1);
+    expect(lower.profile.halfCacheMisses).toBeGreaterThanOrEqual(1);
+  });
+
   it('uses the strongest compatible decoration in feasibility estimates', async() => {
     const response = await searchAndSpeed({
       skills: { 'Critical Boost': 5 },
