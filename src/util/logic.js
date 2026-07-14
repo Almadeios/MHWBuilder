@@ -49,6 +49,9 @@ const mitmHalfCache = new Map();
 const MAX_MITM_HALF_CACHE_ENTRIES = 8;
 const MAX_MITM_HALF_CACHE_STATES = 50000;
 let mitmHalfCacheStateCount = 0;
+const searchGearCache = new Map();
+const MAX_SEARCH_GEAR_CACHE_ENTRIES = 8;
+const searchFeasibilityCache = new Map();
 const GENERATED_TALISMAN_CANDIDATE_LIMIT = 300;
 const isOffElementAttackSkill = (skillName, params = {}) => {
     const elementTable = ELEMENT_SKILL_TABLES[skillName];
@@ -117,10 +120,35 @@ export const buildSearchCacheKey = parameters => {
         findOne: Boolean(params.findOne),
         maxSearchMs: params.maxSearchMs || 0,
         exhaustive: Boolean(params.exhaustive),
+        bonusDiscovery: Boolean(params.bonusDiscovery),
+        bonusDiscoverySetNames: normalizeList(params.bonusDiscoverySetNames),
+        bonusDiscoveryGroupNames: normalizeList(params.bonusDiscoveryGroupNames),
+        bonusDiscoveryTargetType: params.bonusDiscoveryTargetType || '',
+        bonusDiscoveryTargetName: params.bonusDiscoveryTargetName || '',
+        bonusDiscoveryTargetLevel: Number(params.bonusDiscoveryTargetLevel || 0),
         rank: params.rank || "high"
     };
 
     return JSON.stringify(normalizedParams);
+};
+
+const buildSearchGearCacheKey = params => buildSearchCacheKey({
+    ...params,
+    limit: 0,
+    findOne: false,
+    maxSearchMs: 0,
+    bonusDiscoveryTargetType: '',
+    bonusDiscoveryTargetName: '',
+    bonusDiscoveryTargetLevel: 0
+});
+
+const cacheSearchGear = (key, gear) => {
+    if (searchGearCache.size >= MAX_SEARCH_GEAR_CACHE_ENTRIES) {
+        const oldestKey = searchGearCache.keys().next().value;
+        searchGearCache.delete(oldestKey);
+        searchFeasibilityCache.delete(oldestKey);
+    }
+    searchGearCache.set(key, gear);
 };
 
 const cacheSearchResult = (key, results) => {
@@ -1175,28 +1203,39 @@ const getSortedCandidateList = (
 };
 
 const getEquivalentArmorSignature = (
-    piece, desiredSkills, requiredSetPoints, requiredGroupPoints
+    piece, desiredSkills, requiredSetPoints, requiredGroupPoints, discoveryBonuses = null
 ) => JSON.stringify({
     skills: Object.entries(desiredSkills).map(([skillName, targetLevel]) => [
         skillName,
         Math.min(targetLevel, _x.skills(piece)?.[skillName] || 0)
     ]),
     slots: normalizeSlotsForDominance(_x.slots(piece)),
-    sets: Object.keys(requiredSetPoints).map(skillName =>
-        (_x.setSkills(piece) || []).includes(skillName) ? 1 : 0
-    ),
-    groups: Object.keys(requiredGroupPoints).map(skillName =>
-        (_x.groupSkills(piece) || []).includes(skillName) ? 1 : 0
-    )
+    sets: discoveryBonuses ?
+        [..._x.setSkills(piece) || []]
+            .filter(name => discoveryBonuses.setNames.has(name)).sort() :
+        Object.keys(requiredSetPoints).map(skillName =>
+            (_x.setSkills(piece) || []).includes(skillName) ? 1 : 0
+        ),
+    groups: discoveryBonuses ?
+        [..._x.groupSkills(piece) || []]
+            .filter(name => discoveryBonuses.groupNames.has(name)).sort() :
+        Object.keys(requiredGroupPoints).map(skillName =>
+            (_x.groupSkills(piece) || []).includes(skillName) ? 1 : 0
+        )
 });
 
 export const groupEquivalentArmorCandidates = (
-    entries, desiredSkills, requiredSetPoints = {}, requiredGroupPoints = {}
+    entries, desiredSkills, requiredSetPoints = {}, requiredGroupPoints = {},
+    discoveryBonuses = null
 ) => {
     const groups = new Map();
     entries.forEach(entry => {
         const signature = getEquivalentArmorSignature(
-            entry[1], desiredSkills, requiredSetPoints, requiredGroupPoints
+            entry[1], desiredSkills, requiredSetPoints, requiredGroupPoints,
+            discoveryBonuses === true ? {
+                setNames: new Set(entries.flatMap(([, piece]) => _x.setSkills(piece) || [])),
+                groupNames: new Set(entries.flatMap(([, piece]) => _x.groupSkills(piece) || []))
+            } : discoveryBonuses
         );
         const group = groups.get(signature) || [];
         group.push(entry);
@@ -1235,8 +1274,16 @@ export const orderMitmSlotsByRestriction = (slots, candidateLists) => [...slots]
 );
 
 const buildSearchGear = (params, setSkills = params.setSkills, groupSkills = params.groupSkills) => {
+    const candidateSetSkills = params.bonusDiscovery ? {
+        ...setSkills,
+        ...Object.fromEntries(params.bonusDiscoverySetNames.map(name => [name, 1]))
+    } : setSkills;
+    const candidateGroupSkills = params.bonusDiscovery ? {
+        ...groupSkills,
+        ...Object.fromEntries(params.bonusDiscoveryGroupNames.map(name => [name, 1]))
+    } : groupSkills;
     let gear = speed(
-        getBestArmor, params.skills, setSkills, groupSkills,
+        getBestArmor, params.skills, candidateSetSkills, candidateGroupSkills,
         params.mandatoryArmor, params.blacklistedArmor, params.blacklistedArmorTypes,
         params.dontUseDecos, params.weaponSlots, params.setSkillBonus, params.groupSkillBonus,
         params.customTalismans, params.useOnlyOwnedTalismans, params.customDecorations
@@ -1357,7 +1404,9 @@ export const validateSearchFeasibility = (gear, desiredSkills = {}, setSkills = 
 
 const getMitmSlotKey = slots => [...slots].sort((a, b) => b - a).join(',');
 
-const createMitmVectorSchema = (desiredSkills, requiredSetPoints, requiredGroupPoints) => {
+const createMitmVectorSchema = (
+    desiredSkills, requiredSetPoints, requiredGroupPoints, discoveryBonuses = null
+) => {
     const skillNames = Object.keys(desiredSkills);
     const setNames = Object.keys(requiredSetPoints);
     const groupNames = Object.keys(requiredGroupPoints);
@@ -1370,9 +1419,26 @@ const createMitmVectorSchema = (desiredSkills, requiredSetPoints, requiredGroupP
         setIndex: new Map(setNames.map((name, index) => [name, index])),
         groupNames,
         groupTargets: groupNames.map(name => requiredGroupPoints[name]),
-        groupIndex: new Map(groupNames.map((name, index) => [name, index]))
+        groupIndex: new Map(groupNames.map((name, index) => [name, index])),
+        preserveBonusDiversity: Boolean(discoveryBonuses),
+        discoverySetNames: discoveryBonuses?.setNames || new Set(),
+        discoveryGroupNames: discoveryBonuses?.groupNames || new Set()
     };
 };
+
+const addBonusCounts = (counts, names, trackedNames) => {
+    const next = { ...counts };
+    (names || []).forEach(name => {
+        if (!trackedNames.has(name)) { return; }
+        next[name] = (next[name] || 0) + 1;
+    });
+    return next;
+};
+
+const getBonusCountsKey = counts => Object.entries(counts || {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, points]) => `${name}:${points}`)
+    .join(',');
 
 const addMapToMitmVector = (source, additions, index, targets) => {
     const result = new Uint16Array(source);
@@ -1441,14 +1507,20 @@ const getMitmStateKey = state => [
     state.setVector.join(','),
     state.groupVector.join(','),
     getMitmSlotKey(state.slots),
-    getMitmSlotKey(state.weaponSlots)
+    getMitmSlotKey(state.weaponSlots),
+    state.preserveBonusDiversity ? getBonusCountsKey(state.setBonusCounts) : '',
+    state.preserveBonusDiversity ? getBonusCountsKey(state.groupBonusCounts) : ''
 ].join('|');
 
 const getMitmBonusKey = state => `${state.setVector.join(',')}|${state.groupVector.join(',')}`;
 
 const getMitmCoverageScore = state => {
     const skillScore = state.skillVector.reduce((total, level) => total + level, 0);
-    return skillScore * 100 + state.slots.reduce((total, size) => total + size, 0) +
+    const discoveryScore = Object.values(state.setBonusCounts || {})
+        .concat(Object.values(state.groupBonusCounts || {}))
+        .reduce((total, points) => total + points, 0);
+    return discoveryScore * 10000 + skillScore * 100 +
+        state.slots.reduce((total, size) => total + size, 0) +
         state.weaponSlots.reduce((total, size) => total + size, 0);
 };
 
@@ -1464,6 +1536,9 @@ const getMitmHalfCacheKeys = (slotsToBuild, candidateLists, vectorSchema) => {
         vectorSchema.skillNames,
         vectorSchema.setNames,
         vectorSchema.groupNames,
+        vectorSchema.preserveBonusDiversity,
+        [...vectorSchema.discoverySetNames].sort(),
+        [...vectorSchema.discoveryGroupNames].sort(),
         candidateSignature
     ]);
     const targetKey = JSON.stringify([
@@ -1601,7 +1676,10 @@ const buildMitmHalf = async(
         setVector: new Uint8Array(vectorSchema.setNames.length),
         groupVector: new Uint8Array(vectorSchema.groupNames.length),
         slots: [],
-        weaponSlots: []
+        weaponSlots: [],
+        setBonusCounts: {},
+        groupBonusCounts: {},
+        preserveBonusDiversity: vectorSchema.preserveBonusDiversity
     }];
 
     for (const slot of slotsToBuild) {
@@ -1629,7 +1707,16 @@ const buildMitmHalf = async(
                     slots: state.slots.concat(_x.slots(piece) || []),
                     weaponSlots: state.weaponSlots.concat(
                         slot === 'talisman' ? _x.weaponSlots(piece) : []
-                    )
+                    ),
+                    setBonusCounts: vectorSchema.preserveBonusDiversity ?
+                        addBonusCounts(
+                            state.setBonusCounts, _x.setSkills(piece), vectorSchema.discoverySetNames
+                        ) : {},
+                    groupBonusCounts: vectorSchema.preserveBonusDiversity ?
+                        addBonusCounts(
+                            state.groupBonusCounts, _x.groupSkills(piece), vectorSchema.discoveryGroupNames
+                        ) : {},
+                    preserveBonusDiversity: vectorSchema.preserveBonusDiversity
                 };
                 if (name !== 'None') { next.names.add(name); }
                 const key = getMitmStateKey(next);
@@ -1717,6 +1804,47 @@ const rollCombosMeetInMiddle = async(
     const requiredGroupPoints = Object.fromEntries(Object.keys(groupSkills).map(name => [
         name, Math.max(0, 3 - (gear.groupSkillBonus === name ? 1 : 0))
     ]));
+    const discoverySetNames = new Set(gear.bonusDiscoverySetNames || []);
+    const discoveryGroupNames = new Set(gear.bonusDiscoveryGroupNames || []);
+    const discoveryBonuses = gear.bonusDiscovery ? {
+        setNames: discoverySetNames,
+        groupNames: discoveryGroupNames
+    } : null;
+    const discoveredSetNames = new Set();
+    const discoveredGroupNames = new Set();
+    const allDiscoveryTargets = [
+        ...[...discoverySetNames].map(name => ({
+            name,
+            type: 'set',
+            threshold: SET_SKILL_DB[name]?.[2]?.[0] || 2
+        })),
+        ...[...discoveryGroupNames].map(name => ({
+            name,
+            type: 'group',
+            threshold: GROUP_SKILL_DB[name]?.[2] || 3
+        }))
+    ];
+    const directedDiscoveryTarget = allDiscoveryTargets.find(target =>
+        target.type === gear.bonusDiscoveryTargetType &&
+        target.name === gear.bonusDiscoveryTargetName
+    );
+    if (directedDiscoveryTarget) {
+        const targetLevel = Math.max(1, Number(gear.bonusDiscoveryTargetLevel || 1));
+        directedDiscoveryTarget.threshold = directedDiscoveryTarget.type === 'set' ?
+            Math.max(0, targetLevel * 2 - (gear.setSkillBonus === directedDiscoveryTarget.name ? 1 : 0)) :
+            Math.max(0, 3 - (gear.groupSkillBonus === directedDiscoveryTarget.name ? 1 : 0));
+    }
+    const discoveryTargets = directedDiscoveryTarget ?
+        [directedDiscoveryTarget] : allDiscoveryTargets;
+    const allDiscoveryBonusesFound = () => discoveryTargets.every(target =>
+        target.type === 'set' ?
+            discoveredSetNames.has(target.name) : discoveredGroupNames.has(target.name)
+    );
+    const isDiscoveryTargetPending = target => target.type === 'set' ?
+        !discoveredSetNames.has(target.name) : !discoveredGroupNames.has(target.name);
+    const getDiscoveryPoints = (state, target) => target.type === 'set' ?
+        state.setBonusCounts?.[target.name] || 0 :
+        state.groupBonusCounts?.[target.name] || 0;
     const equivalentMembersByPiece = new Map();
     const candidateLists = Object.fromEntries(armorSlots.map(slot => {
         const sortedCandidates = getSortedCandidateList(
@@ -1727,7 +1855,8 @@ const rollCombosMeetInMiddle = async(
             return [slot, sortedCandidates];
         }
         const grouped = groupEquivalentArmorCandidates(
-            sortedCandidates, desiredSkills, requiredSetPoints, requiredGroupPoints
+            sortedCandidates, desiredSkills, requiredSetPoints, requiredGroupPoints,
+            discoveryBonuses
         );
         grouped.membersByPiece.forEach((members, piece) => {
             equivalentMembersByPiece.set(piece, members);
@@ -1742,7 +1871,9 @@ const rollCombosMeetInMiddle = async(
 
     const leftSlotOrder = orderMitmSlotsByRestriction(['head', 'chest', 'arms'], candidateLists);
     const rightSlotOrder = orderMitmSlotsByRestriction(['waist', 'legs', 'talisman'], candidateLists);
-    const vectorSchema = createMitmVectorSchema(desiredSkills, requiredSetPoints, requiredGroupPoints);
+    const vectorSchema = createMitmVectorSchema(
+        desiredSkills, requiredSetPoints, requiredGroupPoints, discoveryBonuses
+    );
     profile.leftSlotOrder = leftSlotOrder;
     profile.rightSlotOrder = rightSlotOrder;
     const leftStates = await getOrBuildMitmHalf(
@@ -1766,15 +1897,47 @@ const rollCombosMeetInMiddle = async(
         rightBuckets.set(key, bucket);
     });
     const orderedRightBuckets = [...rightBuckets.values()];
-    orderedRightBuckets.forEach(bucket => bucket.states.sort(
-        (a, b) => getMitmCoverageScore(b) - getMitmCoverageScore(a)
-    ));
+    orderedRightBuckets.forEach(bucket => {
+        bucket.states.sort((a, b) => getMitmCoverageScore(b) - getMitmCoverageScore(a));
+        if (gear.bonusDiscovery) {
+            bucket.discoveryStates = new Map(discoveryTargets.map(target => {
+                const byMinimum = Array.from({ length: target.threshold + 1 }, (_, needed) =>
+                    needed === 0 ? bucket.states : bucket.states.filter(state =>
+                        getDiscoveryPoints(state, target) >= needed
+                    )
+                );
+                return [`${target.type}:${target.name}`, byMinimum];
+            }));
+        }
+    });
+    const getDiscoveryRightStates = (left, bucket) => {
+        const lists = discoveryTargets.filter(isDiscoveryTargetPending).map(target => {
+            const needed = Math.max(0, target.threshold - getDiscoveryPoints(left, target));
+            return bucket.discoveryStates.get(`${target.type}:${target.name}`)?.[needed] || [];
+        }).filter(list => list.length);
+        if (!lists.length) { return []; }
+
+        const interleaved = [];
+        const seen = new Set();
+        const maxLength = Math.max(...lists.map(list => list.length));
+        for (let index = 0; index < maxLength; index++) {
+            lists.forEach(list => {
+                const state = list[index];
+                if (state && !seen.has(state)) {
+                    seen.add(state);
+                    interleaved.push(state);
+                }
+            });
+        }
+        return interleaved;
+    };
     profile.rightBonusBuckets = orderedRightBuckets.length;
     const results = [];
     const decorationStateCache = new Map();
     let infeasibleFrontier = [];
     const emittedPartialThresholds = new Set();
     let checked = 0;
+    let traversed = 0;
     for (const left of leftStates) {
         for (const bucket of orderedRightBuckets) {
             const setsSatisfied = vectorSchema.setTargets.every(
@@ -1792,7 +1955,14 @@ const rollCombosMeetInMiddle = async(
                 continue;
             }
 
-            for (const right of bucket.states) {
+            const candidateRightStates = gear.bonusDiscovery ?
+                getDiscoveryRightStates(left, bucket) : bucket.states;
+            for (const right of candidateRightStates) {
+                traversed++;
+                if (gear.bonusDiscovery && traversed % 5000 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                    if (cancelToken?.current) { return results; }
+                }
                 if ([...left.names].some(name => right.names.has(name))) { continue; }
 
                 const combinedSkillVector = sumMitmVectors(
@@ -1878,8 +2048,9 @@ const rollCombosMeetInMiddle = async(
                     } : null);
                 }
                 if (result) {
+                    const remainingResultCapacity = Math.max(1, limit - Math.min(results.length, limit));
                     const expandedPieceSets = expandEquivalentPieceSets(
-                        pieces, equivalentMembersByPiece, limit - results.length
+                        pieces, equivalentMembersByPiece, remainingResultCapacity
                     );
                     for (const expandedPieces of expandedPieceSets) {
                         const expandedSet = armorCombo(
@@ -1902,10 +2073,31 @@ const rollCombosMeetInMiddle = async(
                             groupSkills: expandedSet.groupSkills,
                             talismanData: expandedSet.talismanData
                         };
+                        const newSetNames = [...discoverySetNames].filter(skillName => {
+                            if (discoveredSetNames.has(skillName)) { return false; }
+                            const target = discoveryTargets.find(candidate =>
+                                candidate.type === 'set' && candidate.name === skillName
+                            );
+                            const threshold = target?.threshold || SET_SKILL_DB[skillName]?.[2]?.[0] || 2;
+                            return (expandedSet.setSkills?.[skillName] || 0) >= threshold;
+                        });
+                        const newGroupNames = [...discoveryGroupNames].filter(skillName => {
+                            if (discoveredGroupNames.has(skillName)) { return false; }
+                            const target = discoveryTargets.find(candidate =>
+                                candidate.type === 'group' && candidate.name === skillName
+                            );
+                            const threshold = target?.threshold || GROUP_SKILL_DB[skillName]?.[2] || 3;
+                            return (expandedSet.groupSkills?.[skillName] || 0) >= threshold;
+                        });
+                        if (gear.bonusDiscovery && !newSetNames.length && !newGroupNames.length) {
+                            continue;
+                        }
                         expandedResult.id = stringToId(
                             `${expandedResult.armorNames.join(',')}_${expandedResult.decoNames.join(',')}`
                         );
                         results.push(expandedResult);
+                        newSetNames.forEach(name => discoveredSetNames.add(name));
+                        newGroupNames.forEach(name => discoveredGroupNames.add(name));
                         profile.expandedEquivalentResults = (profile.expandedEquivalentResults || 0) + 1;
                         [20, 50].forEach(threshold => {
                             if (results.length >= threshold && limit > threshold && partialResultFunc &&
@@ -1914,11 +2106,16 @@ const rollCombosMeetInMiddle = async(
                                 partialResultFunc(results.slice());
                             }
                         });
-                        if (findOne || results.length >= limit) { return results; }
+                        const normalLimitReached = !gear.bonusDiscovery && results.length >= limit;
+                        const discoveryComplete = gear.bonusDiscovery && allDiscoveryBonusesFound();
+                        if (findOne || normalLimitReached || discoveryComplete) {
+                            return results;
+                        }
                     }
                 }
                 checked++;
-                if (checked % 250 === 0) {
+                const cancellationInterval = gear.bonusDiscovery ? 25 : 250;
+                if (checked % cancellationInterval === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
                     if (cancelToken?.current) { return results; }
                 }
@@ -2120,6 +2317,32 @@ export const collapseFlexibleTalismanResults = (results, desiredSkills = {}) => 
             }
         };
     });
+};
+
+export const selectBonusDiscoveryWitnesses = (
+    results, setNames = [], groupNames = []
+) => {
+    const bestByBonus = new Map();
+    const consider = (result, skillName, level) => {
+        if (!level) { return; }
+        const current = bestByBonus.get(skillName);
+        if (!current || level > current.level) {
+            bestByBonus.set(skillName, { level, result });
+        }
+    };
+
+    results.forEach(result => {
+        setNames.forEach(skillName => consider(
+            result, skillName, result.setSkills?.[skillName] || 0
+        ));
+        groupNames.forEach(skillName => consider(
+            result, skillName, result.groupSkills?.[skillName] || 0
+        ));
+    });
+
+    return Array.from(new Map(
+        [...bestByBonus.values()].map(({ result }) => [result.id, result])
+    ).values());
 };
 
 export const mergeUniqueResultGroups = resultGroups => Array.from(new Map(
@@ -2372,11 +2595,32 @@ export const search = async parameters => {
     recordOptimizerStage(profile, "priorResultExtension", stageStartedAt);
 
     stageStartedAt = performance.now();
-    const gear = buildSearchGear(params);
+    const searchGearCacheKey = buildSearchGearCacheKey(params);
+    const cachedGear = searchGearCache.get(searchGearCacheKey);
+    const gear = cachedGear ? { ...cachedGear } : buildSearchGear(params);
+    if (cachedGear) {
+        profile.candidatePrepCacheHits = (profile.candidatePrepCacheHits || 0) + 1;
+    } else {
+        cacheSearchGear(searchGearCacheKey, gear);
+    }
+    gear.bonusDiscovery = params.bonusDiscovery;
+    gear.bonusDiscoverySetNames = params.bonusDiscoverySetNames;
+    gear.bonusDiscoveryGroupNames = params.bonusDiscoveryGroupNames;
+    gear.bonusDiscoveryTargetType = params.bonusDiscoveryTargetType;
+    gear.bonusDiscoveryTargetName = params.bonusDiscoveryTargetName;
+    gear.bonusDiscoveryTargetLevel = params.bonusDiscoveryTargetLevel;
     recordOptimizerStage(profile, "candidatePrep", stageStartedAt);
 
     stageStartedAt = performance.now();
-    const feasibility = validateSearchFeasibility(gear, params.skills, params.setSkills, params.groupSkills);
+    const cachedFeasibility = searchFeasibilityCache.get(searchGearCacheKey);
+    const feasibility = cachedFeasibility || validateSearchFeasibility(
+        gear, params.skills, params.setSkills, params.groupSkills
+    );
+    if (cachedFeasibility) {
+        profile.searchFeasibilityCacheHits = (profile.searchFeasibilityCacheHits || 0) + 1;
+    } else {
+        searchFeasibilityCache.set(searchGearCacheKey, feasibility);
+    }
     recordOptimizerStage(profile, "feasibilityCheck", stageStartedAt);
     if (!feasibility.possible) {
         profile.impossible = true;
@@ -2394,10 +2638,12 @@ export const search = async parameters => {
     let searchTimedOut = false;
     const runComboSearch = async(searchGear, setSkills, groupSkills, stageName, timeBudget = maxComboSearchMs) => {
         const comboStartTime = performance.now();
-        const effectiveCancelToken = { current: false };
         let localTimedOut = false;
+        const effectiveCancelToken = {};
+        Object.defineProperty(effectiveCancelToken, 'current', {
+            get: () => localTimedOut || Boolean(params.cancelToken?.current)
+        });
         const timeoutId = setTimeout(() => {
-            effectiveCancelToken.current = true;
             localTimedOut = true;
         }, timeBudget);
         const searchRolls = await comboFunc(
@@ -2441,6 +2687,7 @@ export const search = async parameters => {
     let rolls = mergeUniqueResultGroups(resultGroups);
     profile.engine = engineName;
     profile.timedOut = !rolls.length && searchTimedOut;
+    profile.cancelled = Boolean(params.cancelToken?.current);
 
     // lazily handle slotFilters filtering here
     stageStartedAt = performance.now();
@@ -2510,11 +2757,16 @@ export const search = async parameters => {
 
     stageStartedAt = performance.now();
     const rankedRolls = rankBuildsByDamage(rolls, params.optimizationGoal || 'efficient');
-    rolls = collapseFlexibleTalismanResults(reorder(rankedRolls), params.skills).slice(0, params.limit);
+    const orderedRolls = collapseFlexibleTalismanResults(reorder(rankedRolls), params.skills);
+    rolls = params.bonusDiscovery ? selectBonusDiscoveryWitnesses(
+        orderedRolls,
+        params.bonusDiscoverySetNames,
+        params.bonusDiscoveryGroupNames
+    ) : orderedRolls.slice(0, params.limit);
     recordOptimizerStage(profile, "rankAndReorder", stageStartedAt);
 
     stageStartedAt = performance.now();
-    if (!profile.timedOut) {
+    if (!profile.timedOut && !profile.cancelled) {
         cacheSearchResult(cacheKey, rolls);
     }
     recordOptimizerStage(profile, "cacheWrite", stageStartedAt);

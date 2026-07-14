@@ -49,7 +49,13 @@ export const getSearchParameters = parameters => {
         exhaustive: parameters.exhaustive || false,
         cancelToken: parameters.cancelToken,
         addMoreFunc: parameters.addMoreFunc,
-        partialResultFunc: parameters.partialResultFunc
+        partialResultFunc: parameters.partialResultFunc,
+        bonusDiscovery: Boolean(parameters.bonusDiscovery),
+        bonusDiscoverySetNames: parameters.bonusDiscoverySetNames || [],
+        bonusDiscoveryGroupNames: parameters.bonusDiscoveryGroupNames || [],
+        bonusDiscoveryTargetType: parameters.bonusDiscoveryTargetType || '',
+        bonusDiscoveryTargetName: parameters.bonusDiscoveryTargetName || '',
+        bonusDiscoveryTargetLevel: Number(parameters.bonusDiscoveryTargetLevel || 0)
     };
 };
 

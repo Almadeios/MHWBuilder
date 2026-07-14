@@ -10,6 +10,7 @@ import {
   mergeUniqueResultGroups,
   orderMitmSlotsByRestriction,
   searchAndSpeed,
+  selectBonusDiscoveryWitnesses,
   sortTalismanCandidatesBySlotSavings
   , test
 } from './logic';
@@ -22,6 +23,99 @@ import LEGS from '../data/compact/legs.json';
 import DECORATIONS from '../data/compact/decoration.json';
 
 describe('search feasibility and custom decorations', () => {
+  it('keeps different optional bonus paths separate during discovery', () => {
+    const piece = setSkill => [
+      'head', { Adaptability: 1 }, [], [1], 10, [0, 0, 0, 0, 0], 'high', [setSkill]
+    ];
+    const entries = [
+      ['Ebony piece', piece("Ebony Odogaron's Power")],
+      ['Gogmazios piece', piece('Gogmapocalypse')]
+    ];
+
+    expect(groupEquivalentArmorCandidates(entries, { Adaptability: 1 }).representatives)
+      .toHaveLength(1);
+    expect(groupEquivalentArmorCandidates(
+      entries, { Adaptability: 1 }, {}, {}, true
+    ).representatives).toHaveLength(2);
+  });
+
+  it('returns one proven build for every discovered Set or Group Bonus', () => {
+    const ebony = {
+      id: 'ebony', setSkills: { "Ebony Odogaron's Power": 1 }, groupSkills: {}
+    };
+    const shared = {
+      id: 'shared', setSkills: { Gogmapocalypse: 2 }, groupSkills: { "Lord's Soul": 1 }
+    };
+
+    expect(selectBonusDiscoveryWitnesses(
+      [ebony, shared],
+      ["Ebony Odogaron's Power", 'Gogmapocalypse'],
+      ["Lord's Soul"]
+    )).toEqual([ebony, shared]);
+  });
+
+  it("discovers Ebony Odogaron's Power without requiring the user to guess it", async() => {
+    const response = await searchAndSpeed({
+      skills: {
+        'Critical Boost': 5,
+        'Power Prolonger': 3,
+        'Maximum Might': 3,
+        Agitator: 5,
+        'Weakness Exploit': 5,
+        'Attack Boost': 4,
+        Antivirus: 3,
+        'Shock Absorber': 1,
+        Burst: 1
+      },
+      setSkills: { "Gore Magala's Tyranny": 1 },
+      groupSkills: { "Lord's Soul": 1 },
+      setSkillBonus: "Gore Magala's Tyranny",
+      groupSkillBonus: "Lord's Soul",
+      weaponSlots: [3, 3, 3],
+      bonusDiscovery: true,
+      bonusDiscoverySetNames: ["Ebony Odogaron's Power"],
+      maxSearchMs: 12000,
+      limit: 100
+    });
+
+    expect(response.results.some(result =>
+      result.setSkills?.["Ebony Odogaron's Power"] >= 1
+    )).toBe(true);
+
+    const directedResponse = await searchAndSpeed({
+      skills: {
+        'Critical Boost': 5,
+        'Power Prolonger': 3,
+        'Maximum Might': 3,
+        Agitator: 5,
+        'Weakness Exploit': 5,
+        'Attack Boost': 4,
+        Antivirus: 3,
+        'Shock Absorber': 1,
+        Burst: 1
+      },
+      setSkills: { "Gore Magala's Tyranny": 1 },
+      groupSkills: { "Lord's Soul": 1 },
+      setSkillBonus: "Gore Magala's Tyranny",
+      groupSkillBonus: "Lord's Soul",
+      weaponSlots: [3, 3, 3],
+      bonusDiscovery: true,
+      bonusDiscoverySetNames: ["Ebony Odogaron's Power"],
+      bonusDiscoveryTargetType: 'set',
+      bonusDiscoveryTargetName: "Ebony Odogaron's Power",
+      bonusDiscoveryTargetLevel: 1,
+      maxSearchMs: 12000,
+      findOne: true,
+      limit: 1
+    });
+
+    expect(directedResponse.results[0]?.setSkills?.["Ebony Odogaron's Power"])
+      .toBeGreaterThanOrEqual(1);
+    expect(directedResponse.profile.candidatePrepCacheHits).toBe(1);
+    expect(directedResponse.profile.searchFeasibilityCacheHits).toBe(1);
+    expect(directedResponse.profile.halfCacheHits).toBeGreaterThanOrEqual(2);
+  }, 120000);
+
   it('orders each MITM half by its most restrictive armor slot', () => {
     expect(orderMitmSlotsByRestriction(['head', 'chest', 'arms'], {
       head: Array(12),

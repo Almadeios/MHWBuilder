@@ -85,12 +85,14 @@ const Search = () => {
     const bonusWorkerStatsRef = useRef(null);
     const bonusExplorationCacheRef = useRef(new Map());
     const searchWorkerRef = useRef(null);
+    const searchRequestIdRef = useRef(0);
     const recommendationSeedResultsRef = useRef([]);
     const bonusStartedAtRef = useRef(0);
     const [isExploringBonuses, setIsExploringBonuses] = useState(false);
     const [bonusProgress, setBonusProgress] = useState(0);
     const [improvementProgress, setImprovementProgress] = useState({
-        completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0
+        completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0,
+        status: 'idle'
     });
     const [bonusRoutes, setBonusRoutes] = useState([]);
 
@@ -127,7 +129,8 @@ const Search = () => {
         setIsExploringBonuses(false);
         setBonusProgress(0);
         setImprovementProgress({
-            completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0
+            completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0,
+            status: 'idle'
         });
         setBonusRoutes([]);
         if (resetElapsed) {
@@ -247,20 +250,23 @@ const Search = () => {
         params.limit = 100;
         params.findOne = false;
         // console.log('params', params);
-        searchWorkerRef.current?.terminate();
-        const worker = new Worker(new URL('../workers/search.worker.js', import.meta.url));
-        searchWorkerRef.current = worker;
         const workerParams = { ...params };
         delete workerParams.cancelToken;
+        const requestId = ++searchRequestIdRef.current;
+        let worker = searchWorkerRef.current;
+
+        if (!worker) {
+            worker = new Worker(new URL('../workers/search.worker.js', import.meta.url));
+            searchWorkerRef.current = worker;
+        }
 
         worker.onmessage = eventData => {
+            if (eventData.data.requestId !== searchRequestIdRef.current) { return; }
             if (eventData.data.type === 'error') {
                 console.error("Search worker failed:", eventData.data.message, eventData.data.stack);
                 setSearchError(eventData.data.message || 'Search worker failed.');
                 setElapsedSeconds(0);
                 setIsGenerating(false);
-                searchWorkerRef.current = null;
-                worker.terminate();
                 return;
             }
             if (eventData.data.type === 'partial') {
@@ -276,18 +282,18 @@ const Search = () => {
             setResults(ret.results);
             setOptimizerProfile(ret.profile || null);
             setIsGenerating(false);
-            searchWorkerRef.current = null;
-            worker.terminate();
         };
         worker.onerror = error => {
             console.error("Search worker failed:", error);
             setSearchError(error?.message || 'Search worker failed to start.');
             setElapsedSeconds(0);
             setIsGenerating(false);
-            searchWorkerRef.current = null;
-            worker.terminate();
+            if (searchWorkerRef.current === worker) {
+                searchWorkerRef.current = null;
+                worker.terminate();
+            }
         };
-        worker.postMessage({ params: workerParams, useCached: same });
+        worker.postMessage({ type: 'search', requestId, params: workerParams, useCached: same });
         recommendationSeedResultsRef.current = [];
     };
 
@@ -624,6 +630,10 @@ const Search = () => {
         bonusWorkerStatsRef.current = null;
         setIsExploringBonuses(false);
         setBonusProgress(0);
+        setImprovementProgress(current => ({
+            ...current,
+            status: current.total > 0 ? 'cancelled' : 'idle'
+        }));
     };
 
     const exploreBonusPaths = () => {
@@ -702,7 +712,8 @@ const Search = () => {
         setIsExploringBonuses(true);
         setBonusProgress(0);
         setImprovementProgress({
-            completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0
+            completed: 0, total: 0, found: 0, timedOut: 0, initial: 0, feasible: 0,
+            status: 'running'
         });
         bonusWorkerStatsRef.current = {
             workers: Array.from({ length: BONUS_EXPLORER_WORKER_COUNT }, () => ({
@@ -745,7 +756,8 @@ const Search = () => {
                     found: stats.found,
                     timedOut: stats.timedOut,
                     initial: stats.initial,
-                    feasible: stats.feasible
+                    feasible: stats.feasible,
+                    status: 'running'
                 };
                 setBonusProgress(total ? completed / total * 100 : 0);
                 setImprovementProgress(progress);
@@ -763,17 +775,20 @@ const Search = () => {
                         found: stats.found,
                         timedOut: stats.timedOut,
                         initial: stats.initial,
-                        feasible: stats.feasible
+                        feasible: stats.feasible,
+                        status: stats.timedOut > 0 ? 'partial' : 'complete'
                     };
-                    const cache = bonusExplorationCacheRef.current;
-                    if (cache.size >= MAX_BONUS_EXPLORATION_CACHE_ENTRIES) {
-                        cache.delete(cache.keys().next().value);
+                    if (stats.timedOut === 0) {
+                        const cache = bonusExplorationCacheRef.current;
+                        if (cache.size >= MAX_BONUS_EXPLORATION_CACHE_ENTRIES) {
+                            cache.delete(cache.keys().next().value);
+                        }
+                        cache.set(stats.cacheKey, {
+                            resultMessages: stats.resultMessages,
+                            progress,
+                            elapsedSeconds: explorationElapsedSeconds
+                        });
                     }
-                    cache.set(stats.cacheKey, {
-                        resultMessages: stats.resultMessages,
-                        progress,
-                        elapsedSeconds: explorationElapsedSeconds
-                    });
                     setMoreElapsedSeconds(explorationElapsedSeconds);
                     setImprovementProgress(progress);
                     setBonusProgress(100);
@@ -1357,9 +1372,18 @@ const Search = () => {
                     ].filter(Boolean).join(' · ')}` :
                     '…'}
             </div>}
+            {!isExploringBonuses && improvementProgress.status === 'partial' &&
+                <div style={{ color: '#f0c49e', marginTop: '0.8em' }}>
+                    Partial exploration: {improvementProgress.timedOut} directed checks timed out.
+                    Displayed recommendations are verified; unresolved checks already received an automatic retry.
+                </div>}
+            {!isExploringBonuses && improvementProgress.status === 'cancelled' &&
+                <div style={{ color: '#f0c49e', marginTop: '0.8em' }}>
+                    Exploration cancelled. Recommendations found before cancellation were preserved.
+                </div>}
             {hasBonusImprovements && <div style={{ marginTop: '1em' }}>
                 <div style={{ color: '#f0c49e', fontWeight: 700, marginBottom: '0.4em' }}>
-                    Bonus improvements:
+                    Bonus improvements{improvementProgress.status === 'complete' ? ' — complete' : ''}:
                 </div>
                 <div style={{ color: '#d2c4b8', marginBottom: '0.45em' }}>
                     Orange recommendations are Set Bonuses; blue recommendations are Group Skills.
@@ -1400,8 +1424,8 @@ return (
                     onClick={stopBonusExploration}>Cancel Skill Search</Button>}
                 {isGenerating && <Button sx={{ cursor: 'pointer' }} variant="outlined" color="error" onClick={() => {
                     cancelledRef.current = true;
-                    searchWorkerRef.current?.terminate();
-                    searchWorkerRef.current = null;
+                    searchRequestIdRef.current++;
+                    searchWorkerRef.current?.postMessage({ type: 'cancel' });
                     setIsGenerating(false);
                     if (results.length > 0) {
                         setOptimizerProfile(current => Object.assign({}, current || { engine: 'mitm' }, {
