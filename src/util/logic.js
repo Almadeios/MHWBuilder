@@ -25,6 +25,7 @@ import { _x } from "./armorAccessor";
 import { generateTalismans } from "./talismanGenerator";
 import { buildDamageProfile, ELEMENT_SKILL_TABLES, rankBuildsByDamage } from "./damageScoring";
 import { solveDecorationsIndexed } from './decorationSolver';
+import { createDeadlineToken } from './deadlineToken';
 
 const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, true]));
 
@@ -158,6 +159,14 @@ const cacheSearchResult = (key, results) => {
     }
 
     searchCache.set(key, results);
+};
+
+const getCachedSearchResult = key => {
+    const results = searchCache.get(key);
+    if (results === undefined) { return undefined; }
+    searchCache.delete(key);
+    searchCache.set(key, results);
+    return results;
 };
 
 const normalizeCustomDecorations = value => (value || [])
@@ -923,16 +932,20 @@ const getDamageProfileForSkills = (skills, params) => buildDamageProfile({
 
 const scoreSkillGain = (currentSkills, addedSkills, params) => {
     const nextSkills = mergeSumMaps([currentSkills, addedSkills]);
-    const currentProfile = getDamageProfileForSkills(currentSkills, params);
-    const nextProfile = getDamageProfileForSkills(nextSkills, params);
     const targetScore = Object.entries(addedSkills).reduce((total, [skillName, level]) => {
         const targetLevel = params.skills?.[skillName] || 0;
         const missingLevel = Math.max(0, targetLevel - (currentSkills[skillName] || 0));
         return total + Math.min(level, missingLevel) * getSearchSkillWeight(skillName, params.optimizationGoal) * 1000;
     }, 0);
+    if (params.optimizationGoal === 'efficient') {
+        return { score: targetScore, nextSkills };
+    }
 
-    const modeledDamageGain = params.optimizationGoal === 'efficient' ? 0 :
-        Math.max(0, (nextProfile.expected_dps || 0) - (currentProfile.expected_dps || 0));
+    const currentProfile = getDamageProfileForSkills(currentSkills, params);
+    const nextProfile = getDamageProfileForSkills(nextSkills, params);
+    const modeledDamageGain = Math.max(
+        0, (nextProfile.expected_dps || 0) - (currentProfile.expected_dps || 0)
+    );
     return {
         score: targetScore + modeledDamageGain,
         nextSkills
@@ -1072,28 +1085,41 @@ const sortTalismansForDamage = (gear, params) => {
     }, [[], []]);
     const coverageCandidateLimit = Math.ceil(GENERATED_TALISMAN_CANDIDATE_LIMIT * 0.6);
     const damageCandidateLimit = GENERATED_TALISMAN_CANDIDATE_LIMIT - coverageCandidateLimit;
-    const coverageCandidates = generatedTalismans
+    // Sorting comparators run O(n log n) times. Damage scoring is expensive and
+    // the bounded global cache can churn when generated talismans exceed its
+    // capacity, so compute both scores exactly once per candidate.
+    const scoredGeneratedTalismans = generatedTalismans.map(entry => ({
+        entry,
+        coverage: scoreTalismanRequiredCoverage(entry[1], params),
+        damage: scoreTalismanForDamageCached(entry[1], params)
+    }));
+    const damageScoreByName = new Map(scoredGeneratedTalismans.map(candidate => [
+        candidate.entry[0], candidate.damage
+    ]));
+    const coverageCandidates = [...scoredGeneratedTalismans]
         .sort((a, b) => {
-            const coverageCompare = scoreTalismanRequiredCoverage(b[1], params) -
-                scoreTalismanRequiredCoverage(a[1], params);
+            const coverageCompare = b.coverage - a.coverage;
             if (coverageCompare !== 0) { return coverageCompare; }
-            return b[0].localeCompare(a[0]);
+            return b.entry[0].localeCompare(a.entry[0]);
         })
-        .slice(0, coverageCandidateLimit);
-    const damageCandidates = generatedTalismans
+        .slice(0, coverageCandidateLimit)
+        .map(candidate => candidate.entry);
+    const damageCandidates = [...scoredGeneratedTalismans]
         .sort((a, b) => {
-            const scoreCompare = scoreTalismanForDamageCached(b[1], params) - scoreTalismanForDamageCached(a[1], params);
+            const scoreCompare = b.damage - a.damage;
             if (scoreCompare !== 0) { return scoreCompare; }
-            return b[0].localeCompare(a[0]);
+            return b.entry[0].localeCompare(a.entry[0]);
         })
-        .slice(0, damageCandidateLimit);
+        .slice(0, damageCandidateLimit)
+        .map(candidate => candidate.entry);
     const generatedCandidates = Array.from(new Map([...coverageCandidates, ...damageCandidates]));
 
     gear.talisman = Object.fromEntries([...fixedTalismans, ...generatedCandidates].sort((a, b) => {
         const savingsCompare = scoreTalismanDecorationSavings(b[1], params) -
             scoreTalismanDecorationSavings(a[1], params);
         if (savingsCompare !== 0) { return savingsCompare; }
-        const scoreCompare = scoreTalismanForDamageCached(b[1], params) - scoreTalismanForDamageCached(a[1], params);
+        const scoreCompare = (damageScoreByName.get(b[0]) ?? scoreTalismanForDamageCached(b[1], params)) -
+            (damageScoreByName.get(a[0]) ?? scoreTalismanForDamageCached(a[1], params));
         if (scoreCompare !== 0) { return scoreCompare; }
 
         return sourcePriority(b[0]) - sourcePriority(a[0]);
@@ -1360,10 +1386,16 @@ const buildPiecePotentialMap = (candidateLists, armorSlots, desiredSkills, decos
     return piecePotentialMap;
 };
 
-export const validateSearchFeasibility = (gear, desiredSkills = {}, setSkills = {}, groupSkills = {}) => {
+export const validateSearchFeasibility = (
+    gear, desiredSkills = {}, setSkills = {}, groupSkills = {}, optimizationGoal = 'highest_dps',
+    profile = null
+) => {
     const armorSlots = getArmorTypeList();
     const candidateLists = Object.fromEntries(
-        armorSlots.map(slot => [slot, getSortedCandidateList(gear, slot, desiredSkills)])
+        armorSlots.map(slot => [
+            slot,
+            getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal, profile)
+        ])
     );
     const reasons = [];
 
@@ -1399,7 +1431,7 @@ export const validateSearchFeasibility = (gear, desiredSkills = {}, setSkills = 
     checkBonusPieces(setSkills, _x.setSkills, level => level * 2, gear.setSkillBonus);
     checkBonusPieces(groupSkills, _x.groupSkills, () => 3, gear.groupSkillBonus);
 
-    return { possible: reasons.length === 0, reasons };
+    return { possible: reasons.length === 0, reasons, candidateLists };
 };
 
 const getMitmSlotKey = slots => [...slots].sort((a, b) => b - a).join(',');
@@ -1724,6 +1756,7 @@ const buildMitmHalf = async(
                 profile.nodes++;
                 generatedStates++;
                 operations++;
+                if (operations % 64 === 0 && cancelToken?.current) { return []; }
                 if (operations % 1000 === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
                     if (cancelToken?.current) { return []; }
@@ -1793,7 +1826,8 @@ const getOrBuildMitmHalf = async(
 
 const rollCombosMeetInMiddle = async(
     gear, desiredSkills, setSkills, groupSkills, limit, findOne = false, cancelToken = undefined,
-    optimizationGoal = 'efficient', profile = createOptimizerProfile('mitm'), partialResultFunc = null
+    optimizationGoal = 'efficient', profile = createOptimizerProfile('mitm'), partialResultFunc = null,
+    preparedCandidateLists = null
 ) => {
     if (!gear) { return []; }
     profile.engine = 'mitm';
@@ -1847,9 +1881,12 @@ const rollCombosMeetInMiddle = async(
         state.groupBonusCounts?.[target.name] || 0;
     const equivalentMembersByPiece = new Map();
     const candidateLists = Object.fromEntries(armorSlots.map(slot => {
-        const sortedCandidates = getSortedCandidateList(
+        const sortedCandidates = preparedCandidateLists?.[slot] || getSortedCandidateList(
             gear, slot, desiredSkills, optimizationGoal, profile
         );
+        if (preparedCandidateLists?.[slot]) {
+            profile.candidateListReuseHits = (profile.candidateListReuseHits || 0) + 1;
+        }
         if (slot === 'talisman') {
             sortedCandidates.forEach(entry => equivalentMembersByPiece.set(entry[1], [entry]));
             return [slot, sortedCandidates];
@@ -1959,6 +1996,7 @@ const rollCombosMeetInMiddle = async(
                 getDiscoveryRightStates(left, bucket) : bucket.states;
             for (const right of candidateRightStates) {
                 traversed++;
+                if (traversed % 64 === 0 && cancelToken?.current) { return results; }
                 if (gear.bonusDiscovery && traversed % 5000 === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
                     if (cancelToken?.current) { return results; }
@@ -2031,6 +2069,7 @@ const rollCombosMeetInMiddle = async(
                     };
                     profile.feasibilityCacheHits = (profile.feasibilityCacheHits || 0) + 1;
                 } else {
+                    if (cancelToken?.current) { return results; }
                     profile.decorationSolverCalls = (profile.decorationSolverCalls || 0) + 1;
                     result = test(fullSet, gear.decos, desiredSkills, gear);
                     if (!result) {
@@ -2560,7 +2599,7 @@ export const search = async parameters => {
     recordOptimizerStage(profile, "cacheKey", stageStartedAt);
 
     stageStartedAt = performance.now();
-    const cachedSearch = searchCache.get(cacheKey);
+    const cachedSearch = getCachedSearchResult(cacheKey);
     recordOptimizerStage(profile, "cacheLookup", stageStartedAt);
     if (cachedSearch) {
         profile.engine = "cache";
@@ -2569,6 +2608,12 @@ export const search = async parameters => {
         finishOptimizerProfile(profile, cachedSearch);
         return cachedSearch;
     }
+    const maxComboSearchMs = params.maxSearchMs || MAX_COMBO_SEARCH_MS;
+    const searchDeadline = createDeadlineToken({
+        budgetMs: maxComboSearchMs,
+        cancelToken: params.cancelToken
+    });
+    profile.searchBudgetMs = maxComboSearchMs;
 
     stageStartedAt = performance.now();
     const customDecorationMap = customDecorationsToCompact(params.customDecorations);
@@ -2599,6 +2644,8 @@ export const search = async parameters => {
     const cachedGear = searchGearCache.get(searchGearCacheKey);
     const gear = cachedGear ? { ...cachedGear } : buildSearchGear(params);
     if (cachedGear) {
+        searchGearCache.delete(searchGearCacheKey);
+        searchGearCache.set(searchGearCacheKey, cachedGear);
         profile.candidatePrepCacheHits = (profile.candidatePrepCacheHits || 0) + 1;
     } else {
         cacheSearchGear(searchGearCacheKey, gear);
@@ -2610,11 +2657,20 @@ export const search = async parameters => {
     gear.bonusDiscoveryTargetName = params.bonusDiscoveryTargetName;
     gear.bonusDiscoveryTargetLevel = params.bonusDiscoveryTargetLevel;
     recordOptimizerStage(profile, "candidatePrep", stageStartedAt);
+    if (searchDeadline.current) {
+        profile.timedOut = searchDeadline.timedOut;
+        profile.cancelled = Boolean(params.cancelToken?.current);
+        profile.runtimeMs = performance.now() - searchStartedAt;
+        profile.timeoutOverrunMs = profile.timedOut ?
+            Math.max(0, profile.runtimeMs - maxComboSearchMs) : 0;
+        finishOptimizerProfile(profile, []);
+        return [];
+    }
 
     stageStartedAt = performance.now();
     const cachedFeasibility = searchFeasibilityCache.get(searchGearCacheKey);
     const feasibility = cachedFeasibility || validateSearchFeasibility(
-        gear, params.skills, params.setSkills, params.groupSkills
+        gear, params.skills, params.setSkills, params.groupSkills, params.optimizationGoal, profile
     );
     if (cachedFeasibility) {
         profile.searchFeasibilityCacheHits = (profile.searchFeasibilityCacheHits || 0) + 1;
@@ -2626,6 +2682,7 @@ export const search = async parameters => {
         profile.impossible = true;
         profile.impossibleReasons = feasibility.reasons;
         profile.runtimeMs = performance.now() - searchStartedAt;
+        cacheSearchResult(cacheKey, []);
         finishOptimizerProfile(profile, []);
         return [];
     }
@@ -2634,28 +2691,27 @@ export const search = async parameters => {
     const engineName = "mitm";
     profile.engine = engineName;
     const searchLimit = params.findOne ? params.limit : Math.max(params.limit, Math.min(params.limit * 3, 60));
-    const maxComboSearchMs = params.maxSearchMs || MAX_COMBO_SEARCH_MS;
     let searchTimedOut = false;
     const runComboSearch = async(searchGear, setSkills, groupSkills, stageName, timeBudget = maxComboSearchMs) => {
         const comboStartTime = performance.now();
-        let localTimedOut = false;
-        const effectiveCancelToken = {};
-        Object.defineProperty(effectiveCancelToken, 'current', {
-            get: () => localTimedOut || Boolean(params.cancelToken?.current)
+        const effectiveCancelToken = createDeadlineToken({
+            budgetMs: timeBudget,
+            cancelToken: searchDeadline
         });
-        const timeoutId = setTimeout(() => {
-            localTimedOut = true;
-        }, timeBudget);
         const searchRolls = await comboFunc(
             searchGear, params.skills, setSkills, groupSkills, searchLimit,
             params.findOne, effectiveCancelToken, params.optimizationGoal, profile,
             params.partialResultFunc ? partialRolls => params.partialResultFunc(
                 preparePartialResults(partialRolls, params), { ...profile, partial: true }
-            ) : null
+            ) : null,
+            feasibility.candidateLists
         );
-        clearTimeout(timeoutId);
+        // Refresh the token after the combo returns in case it completed between
+        // cooperative checks and the exact deadline.
+        const stopped = effectiveCancelToken.current;
+        const timedOut = stopped && (effectiveCancelToken.timedOut || searchDeadline.timedOut);
         recordOptimizerStage(profile, stageName, comboStartTime);
-        if (localTimedOut && !searchRolls.length) {
+        if (timedOut) {
             searchTimedOut = true;
         }
 
@@ -2686,7 +2742,8 @@ export const search = async parameters => {
     }
     let rolls = mergeUniqueResultGroups(resultGroups);
     profile.engine = engineName;
-    profile.timedOut = !rolls.length && searchTimedOut;
+    profile.timedOut = searchTimedOut;
+    profile.partial = searchTimedOut && rolls.length > 0;
     profile.cancelled = Boolean(params.cancelToken?.current);
 
     // lazily handle slotFilters filtering here
@@ -2772,6 +2829,8 @@ export const search = async parameters => {
     recordOptimizerStage(profile, "cacheWrite", stageStartedAt);
 
     profile.runtimeMs = performance.now() - searchStartedAt;
+    profile.timeoutOverrunMs = profile.timedOut ?
+        Math.max(0, profile.runtimeMs - maxComboSearchMs) : 0;
     finishOptimizerProfile(profile, rolls);
 
     return rolls;
@@ -2781,7 +2840,7 @@ export const searchAndSpeed = async(parameters, useCached = false) => {
     const params = getSearchParameters(parameters);
     const cacheKey = buildSearchCacheKey(params);
     if (useCached) {
-        const cachedSearch = searchCache.get(cacheKey);
+        const cachedSearch = getCachedSearchResult(cacheKey);
         if (cachedSearch) {
             const profile = createOptimizerProfile("cache");
             profile.cacheHit = true;

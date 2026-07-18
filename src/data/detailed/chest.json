@@ -271,7 +271,7 @@
     },
     "Rompopolo Mail": {
         "defense": 18,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that—supposedly—never leaks.",
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison thatâ€”supposedlyâ€”never leaks.",
         "dragonResistance": 1,
         "fireResistance": 0,
         "groupSkill": [
@@ -954,7 +954,7 @@
     },
     "Rompopolo Mail Alpha": {
         "defense": 36,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that—supposedly—never leaks.",
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison thatâ€”supposedlyâ€”never leaks.",
         "dragonResistance": 1,
         "fireResistance": 0,
         "groupSkill": [
@@ -977,7 +977,7 @@
     },
     "Rompopolo Mail Beta": {
         "defense": 36,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that—supposedly—never leaks.",
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison thatâ€”supposedlyâ€”never leaks.",
         "dragonResistance": 1,
         "fireResistance": 0,
         "groupSkill": [
@@ -1926,7 +1926,7 @@
     },
     "Battle Mail Alpha": {
         "defense": 44,
-        "description": "Chest armor designed for seasoned hunters. Stylish, useful, and solid protection—it checks all the boxes.",
+        "description": "Chest armor designed for seasoned hunters. Stylish, useful, and solid protectionâ€”it checks all the boxes.",
         "dragonResistance": 0,
         "fireResistance": 2,
         "groupSkill": [
@@ -3707,7 +3707,7 @@
     },
     "Rompopolo Mail Alpha+": {
         "defense": 36,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that—supposedly—never leaks.",
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison thatâ€”supposedlyâ€”never leaks.",
         "dragonResistance": 1,
         "fireResistance": 0,
         "groupSkill": [
@@ -3732,7 +3732,7 @@
     },
     "Rompopolo Mail Beta+": {
         "defense": 36,
-        "description": "Well-padded Rompopolo chest armor. The fabric contains poison that—supposedly—never leaks.",
+        "description": "Well-padded Rompopolo chest armor. The fabric contains poison thatâ€”supposedlyâ€”never leaks.",
         "dragonResistance": 1,
         "fireResistance": 0,
         "groupSkill": [
@@ -4723,7 +4723,7 @@
     },
     "Battle Mail Alpha+": {
         "defense": 44,
-        "description": "Chest armor designed for seasoned hunters. Stylish, useful, and solid protection—it checks all the boxes.",
+        "description": "Chest armor designed for seasoned hunters. Stylish, useful, and solid protectionâ€”it checks all the boxes.",
         "dragonResistance": 0,
         "fireResistance": 2,
         "groupSkill": [

@@ -269,7 +269,14 @@ export const getSetUrl = (armorNames, decoNames, setName) => {
         urlParams.set("name", setName);
     }
 
-    return `${window.location.href}?${urlParams}`;
+    return getUrlWithSearchParams(window.location.href, urlParams);
+};
+
+export const getUrlWithSearchParams = (href, urlParams) => {
+    const url = new URL(href);
+    url.search = urlParams.toString();
+    url.hash = '';
+    return url.toString();
 };
 
 export const getSearchUrl = (skills, slotFilters) => {
@@ -280,7 +287,7 @@ export const getSearchUrl = (skills, slotFilters) => {
     if (!isEmpty(slotFilters)) {
         urlParams.set('sf', Object.entries(slotFilters).map(x => `${x[0]}-${x[1]}`).join("_"));
     }
-    return `${window.location.href}?${urlParams}`;
+    return getUrlWithSearchParams(window.location.href, urlParams);
 };
 
 export const addUrlParam = (key, value) => {

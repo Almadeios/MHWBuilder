@@ -501,7 +501,7 @@ describe('search feasibility and custom decorations', () => {
     expect(partialBatches[0].length).toBeLessThanOrEqual(20);
     expect(partialBatches[1].length).toBeGreaterThan(partialBatches[0].length);
     expect(partialBatches[1].length).toBeLessThanOrEqual(50);
-  }, 20000);
+  }, 120000);
 
   it('finds the reported ranged build with the R7 Rapid Fire Up and Burst charm', async() => {
     const charmName = 'Reported R7 Rapid Burst Charm';

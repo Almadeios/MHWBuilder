@@ -396,7 +396,7 @@
     },
     "Rey Sandhelm": {
         "defense": 26,
-        "description": "Rey Dau head armor. Its crest reaches the heavens—proof that this creature bows to no one.",
+        "description": "Rey Dau head armor. Its crest reaches the heavensâ€”proof that this creature bows to no one.",
         "dragonResistance": 0,
         "fireResistance": 0,
         "groupSkill": [
@@ -2208,7 +2208,7 @@
     },
     "Rey Sandhelm Alpha": {
         "defense": 60,
-        "description": "Rey Dau head armor. Its crest reaches the heavens—proof that this creature bows to no one.",
+        "description": "Rey Dau head armor. Its crest reaches the heavensâ€”proof that this creature bows to no one.",
         "dragonResistance": 0,
         "fireResistance": 0,
         "groupSkill": [
@@ -2231,7 +2231,7 @@
     },
     "Rey Sandhelm Beta": {
         "defense": 60,
-        "description": "Rey Dau head armor. Its crest reaches the heavens—proof that this creature bows to no one.",
+        "description": "Rey Dau head armor. Its crest reaches the heavensâ€”proof that this creature bows to no one.",
         "dragonResistance": 0,
         "fireResistance": 0,
         "groupSkill": [
@@ -3048,7 +3048,7 @@
     },
     "Dreamwalker Helm Alpha": {
         "defense": 36,
-        "description": "Dreamspell Ticket headgear. Its crown-like silhouette is illuminated by the autumn moon—and wreathed in fear.",
+        "description": "Dreamspell Ticket headgear. Its crown-like silhouette is illuminated by the autumn moonâ€”and wreathed in fear.",
         "dragonResistance": 2,
         "fireResistance": -3,
         "groupSkill": [
@@ -5612,7 +5612,7 @@
     },
     "Dreamwalker Helm Alpha+": {
         "defense": 36,
-        "description": "Dreamspell Ticket headgear. Its crown-like silhouette is illuminated by the autumn moon—and wreathed in fear.",
+        "description": "Dreamspell Ticket headgear. Its crown-like silhouette is illuminated by the autumn moonâ€”and wreathed in fear.",
         "dragonResistance": 2,
         "fireResistance": -3,
         "groupSkill": [

@@ -31,8 +31,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
       - name: Install NPM Packages
-        uses: bahmutov/npm-install@v1
+        run: npm ci
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          CI: "true"
 
       - name: Create deployment version
         run: printf '{"version":"%s"}\n' "$GITHUB_SHA" > public/version.json
@@ -40,8 +54,8 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          CI: "false"
-          REACT_APP_BUILD_SHA: ${{ github.sha }}
+          CI: "true"
+          VITE_BUILD_SHA: ${{ github.sha }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -49,7 +63,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './build'
+          path: './dist'
 
       - name: Deploy to GitHub Pages
         id: deployment

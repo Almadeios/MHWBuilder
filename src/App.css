@@ -179,6 +179,13 @@
   align-items: center;
   gap: 4px;
   padding-right: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+.skills-search-bubble:focus-visible {
+  outline: 3px solid #8db9ff;
+  outline-offset: 2px;
 }
 .skills-search-bubble-text {
   font-family: monospace;
@@ -643,6 +650,18 @@ input[type=number] {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 .custom-slot-filter-group {
   width: 100%;

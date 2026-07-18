@@ -6,7 +6,8 @@ module.exports = {
     env: {
         es6: true,
         browser: true,
-        node: true
+        node: true,
+        jest: true
     },
 
     parserOptions: {
@@ -30,6 +31,30 @@ module.exports = {
         'eslint:recommended',
         'plugin:react/recommended'
     ],
+
+    settings: {
+        react: {
+            version: 'detect'
+        }
+    },
+
+    overrides: [{
+        files: ['**/*.test.{js,jsx}'],
+        env: {
+            jest: true
+        },
+        globals: {
+            vi: 'readonly'
+        },
+        rules: {
+            // Persisted damage-condition keys and named skill fixtures intentionally use
+            // the application's external data format.
+            camelcase: OFF,
+            'quote-props': OFF,
+            'max-len': OFF,
+            'no-extra-parens': OFF
+        }
+    }],
 
     rules: {
         // Possible Errors (overrides from recommended set)

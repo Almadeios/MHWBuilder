@@ -2,6 +2,18 @@
 
 A tool to help you find gear sets with the skills you want in Monster Hunter Wilds.  Set your search parameters and the tool will find you the armor combos with the best slots available.
 
+## Development
+
+This project uses Vite for development and production builds, and Vitest for the test suite.
+
+```sh
+npm ci
+npm run dev
+```
+
+Use `npm test` for the full test suite, `npm run benchmark` for the optimizer benchmarks,
+and `npm run build` to create the deployable site in `dist/`.
+
 You can find it here: [MHWilds Set Search](https://cecilbowen.github.io/mhwilds-set-search/).
 
 Originally, I wrote this in python to help sort out the logic and flow of how it was going to work.  I regretted that decision when it came time to "port" it over to JavaScript for static web hosting; not because either language is difficult, but because I despise writing the same code twice.  So that is why there is a (slightly outdated) python version of the tool that you can find in ./misc/stats.py.
