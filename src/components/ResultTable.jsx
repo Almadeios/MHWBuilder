@@ -92,19 +92,7 @@ const ResultTable = ({
                     toggle();
                 }
             }}>
-            {save && <StyledTableCell align="left">
-                <div className="saved-set-name-cell">
-                    <span>{name}</span>
-                    <IconButton aria-label={`Delete saved set ${name}`} color="error" size="small"
-                        title={`Delete ${name}`}
-                        onClick={event => {
-                            event.stopPropagation();
-                            onDeleteSavedSet(result.id);
-                        }}>
-                        <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                </div>
-            </StyledTableCell>}
+            {save && <StyledTableCell align="left">{name}</StyledTableCell>}
             <StyledTableCell align="left">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {renderSlots(result)}
@@ -123,6 +111,16 @@ const ResultTable = ({
                 </StyledTableCell>
             )}
             {!isMobile && <StyledTableCell align="left">{renderCompactTalisman(result)}</StyledTableCell>}
+            {save && <StyledTableCell align="right" className="saved-set-actions-cell">
+                <IconButton aria-label={`Delete saved set ${name}`} color="error" size="small"
+                    title={`Delete ${name}`}
+                    onClick={event => {
+                        event.stopPropagation();
+                        onDeleteSavedSet(result.id);
+                    }}>
+                    <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+            </StyledTableCell>}
         </StyledTableRow>;
     };
 
@@ -146,6 +144,7 @@ const ResultTable = ({
                                 <ArmorSvgWrapper type={type} style={svgStyle} /> {type}
                             </span>
                         </StyledTableCell>)}
+                        {save && <StyledTableCell component="th" align="right">Actions</StyledTableCell>}
                     </StyledTableRow>
                 </TableHead>
                 <TableBody>{visibleResults.map(renderResult)}</TableBody>

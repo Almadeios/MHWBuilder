@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import TextField from '@mui/material/TextField';
 import {
     armorNameFormat,
     getArmorTypeList,
     isArmorOfType
 } from '../util/util';
-import { Autocomplete, Button, FormControlLabel, Paper, Switch, Typography } from '@mui/material';
+import {
+    Autocomplete, Button, Dialog, DialogActions, DialogContent, DialogContentText,
+    DialogTitle, FormControlLabel, Paper, Switch, Typography
+} from '@mui/material';
 import ArmorSvgWrapper from './ArmorSvgWrapper';
 import Remove from '@mui/icons-material/Remove';
 import { iconCommon } from './Results';
@@ -13,6 +17,7 @@ import Divider from '@mui/material/Divider';
 import { getJsonFromType } from '../util/tools';
 import { useStorage } from '../hooks/StorageContext';
 import { _x } from '../util/armorAccessor';
+import { clearAppData } from '../util/factoryReset';
 
 const RemoveIcon = styled(Remove)`
     ${iconCommon}
@@ -22,7 +27,16 @@ const RemoveIcon = styled(Remove)`
 
 const Settings = () => {
     const { fields, updateField, pinArmor, excludeArmor } = useStorage();
+    const [factoryResetOpen, setFactoryResetOpen] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
     const types = getArmorTypeList();
+
+    const factoryReset = async() => {
+        setIsResetting(true);
+        await clearAppData();
+        const cleanUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
+        window.location.replace(cleanUrl.toString());
+    };
 
     const toggleBlacklistType = type => {
         let tempTypeBlacklist = [...fields.blacklistedArmorTypes];
@@ -207,7 +221,36 @@ const Settings = () => {
                 A pinned armor piece tells the tool that it must include the armor piece in all its results.
                 A blacklisted armor piece will never be used to find results.
             </Typography>
+
+            <Divider component="div" />
+            <Paper className="factory-reset-panel" elevation={0}>
+                <div>
+                    <Typography className="factory-reset-panel__title">Factory Reset</Typography>
+                    <Typography className="factory-reset-panel__description">
+                        Delete all saved sets, custom charms and decorations, inventory, search history,
+                        settings, and cached app files from this browser.
+                    </Typography>
+                </div>
+                <Button color="error" variant="outlined" onClick={() => setFactoryResetOpen(true)}>
+                    Factory Reset
+                </Button>
+            </Paper>
         </div>
+        <Dialog open={factoryResetOpen} onClose={() => !isResetting && setFactoryResetOpen(false)}>
+            <DialogTitle>Factory reset MHW Builder?</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    This permanently deletes every saved build and all builder data stored in this browser.
+                    This action cannot be undone.
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button disabled={isResetting} onClick={() => setFactoryResetOpen(false)}>Cancel</Button>
+                <Button color="error" disabled={isResetting} variant="contained" onClick={factoryReset}>
+                    {isResetting ? 'Resetting…' : 'Delete Everything'}
+                </Button>
+            </DialogActions>
+        </Dialog>
     </div>;
 };
 export default Settings;
