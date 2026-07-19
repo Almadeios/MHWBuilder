@@ -31,6 +31,7 @@ const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, tru
 
 let decoInventory = { ...DECO_INVENTORY };
 let currentDecorations = { ...DECORATIONS };
+const decorationReplacementCostCache = new Map();
 
 // getting lazier..
 let currentSlotFilters = {};
@@ -147,7 +148,11 @@ const cacheSearchGear = (key, gear) => {
     if (searchGearCache.size >= MAX_SEARCH_GEAR_CACHE_ENTRIES) {
         const oldestKey = searchGearCache.keys().next().value;
         searchGearCache.delete(oldestKey);
-        searchFeasibilityCache.delete(oldestKey);
+        [...searchFeasibilityCache.keys()].forEach(feasibilityKey => {
+            if (feasibilityKey === oldestKey || feasibilityKey.startsWith(`${oldestKey}::`)) {
+                searchFeasibilityCache.delete(feasibilityKey);
+            }
+        });
     }
     searchGearCache.set(key, gear);
 };
@@ -182,6 +187,24 @@ const normalizeCustomDecorations = value => (value || [])
 const customDecorationsToCompact = value => Object.fromEntries((value || [])
     .filter(deco => deco?.name && ["armor", "weapon"].includes(deco?.type))
     .map(deco => [deco.name, [deco.type, deco.skills || {}, Number(deco.size || 1)]]));
+
+export const configureSearchDecorations = (params = {}) => {
+    const customDecorationMap = customDecorationsToCompact(params.customDecorations);
+    currentDecorations = { ...DECORATIONS, ...customDecorationMap };
+    decorationReplacementCostCache.clear();
+    decoInventory = { ...DECO_INVENTORY };
+    for (const deco of params.customDecorations || []) {
+        if (deco?.name) {
+            decoInventory[deco.name] = Math.max(0, Number(deco.amount ?? 99));
+        }
+    }
+    for (const [decoName, decoAmount] of Object.entries(params.decoMods || {})) {
+        if (Object.prototype.hasOwnProperty.call(decoInventory, decoName)) {
+            decoInventory[decoName] = decoAmount;
+        }
+    }
+    return currentDecorations;
+};
 
 const cacheTalismanScore = (key, score) => {
     if (talismanScoreCache.size >= MAX_TALISMAN_SCORE_CACHE_ENTRIES) {
@@ -886,12 +909,17 @@ const getSearchSkillWeight = (skillName, optimizationGoal = 'highest_dps') => {
 };
 
 export const getDecorationReplacementCost = skillName => {
+    if (decorationReplacementCostCache.has(skillName)) {
+        return decorationReplacementCostCache.get(skillName);
+    }
     const costs = Object.values(currentDecorations).flatMap(decoData => {
         const skillLevel = Number(decoData?.[1]?.[skillName] || 0);
         const slotSize = Number(decoData?.[2] || 0);
         return skillLevel > 0 && slotSize > 0 ? [slotSize / skillLevel] : [];
     });
-    return costs.length ? Math.min(...costs) : 1;
+    const replacementCost = costs.length ? Math.min(...costs) : 1;
+    decorationReplacementCostCache.set(skillName, replacementCost);
+    return replacementCost;
 };
 
 const scoreTalismanDecorationSavings = (talismanData, params) => {
@@ -1141,9 +1169,15 @@ const dominatesNumberArray = (left = [], right = []) => {
     return true;
 };
 
-const getPieceBonusSignature = piece => {
+const getPieceBonusSignature = (piece, relevantSetNames = null, relevantGroupNames = null) => {
     const setSkillNames = _x.setSkills(piece) || [];
     const groupSkillNames = _x.groupSkills(piece) || [];
+    if (relevantSetNames || relevantGroupNames) {
+        return JSON.stringify([
+            [...relevantSetNames || []].map(name => setSkillNames.includes(name) ? 1 : 0),
+            [...relevantGroupNames || []].map(name => groupSkillNames.includes(name) ? 1 : 0)
+        ]);
+    }
     return [
         ...setSkillNames,
         "|",
@@ -1155,18 +1189,24 @@ const getDominanceSkillLevel = (piece, skillName) => {
     return _x.skills(piece)?.[skillName] || 0;
 };
 
-const doesPieceDominate = (challenger, target, desiredSkillNames) => {
-    if (getPieceBonusSignature(challenger) !== getPieceBonusSignature(target)) {
+const doesPieceDominate = (challenger, target, desiredSkillNames, options = {}) => {
+    if (!options.bonusSignatureMatched && getPieceBonusSignature(
+        challenger, options.relevantSetNames, options.relevantGroupNames
+    ) !== getPieceBonusSignature(
+        target, options.relevantSetNames, options.relevantGroupNames
+    )) {
         return false;
     }
     if (!dominatesNumberArray(normalizeSlotsForDominance(_x.slots(challenger)), normalizeSlotsForDominance(_x.slots(target)))) {
         return false;
     }
-    if ((_x.defense(challenger) || 0) < (_x.defense(target) || 0)) {
-        return false;
-    }
-    if (!dominatesNumberArray(_x.resists(challenger), _x.resists(target))) {
-        return false;
+    if (!options.feasibilityOnly) {
+        if ((_x.defense(challenger) || 0) < (_x.defense(target) || 0)) {
+            return false;
+        }
+        if (!dominatesNumberArray(_x.resists(challenger), _x.resists(target))) {
+            return false;
+        }
     }
 
     return desiredSkillNames.every(skillName => {
@@ -1174,7 +1214,9 @@ const doesPieceDominate = (challenger, target, desiredSkillNames) => {
     });
 };
 
-const pruneDominatedCandidateList = (candidateEntries, desiredSkills, profile = null) => {
+export const pruneDominatedCandidateList = (
+    candidateEntries, desiredSkills, profile = null, options = {}
+) => {
     const desiredSkillNames = Object.keys(desiredSkills || {});
     if (profile) {
         profile.inputCandidateCount = (profile.inputCandidateCount || 0) + candidateEntries.length;
@@ -1186,20 +1228,39 @@ const pruneDominatedCandidateList = (candidateEntries, desiredSkills, profile = 
         return candidateEntries;
     }
 
-    const kept = [];
-    for (const entry of candidateEntries) {
-        const [, piece] = entry;
-        if (kept.some(([, keptPiece]) => doesPieceDominate(keptPiece, piece, desiredSkillNames))) {
-            continue;
-        }
-
-        for (let index = kept.length - 1; index >= 0; index--) {
-            if (doesPieceDominate(piece, kept[index][1], desiredSkillNames)) {
-                kept.splice(index, 1);
+    const entriesByBonusSignature = new Map();
+    candidateEntries.forEach(entry => {
+        const signature = getPieceBonusSignature(
+            entry[1], options.relevantSetNames, options.relevantGroupNames
+        );
+        const group = entriesByBonusSignature.get(signature) || [];
+        group.push(entry);
+        entriesByBonusSignature.set(signature, group);
+    });
+    const keptEntries = new Set();
+    const matchedOptions = { ...options, bonusSignatureMatched: true };
+    entriesByBonusSignature.forEach(group => {
+        const keptInGroup = [];
+        for (const entry of group) {
+            const [, piece] = entry;
+            if (keptInGroup.some(([, keptPiece]) => doesPieceDominate(
+                keptPiece, piece, desiredSkillNames, matchedOptions
+            ))) {
+                continue;
             }
+
+            for (let index = keptInGroup.length - 1; index >= 0; index--) {
+                if (doesPieceDominate(
+                    piece, keptInGroup[index][1], desiredSkillNames, matchedOptions
+                )) {
+                    keptInGroup.splice(index, 1);
+                }
+            }
+            keptInGroup.push(entry);
         }
-        kept.push(entry);
-    }
+        keptInGroup.forEach(entry => keptEntries.add(entry));
+    });
+    const kept = candidateEntries.filter(entry => keptEntries.has(entry));
 
     if (profile) {
         profile.filteredCandidateCount = (profile.filteredCandidateCount || 0) + kept.length;
@@ -1224,8 +1285,91 @@ const getSortedCandidateList = (
     return pruneDominatedCandidateList(
         sortPiecesForSearch(gear[slot], desiredSkills, optimizationGoal),
         desiredSkills,
-        profile
+        profile,
+        gear.feasibilityOnly ? {
+            feasibilityOnly: true,
+            relevantSetNames: gear.relevantSetNames,
+            relevantGroupNames: gear.relevantGroupNames
+        } : {}
     );
+};
+
+const getBonusSupportTargets = (setSkills, groupSkills, setSkillBonus, groupSkillBonus) => [
+    ...Object.entries(setSkills || {}).map(([name, level]) => ({
+        name,
+        type: 'set',
+        points: Math.max(0, level * 2 - (setSkillBonus === name ? 1 : 0))
+    })),
+    ...Object.entries(groupSkills || {}).map(([name]) => ({
+        name,
+        type: 'group',
+        points: Math.max(0, 3 - (groupSkillBonus === name ? 1 : 0))
+    }))
+].filter(target => target.points > 0);
+
+const getBonusSupportVector = (piece, targets) => targets.map(target => {
+    const names = target.type === 'set' ? _x.setSkills(piece) : _x.groupSkills(piece);
+    return (names || []).includes(target.name) ? 1 : 0;
+});
+
+const addBonusSupportVectors = (left, right, targets) => left.map((value, index) =>
+    Math.min(targets[index].points, value + right[index])
+);
+
+const getUniqueSupportVectors = vectors => [...new Map(
+    vectors.map(vector => [vector.join(','), vector])
+).values()];
+
+const advanceBonusSupportStates = (states, vectors, targets) => getUniqueSupportVectors(
+    states.flatMap(state => vectors.map(vector => addBonusSupportVectors(state, vector, targets)))
+);
+
+export const pruneBonusUnsupportedCandidateLists = (
+    candidateLists, setSkills = {}, groupSkills = {}, setSkillBonus = '', groupSkillBonus = '',
+    profile = null
+) => {
+    const targets = getBonusSupportTargets(
+        setSkills, groupSkills, setSkillBonus, groupSkillBonus
+    );
+    if (!targets.length) { return candidateLists; }
+    const slots = ['head', 'chest', 'arms', 'waist', 'legs'];
+    const zero = targets.map(() => 0);
+    const vectorsBySlot = slots.map(slot => getUniqueSupportVectors(
+        (candidateLists[slot] || []).map(([, piece]) => getBonusSupportVector(piece, targets))
+    ));
+    const prefix = [ [zero] ];
+    slots.forEach((slot, index) => {
+        prefix[index + 1] = advanceBonusSupportStates(prefix[index], vectorsBySlot[index], targets);
+    });
+    const suffix = Array(slots.length + 1);
+    suffix[slots.length] = [zero];
+    for (let index = slots.length - 1; index >= 0; index--) {
+        suffix[index] = advanceBonusSupportStates(
+            suffix[index + 1], vectorsBySlot[index], targets
+        );
+    }
+    const next = { ...candidateLists };
+    let removed = 0;
+    slots.forEach((slot, slotIndex) => {
+        next[slot] = (candidateLists[slot] || []).filter(([, piece]) => {
+            const pieceVector = getBonusSupportVector(piece, targets);
+            const supported = prefix[slotIndex].some(left => suffix[slotIndex + 1].some(right =>
+                targets.every((target, targetIndex) =>
+                    left[targetIndex] + pieceVector[targetIndex] + right[targetIndex] >= target.points
+                )
+            ));
+            if (!supported) { removed++; }
+            return supported;
+        });
+    });
+    if (profile) {
+        profile.bonusUnsupportedCandidateCount =
+            (profile.bonusUnsupportedCandidateCount || 0) + removed;
+        profile.filteredCandidateCount = Math.max(
+            0, (profile.filteredCandidateCount || 0) - removed
+        );
+    }
+    return next;
 };
 
 const getEquivalentArmorSignature = (
@@ -1327,13 +1471,15 @@ const buildSearchGear = (params, setSkills = params.setSkills, groupSkills = par
     return sortTalismansForDamage(gear, params);
 };
 
-const getPieceSkillPotential = (slot, piece, skillName, decos, baseWeaponSlots = []) => {
+const getPieceSkillPotential = (
+    slot, piece, skillName, decorationOptions, baseWeaponSlots = []
+) => {
     const points = piece[1]?.[skillName] || 0;
     const armorSlots = piece[3] || [];
     const weaponSlots = slot === "talisman" ? [...baseWeaponSlots, ..._x.weaponSlots(piece)] : [];
     let bestDecoPotential = 0;
 
-    for (const deco of Object.values(decos)) {
+    for (const deco of decorationOptions) {
         const validSlots = deco[0] === "weapon" ? weaponSlots : armorSlots;
         const decoSkillLevel = deco[1]?.[skillName];
         if (decoSkillLevel && validSlots.length) {
@@ -1370,6 +1516,10 @@ const buildSkillPotentialSuffix = (candidateLists, armorSlots, desiredSkills, de
 const buildPiecePotentialMap = (candidateLists, armorSlots, desiredSkills, decos, baseWeaponSlots = []) => {
     const skillNames = Object.keys(desiredSkills);
     const piecePotentialMap = new Map();
+    const decorationOptionsBySkill = Object.fromEntries(skillNames.map(skillName => [
+        skillName,
+        Object.values(decos).filter(deco => deco[1]?.[skillName])
+    ]));
 
     for (const slot of armorSlots) {
         for (const [, piece] of candidateLists[slot]) {
@@ -1377,7 +1527,9 @@ const buildPiecePotentialMap = (candidateLists, armorSlots, desiredSkills, decos
             piecePotentialMap.set(piece, Object.fromEntries(
                 skillNames.map(skillName => [
                     skillName,
-                    getPieceSkillPotential(slot, piece, skillName, decos, baseWeaponSlots)
+                    getPieceSkillPotential(
+                        slot, piece, skillName, decorationOptionsBySkill[skillName], baseWeaponSlots
+                    )
                 ])
             ));
         }
@@ -1391,11 +1543,14 @@ export const validateSearchFeasibility = (
     profile = null
 ) => {
     const armorSlots = getArmorTypeList();
-    const candidateLists = Object.fromEntries(
+    let candidateLists = Object.fromEntries(
         armorSlots.map(slot => [
             slot,
             getSortedCandidateList(gear, slot, desiredSkills, optimizationGoal, profile)
         ])
+    );
+    candidateLists = pruneBonusUnsupportedCandidateLists(
+        candidateLists, setSkills, groupSkills, gear.setSkillBonus, gear.groupSkillBonus, profile
     );
     const reasons = [];
 
@@ -2422,7 +2577,9 @@ const preparePartialResults = (rolls, params) => {
             weaponType: params.weaponType,
             weaponElementType: params.weaponElementType,
             weaponElementValue: params.weaponElementValue,
-            weaponSharpness: params.weaponSharpness
+            weaponSharpness: params.weaponSharpness,
+            setSkillBonus: params.setSkillBonus || '',
+            groupSkillBonus: params.groupSkillBonus || ''
         };
         const damageProfile = buildDamageProfile(enrichedRoll);
         return { ...enrichedRoll, damageProfile, tags: damageProfile.tags };
@@ -2616,21 +2773,7 @@ export const search = async parameters => {
     profile.searchBudgetMs = maxComboSearchMs;
 
     stageStartedAt = performance.now();
-    const customDecorationMap = customDecorationsToCompact(params.customDecorations);
-    currentDecorations = { ...DECORATIONS, ...customDecorationMap };
-    decoInventory = { ...DECO_INVENTORY };
-    for (const deco of params.customDecorations || []) {
-        if (deco?.name) {
-            decoInventory[deco.name] = Math.max(0, Number(deco.amount ?? 99));
-        }
-    }
-
-    // limit decos to what user has specified they have
-    for (const [decoName, decoAmount] of Object.entries(params.decoMods)) {
-        if (Object.prototype.hasOwnProperty.call(decoInventory, decoName)) {
-            decoInventory[decoName] = decoAmount;
-        }
-    }
+    configureSearchDecorations(params);
     recordOptimizerStage(profile, "decoInventory", stageStartedAt);
 
     stageStartedAt = performance.now();
@@ -2656,6 +2799,18 @@ export const search = async parameters => {
     gear.bonusDiscoveryTargetType = params.bonusDiscoveryTargetType;
     gear.bonusDiscoveryTargetName = params.bonusDiscoveryTargetName;
     gear.bonusDiscoveryTargetLevel = params.bonusDiscoveryTargetLevel;
+    // Exact recommendation proofs only need one feasible witness. In this mode,
+    // defense, resistances, and unrelated bonuses cannot affect feasibility, so
+    // they must not prevent otherwise exact dominance pruning.
+    gear.feasibilityOnly = Boolean(params.findOne);
+    gear.relevantSetNames = Object.keys(params.setSkills || {}).concat(
+        params.bonusDiscoveryTargetType === 'set' && params.bonusDiscoveryTargetName ?
+            [params.bonusDiscoveryTargetName] : []
+    );
+    gear.relevantGroupNames = Object.keys(params.groupSkills || {}).concat(
+        params.bonusDiscoveryTargetType === 'group' && params.bonusDiscoveryTargetName ?
+            [params.bonusDiscoveryTargetName] : []
+    );
     recordOptimizerStage(profile, "candidatePrep", stageStartedAt);
     if (searchDeadline.current) {
         profile.timedOut = searchDeadline.timedOut;
@@ -2668,14 +2823,19 @@ export const search = async parameters => {
     }
 
     stageStartedAt = performance.now();
-    const cachedFeasibility = searchFeasibilityCache.get(searchGearCacheKey);
+    const proofBonusSignature = JSON.stringify([
+        gear.relevantSetNames || [], gear.relevantGroupNames || []
+    ]);
+    const feasibilityCacheKey = params.findOne ?
+        `${searchGearCacheKey}::feasibility-proof:${proofBonusSignature}` : searchGearCacheKey;
+    const cachedFeasibility = searchFeasibilityCache.get(feasibilityCacheKey);
     const feasibility = cachedFeasibility || validateSearchFeasibility(
         gear, params.skills, params.setSkills, params.groupSkills, params.optimizationGoal, profile
     );
     if (cachedFeasibility) {
         profile.searchFeasibilityCacheHits = (profile.searchFeasibilityCacheHits || 0) + 1;
     } else {
-        searchFeasibilityCache.set(searchGearCacheKey, feasibility);
+        searchFeasibilityCache.set(feasibilityCacheKey, feasibility);
     }
     recordOptimizerStage(profile, "feasibilityCheck", stageStartedAt);
     if (!feasibility.possible) {
@@ -2801,7 +2961,9 @@ export const search = async parameters => {
             weaponType: roll.weaponType ?? params.weaponType ?? 'other',
             weaponElementType: roll.weaponElementType ?? params.weaponElementType ?? 'None',
             weaponElementValue: roll.weaponElementValue ?? params.weaponElementValue ?? 0,
-            weaponSharpness: roll.weaponSharpness ?? params.weaponSharpness ?? 'White'
+            weaponSharpness: roll.weaponSharpness ?? params.weaponSharpness ?? 'White',
+            setSkillBonus: roll.setSkillBonus ?? params.setSkillBonus ?? '',
+            groupSkillBonus: roll.groupSkillBonus ?? params.groupSkillBonus ?? ''
         };
         const damageProfile = buildDamageProfile(enrichedRoll);
         return {

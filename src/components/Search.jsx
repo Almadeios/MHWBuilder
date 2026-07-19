@@ -9,7 +9,7 @@ import GROUP_SKILLS_DB from '../data/detailed/group-skills.json';
 import DECORATIONS from '../data/compact/decoration.json';
 import {
     getSearchUrl, generateStyle,
-    generateWikiString, getMaxLevel, getSkillPopup,
+    getMaxLevel, getSkillPopup,
     isGroupSkill, isSetSkill,
     copyTextToClipboard
 } from "../util/util";
@@ -26,7 +26,6 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Results from "./Results";
-import { DEBUG } from "../util/constants";
 import { useStorage } from "../hooks/StorageContext";
 import { useSearchWorker } from "../hooks/useSearchWorker";
 import { useBonusExplorer } from "../hooks/useBonusExplorer";
@@ -34,6 +33,10 @@ import { ELEMENT_SKILL_TABLES, filterConditionsForSkills, getConditionOptionsFor
 import DamageConditions from './DamageConditions';
 import WeaponSearchControls from './WeaponSearchControls';
 import { SearchOutcome, SearchProgress } from './SearchStatus';
+import RecommendationAudit from './RecommendationAudit';
+
+const DEFAULT_BONUS_PROOF_BUDGET_MS = 60000;
+const DEFAULT_BONUS_PATH_BUDGET_MS = 15000;
 
 const ArrowL = styled(ArrowLeft)`
     width: 16px !important;
@@ -55,11 +58,13 @@ const Search = () => {
     const cancelledRef = useRef(false);
     const [elapsedSeconds, setElapsedSeconds] = useState(-1);
     const [moreElapsedSeconds, setMoreElapsedSeconds] = useState(-1);
+    const [bonusElapsedSeconds, setBonusElapsedSeconds] = useState(-1);
     const [loadProgress, setLoadProgress] = useState(0);
     const [optimizerProfile, setOptimizerProfile] = useState(null);
     const [searchError, setSearchError] = useState('');
     const recommendationSeedResultsRef = useRef([]);
-    const bonusSearchedSkillsRef = useRef({});
+    const bonusExplorationParamsRef = useRef(null);
+    const bonusResumeAttemptRef = useRef(0);
     const [bonusRoutes, setBonusRoutes] = useState([]);
 
     const [isGenerating, setIsGenerating] = useState(false);
@@ -89,7 +94,7 @@ const Search = () => {
         stop: stopBonusExploration
     } = useBonusExplorer({
         onElapsed: seconds => {
-            setMoreElapsedSeconds(seconds);
+            setBonusElapsedSeconds(seconds);
             setShowMore(true);
         },
         onResult: message => applyBonusResultMessage(message)
@@ -124,6 +129,7 @@ const Search = () => {
         }
         setMoreResults({});
         setMoreSlots({});
+        setBonusElapsedSeconds(-1);
         setOptimizerProfile(null);
         setSearchError('');
         setIsGenerating(true);
@@ -139,15 +145,6 @@ const Search = () => {
             Object.entries(fields.skills).filter(x => GROUP_SKILLS[x[0]]).map(x => [x[0], x[1]])
         );
         const filteredConditions = filterConditionsForSkills(fields.conditions, fields.skills);
-
-        if (DEBUG) {
-            const wiki = generateWikiString(
-                justSkills, justSetSkills, justGroupSkills,
-                fields.slotFilters
-            );
-
-            console.log(`https://mhwilds.wiki-db.com/sim/#skills=${wiki}&fee=1`);
-        }
 
         const params = getSearchParameters({
             skills: justSkills,
@@ -569,32 +566,20 @@ const Search = () => {
     };
 
     const applyBonusResultMessage = message => {
-        const searchedSkills = bonusSearchedSkillsRef.current;
-        if (message.candidate.sourceType === 'skill') {
-            setMoreResults(current => {
-                const next = { ...current };
-                (message.seedResults || [null]).forEach(sourceResult => addSocketableSkill(
-                    next, message.candidate.skillName, message.candidate.level, 'armor',
-                    searchedSkills[message.candidate.skillName] || 0, sourceResult
-                ));
-                return next;
-            });
-        } else {
-            setBonusRoutes(current => {
-                const route = {
-                    ...message.candidate,
-                    seedResults: message.seedResults || []
-                };
-                const existingIndex = current.findIndex(candidate =>
-                    candidate.skillName === route.skillName
-                );
-                if (existingIndex < 0) { return [...current, route]; }
-                const next = [...current];
-                next[existingIndex] = route.level >= next[existingIndex].level ?
-                    route : next[existingIndex];
-                return next;
-            });
-        }
+        setBonusRoutes(current => {
+            const route = {
+                ...message.candidate,
+                seedResults: message.seedResults || []
+            };
+            const existingIndex = current.findIndex(candidate =>
+                candidate.skillName === route.skillName
+            );
+            if (existingIndex < 0) { return [...current, route]; }
+            const next = [...current];
+            next[existingIndex] = route.level >= next[existingIndex].level ?
+                route : next[existingIndex];
+            return next;
+        });
         setShowMore(true);
     };
 
@@ -602,7 +587,6 @@ const Search = () => {
         if (!results.length || isExploringBonuses) { return; }
 
         const searchedSkills = getNormalSkillTargets(fields.skills);
-        bonusSearchedSkillsRef.current = searchedSkills;
         const searchedSetSkills = getSetSkillTargets(fields.skills);
         const searchedGroupSkills = getGroupSkillTargets(fields.skills);
         const params = getSearchParameters({
@@ -629,10 +613,61 @@ const Search = () => {
             decoMods: fields.decoInventory,
             priorResults: results
         });
-        startBonusExploration(params);
+        bonusExplorationParamsRef.current = params;
+        // The first exhaustive proof used to require an extra button press. It is now the
+        // default recommendation pass; later continuations increase this initial budget.
+        bonusResumeAttemptRef.current = 1;
+        startBonusExploration({
+            ...params,
+            recommendationResume: true,
+            recommendationBudgetMs: DEFAULT_BONUS_PROOF_BUDGET_MS,
+            recommendationCandidateBudgetMs: DEFAULT_BONUS_PATH_BUDGET_MS
+        });
+    };
+
+    const continueBonusExploration = () => {
+        const unresolvedCandidates = (improvementProgress.candidates || []).filter(candidate =>
+            (candidate.status === 'unresolved' || candidate.maxUnresolved) &&
+            candidate.reason !== 'large-pool-timeout'
+        );
+        if (!bonusExplorationParamsRef.current || !unresolvedCandidates.length || isExploringBonuses) {
+            return;
+        }
+        bonusResumeAttemptRef.current += 1;
+        const unresolvedIds = new Set(unresolvedCandidates.map(candidate =>
+            `${candidate.sourceType}:${candidate.skillName}`
+        ));
+        const resolvedCandidates = (improvementProgress.candidates || []).filter(candidate =>
+            !unresolvedIds.has(`${candidate.sourceType}:${candidate.skillName}`)
+        );
+        const resumeBudgetMultiplier = 2 ** bonusResumeAttemptRef.current / 2;
+        const recommendationBudgetMs = Math.min(
+            300000, DEFAULT_BONUS_PROOF_BUDGET_MS * resumeBudgetMultiplier
+        );
+        const recommendationCandidateBudgetMs = Math.min(
+            60000,
+            DEFAULT_BONUS_PATH_BUDGET_MS * 2 ** (bonusResumeAttemptRef.current - 1)
+        );
+        const recommendationStartingLevels = Object.fromEntries(unresolvedCandidates
+            .filter(candidate => candidate.level)
+            .map(candidate => [
+                `${candidate.sourceType}:${candidate.skillName}`,
+                candidate.level
+            ]));
+        setBonusElapsedSeconds(-1);
+        startBonusExploration({
+            ...bonusExplorationParamsRef.current,
+            recommendationResume: true,
+            recommendationBudgetMs,
+            recommendationCandidateBudgetMs,
+            recommendationCandidateIds: [...unresolvedIds],
+            recommendationStartingLevels,
+            recommendationPriorCandidates: resolvedCandidates
+        });
     };
 
     const findImprovements = () => {
+        setBonusElapsedSeconds(-1);
         getMoreSkills();
         setBonusRoutes([]);
         exploreBonusPaths();
@@ -660,20 +695,31 @@ const Search = () => {
     };
 
     const conditionOptions = getConditionOptionsForSkills(fields.skills);
+    const activeConditionCount = conditionOptions.filter(condition => condition.id === 'wound' ?
+        Boolean(fields.conditions?.wound || fields.conditions?.weak_point_and_wound) :
+        Boolean(fields.conditions?.[condition.id])
+    ).length;
 
     const renderConditionsPanel = () => {
         if (conditionOptions.length === 0) {
             return null;
         }
 
-        return <Accordion
+        return <Accordion className="conditions-panel"
+            disableGutters
+            elevation={0}
             expanded={showConditions}
-            onChange={() => setShowConditions(!showConditions)}
-            sx={{ marginTop: '0.75em' }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                Conditions
+            onChange={(_, expanded) => setShowConditions(expanded)}>
+            <AccordionSummary className="conditions-panel__summary" expandIcon={<ExpandMoreIcon />}>
+                <div className="conditions-panel__heading">
+                    <span>Damage Conditions</span>
+                    <span className="conditions-panel__count">
+                        {activeConditionCount} active
+                    </span>
+                    <span className="conditions-panel__hint">Optional combat assumptions</span>
+                </div>
             </AccordionSummary>
-            <AccordionDetails>
+            <AccordionDetails className="conditions-panel__details">
                 <DamageConditions
                     skills={fields.skills}
                     conditions={fields.conditions}
@@ -921,8 +967,15 @@ const Search = () => {
                 level,
                 addedLevel: level,
                 slotTypes: [candidate.sourceType],
-                seedResults: candidate.seedResults || []
+                seedResults: candidate.seedResults || [],
+                verifiedBy: candidate.verifiedBy || ''
             };
+        });
+        Object.entries(bonusImprovements).forEach(([skillName, skillInfo]) => {
+            const searchedLevel = Number(fields.skills?.[skillName] || 0);
+            if (Number(skillInfo.level || 0) <= searchedLevel) {
+                delete bonusImprovements[skillName];
+            }
         });
         const hasAddableSkills = !isEmpty(weaponSkillResults) || !isEmpty(armorSkillResults);
         const hasBonusImprovements = !isEmpty(bonusImprovements);
@@ -931,7 +984,7 @@ const Search = () => {
         const hasMoreSlots = hasArmorSlots || hasWeaponSlots;
         const displayStr = hasAddableSkills || hasBonusImprovements || hasMoreSlots ?
             `Available improvements ${time}:` :
-            `No extras found in the current results ${time}.`;
+            `No immediate extras found in the returned results ${time}.`;
         const renderMoreSkillBubble = ([skillName, skillInfo], descriptionLine, gradientColor) => {
             const maxLevel = skillInfo.level;
             const displayLevel = skillInfo.addedLevel || maxLevel;
@@ -1045,28 +1098,9 @@ const Search = () => {
                     </div>
                 </div>}
             </div>}
-            {isExploringBonuses && <div style={{ color: '#9ee8f0', marginTop: '0.8em' }}>
-                Exploring skill and bonus recommendations
-                {improvementProgress.total > 0 ?
-                    ` — ${[
-                        `${improvementProgress.completed}/${improvementProgress.total}`,
-                        `${improvementProgress.found} found`,
-                        improvementProgress.initial ?
-                            `${improvementProgress.feasible}/${improvementProgress.initial} viable` : null,
-                        improvementProgress.timedOut ?
-                            `${improvementProgress.timedOut} timed out` : null
-                    ].filter(Boolean).join(' · ')}` :
-                    '…'}
-            </div>}
-            {!isExploringBonuses && improvementProgress.status === 'partial' &&
-                <div style={{ color: '#f0c49e', marginTop: '0.8em' }}>
-                    Partial exploration: {improvementProgress.timedOut} directed checks timed out.
-                    Displayed recommendations are verified; unresolved checks already received an automatic retry.
-                </div>}
-            {!isExploringBonuses && improvementProgress.status === 'cancelled' &&
-                <div style={{ color: '#f0c49e', marginTop: '0.8em' }}>
-                    Exploration cancelled. Recommendations found before cancellation were preserved.
-                </div>}
+            <RecommendationAudit elapsedSeconds={bonusElapsedSeconds}
+                isExploring={isExploringBonuses} onContinue={continueBonusExploration}
+                progress={improvementProgress} />
             {hasBonusImprovements && <div style={{ marginTop: '1em' }}>
                 <div style={{ color: '#f0c49e', fontWeight: 700, marginBottom: '0.4em' }}>
                     Bonus improvements{improvementProgress.status === 'complete' ? ' — complete' : ''}:
@@ -1076,11 +1110,16 @@ const Search = () => {
                     Click one to add it to the search.
                 </div>
                 <div className="more-skills" style={{ alignItems: 'flex-start' }}>
-                    {alphabeticalEntries(bonusImprovements).map(sk => renderMoreSkillBubble(
-                        sk,
-                        `A valid build exists with this bonus. Click to add it to the search.`,
-                        SET_SKILLS[sk[0]] ? '#f0c49e' : '#9ee8f0'
-                    ))}
+                    {alphabeticalEntries(bonusImprovements).map(sk => {
+                        const proof = sk[1].verifiedBy === 'local-armor-swap' ?
+                            'Proven by a nearby armor swap from the returned builds.' :
+                            'A valid build exists with this bonus.';
+                        return renderMoreSkillBubble(
+                            sk,
+                            `${proof} Click to add it to the search.`,
+                            SET_SKILLS[sk[0]] ? '#f0c49e' : '#9ee8f0'
+                        );
+                    })}
                 </div>
             </div>}
         </div>;

@@ -15,6 +15,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
+    "html-to-image": "^1.11.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "use-debounce": "^10.0.4"
@@ -26,10 +27,13 @@
     "benchmark": "node scripts/run-optimizer-benchmarks.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "preview": "vite preview",
-    "lint": "eslint src scripts vite.config.mjs --ext .js,.jsx,.mjs"
+    "lint": "eslint src scripts e2e vite.config.mjs playwright.config.mjs --ext .js,.jsx,.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",

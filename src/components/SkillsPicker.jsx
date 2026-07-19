@@ -223,10 +223,11 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
             {skill.displayName}
         </span>;
         const iconImg = skill.icon ?
-            <img className="skills-search-bubble-icon" src={`images/icons/${skill.icon}.png`} alt={skill.icon} /> :
+            <img className="skills-search-bubble-icon" src={`images/icons/${skill.icon}.png`} alt="" /> :
             null;
 
-        return <button type="button" className={`skills-search-bubble underline ${highlightClass} ${blurredClass}`}
+        return <button type="button" aria-label={skill.displayName}
+            className={`skills-search-bubble underline ${highlightClass} ${blurredClass}`}
             title={description} onClick={() => addSkill(skill.name)} key={skill.name}>
             {showIcons && iconImg}
             {nameDiv}

@@ -22,6 +22,7 @@ describe('bonus feasibility index', () => {
     expect(candidate).toEqual(expect.objectContaining({
       requiredPoints: 2,
       reachablePoints: 1,
+      contributorPieceCount: 1,
       feasibleByArmorCount: false
     }));
   });
@@ -52,6 +53,7 @@ describe('bonus feasibility index', () => {
     }]);
 
     expect(candidate.requiredPoints).toBe(3);
+    expect(candidate.contributorPieceCount).toBe(2);
     expect(candidate.feasibleByArmorCount).toBe(false);
   });
 

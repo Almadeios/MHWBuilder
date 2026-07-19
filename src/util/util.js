@@ -428,6 +428,23 @@ export const saveToLocalStorage = (key, data) => {
         return false;
     }
 };
+
+export const getArmorBonusPointsFromNames = names => {
+    const setSkillPoints = {};
+    const groupSkillPoints = {};
+    const armorByName = allArmor();
+    for (const name of (names || []).slice(0, 5)) {
+        const armor = armorByName[name];
+        if (!armor) { continue; }
+        for (const skillName of armor.setSkill || []) {
+            setSkillPoints[skillName] = (setSkillPoints[skillName] || 0) + 1;
+        }
+        for (const skillName of armor.groupSkill || []) {
+            groupSkillPoints[skillName] = (groupSkillPoints[skillName] || 0) + 1;
+        }
+    }
+    return { setSkillPoints, groupSkillPoints };
+};
 export const getFromLocalStorage = (key, defaultValue = null) => {
     const data = localStorage.getItem(key);
 
@@ -560,29 +577,6 @@ export const getArmorColorHue = rarity => {
     return `hue-rotate(${colorToDeg[rarityToColor[rarity]]}deg)`;
 };
 
-export const generateWikiString = (skills, setSkills, groupSkills, slotFilters = {}) => {
-    const skillsWikiFormat = [];
-
-    for (const [key, value] of Object.entries(skills)) {
-        skillsWikiFormat.push(`${key} Lv${value}`);
-    }
-
-    for (const [key, value] of Object.entries(setSkills)) {
-        skillsWikiFormat.push(`${SET_SKILLS[key][0]} ${'I'.repeat(value)}`);
-    }
-
-    for (const key of Object.keys(groupSkills)) {
-        skillsWikiFormat.push(`${GROUP_SKILLS[key][0]}`);
-    }
-
-    for (const [slotSize, amount] of Object.entries(slotFilters)) {
-        const truncatedAmount = Math.min(amount, 7); // wiki tool only allows up to 7
-        skillsWikiFormat.push(`LV${slotSize} Slot Skill Lv${truncatedAmount}`);
-    }
-
-    return skillsWikiFormat.join("%2C");
-};
-
 export const getSkillDiff = (skillsA, skillsB) => {
     const result = {};
     const keys = new Set([...Object.keys(skillsA), ...Object.keys(skillsB)]);
@@ -647,6 +641,7 @@ export const getArmorFromNames = (names, talismanData = {}) => {
             rarity: found.rarity,
             skills: found.skills, // .map(x => `${x.name} Lv. ${x.level}`).join(", "),
             slots: found.slots || [],
+            weaponSlots: found.weaponSlots || []
         });
     }
 

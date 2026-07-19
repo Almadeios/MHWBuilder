@@ -1,10 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import OptimizerProfile from './OptimizerProfile';
 import ResultNavigation from './ResultNavigation';
 import ResultTable from './ResultTable';
 import SelectedBuildPanel from './SelectedBuildPanel';
+import ShareSetDialog, { buildSharedSetSummary } from './ShareSetDialog';
 import { SearchOutcome, SearchProgress } from './SearchStatus';
 import WeaponSearchControls from './WeaponSearchControls';
+import RecommendationAudit from './RecommendationAudit';
+import DamageConditions from './DamageConditions';
 
 describe('search presentation components', () => {
   it('reports active search progress accessibly', () => {
@@ -23,16 +25,6 @@ describe('search presentation components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load latest version' }));
     expect(reload).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('alert')).toHaveTextContent('Loading chunk 3 failed');
-  });
-
-  it('formats optimizer profile details outside the results container', () => {
-    render(<OptimizerProfile profile={{
-      engine: 'mitm', nodes: 1200, pruned: 300, leftStates: 10, rightStates: 20,
-      stages: { ranking: 1500 }
-    }} />);
-
-    expect(screen.getByText(/nodes 1,200/)).toHaveTextContent('halves 10+20');
-    expect(screen.getByText(/ranking 1.50s/)).toBeInTheDocument();
   });
 
   it('routes result navigation actions', () => {
@@ -60,6 +52,45 @@ describe('search presentation components', () => {
     expect(updateField).toHaveBeenCalledWith('weaponBaseRaw', 125);
   });
 
+  it('presents damage conditions as accessible toggle chips', () => {
+    const onChange = vi.fn();
+    render(<DamageConditions
+      conditions={{ monster_enraged: true }}
+      onChange={onChange}
+      skills={{ Agitator: 5 }}
+    />);
+
+    const enraged = screen.getByRole('button', { name: 'Monster Enraged' });
+    expect(enraged).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(enraged);
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ monster_enraged: false }));
+  });
+
+  it('summarizes recommendation uncertainty without dumping debug details', () => {
+    render(<RecommendationAudit isExploring={false} progress={{
+      status: 'partial', unresolved: 1, budgetExhausted: 1, budgetMs: 25000,
+      candidates: [{
+        skillName: "Jin Dahaad's Revolt", status: 'unresolved', reason: 'exploration-budget'
+      }]
+    }} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('No new bonus improvements found');
+    expect(screen.getByRole('status')).not.toHaveTextContent("Jin Dahaad's Revolt");
+    expect(screen.getByRole('status')).not.toHaveTextContent('25-second exploration budget');
+  });
+
+  it('does not offer retries for oversized Group Skill pools', () => {
+    render(<RecommendationAudit isExploring={false} onContinue={vi.fn()} progress={{
+      status: 'partial', found: 8,
+      candidates: [{
+        skillName: 'Broad Group', status: 'unresolved', reason: 'large-pool-timeout'
+      }]
+    }} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('1 unusually broad Group Skill path');
+    expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+  });
+
   it('selects a result from the extracted results table', () => {
     const onSelect = vi.fn();
     const result = {
@@ -78,16 +109,81 @@ describe('search presentation components', () => {
   it('routes actions from the extracted selected-build panel', () => {
     const save = vi.fn();
     const close = vi.fn();
+    const queueOriginal = vi.fn();
+    const share = vi.fn();
     render(<SelectedBuildPanel canGoNext={false} canGoPrevious={false}
-      hasSelection isSaved={false} name="Test Set" onClose={close} onExport={vi.fn()}
-      onNext={vi.fn()} onPrevious={vi.fn()} onQueueSkills={vi.fn()}
-      onRename={vi.fn()} onSave={save} onShare={vi.fn()} onWikiSearch={vi.fn()}
-      resultCount={1} save={false} summary={<span>Decorations</span>} />);
+      hasOriginalSearch hasSelection isSaved={false} name="Test Set" onClose={close}
+      onExport={vi.fn()} onNext={vi.fn()} onPrevious={vi.fn()}
+      onQueueOriginalSearch={queueOriginal}
+      onRename={vi.fn()} onSave={save} onShare={share}
+      resultCount={1} save summary={<span>Decorations</span>} />);
 
+    fireEvent.keyDown(window, { key: 'Control', ctrlKey: true });
     fireEvent.click(screen.getByRole('button', { name: 'Save Armor Set' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set as Search Target' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Share Set' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close selected result' }));
+    expect(screen.queryByRole('button', { name: 'Search Wiki' })).not.toBeInTheDocument();
     expect(save).toHaveBeenCalledTimes(1);
+    expect(queueOriginal).toHaveBeenCalledTimes(1);
+    expect(share).toHaveBeenCalledTimes(1);
     expect(close).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Decorations')).toBeInTheDocument();
+  });
+
+  it('presents a visual share preview with explicit export actions', () => {
+    const copySummary = vi.fn();
+    const armor = [{
+      name: 'Test Helm', rarity: 8, slots: [3, 1], weaponSlots: [1], skills: { Agitator: 2 }
+    }];
+    const result = {
+      name: 'My Build', searchedSkills: { Agitator: 2 }, skills: { Agitator: 2 },
+      setSkills: { 'Test Set Bonus': 1 }, setSkillPoints: { 'Test Set Bonus': 2 },
+      setSkillBonus: 'Test Set Bonus', groupSkills: { 'Test Group Skill': 1 },
+      freeSlots: [2], freeWeaponSlots: [1], conditions: { 'Monster Enraged': true },
+      damageProfile: { expected_dps: 300, raw_dps: 250, element_dps: 50, final_affinity: 20 }
+    };
+    const decorations = [{
+      name: 'Challenger Jewel', amount: 2, skills: 'Agitator Lv. 1', slotSize: 2
+    }];
+
+    render(<ShareSetDialog armor={armor} decorations={decorations}
+      defense={{ base: 100, upgraded: 150 }} onClose={vi.fn()}
+      onCopySummary={copySummary} open result={result} />);
+
+    expect(screen.getByRole('dialog', { name: 'My Build' })).toBeInTheDocument();
+    expect(screen.getByText('Test Helm')).toBeInTheDocument();
+    expect(screen.getAllByText('Test Set Bonus')).toHaveLength(2);
+    expect(screen.getByText('Test Group Skill')).toBeInTheDocument();
+    expect(screen.getByText('300.0')).toBeInTheDocument();
+    expect(screen.getByText('Monster Enraged')).toBeInTheDocument();
+    const overview = screen.getByRole('region', { name: 'Build overview' });
+    expect(overview).not.toHaveTextContent('equipment piece');
+    expect(overview).toHaveTextContent('2 decorations');
+    expect(screen.getByRole('img', { name: 'Agitator skill icon' })).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Agitator level progress' }))
+      .toHaveAttribute('aria-valuemax', '5');
+    expect(screen.getByRole('progressbar', { name: 'Test Set Bonus set points' }))
+      .toHaveAttribute('aria-valuenow', '2');
+    expect(screen.getByText('+1 manual')).toBeInTheDocument();
+    expect(screen.getByText('Manual Set Bonus')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Original search target' }))
+      .toHaveTextContent('1 requirements');
+    expect(screen.getByText('1 on')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Test Group Skill group points' }))
+      .toHaveAttribute('aria-valuenow', '3');
+    expect(screen.getByRole('img', { name: 'Level 2 slot' })).toBeInTheDocument();
+    const weaponSlots = screen.getByLabelText('Weapon slots: 1');
+    const regularSlot = screen.getByRole('img', { name: 'Level 2 slot' });
+    expect(weaponSlots.compareDocumentPosition(regularSlot) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy();
+    expect(screen.getByText('WPN')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save as PNG' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Copy Share Link' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Build Summary' }));
+    expect(copySummary).toHaveBeenCalledTimes(1);
+
+    expect(buildSharedSetSummary({ armor, decorations, defense: { base: 100, upgraded: 150 }, result }))
+      .toContain('DPS: 300.0 | Raw: 250.0 | Element: 50.0 | Affinity: 20.0%');
   });
 });

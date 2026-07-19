@@ -67,6 +67,7 @@ export const StorageProvider = ({ children }) => {
     const [fields, setFields] = useState(DEFAULTS);
     const [swapTab, setSwapTab] = useState(false);
     const [setId, setSetId] = useState();
+    const [sharedSetPreview, setSharedSetPreview] = useState();
 
     useEffect(() => {
         // honestly, should probably combine all these into one localStorage object
@@ -79,6 +80,17 @@ export const StorageProvider = ({ children }) => {
         saveToLocalStorage('optimizationGoal', tempFields.optimizationGoal);
         tempFields.customTalismans = normalizeCustomTalismans(tempFields.customTalismans);
         saveToLocalStorage('customTalismans', tempFields.customTalismans);
+
+        // One-time cleanup for the accidental legacy URL import reported before shared previews.
+        if (!getFromLocalStorage('sharedPreviewMigrationV1', false)) {
+            tempFields.savedSets = tempFields.savedSets.filter(savedSet => !(
+                savedSet.name === 'Sazeeaid' &&
+                !savedSet.damageProfile &&
+                !savedSet.requiredDecoNames
+            ));
+            saveToLocalStorage('savedSets', tempFields.savedSets);
+            saveToLocalStorage('sharedPreviewMigrationV1', true);
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
 
@@ -116,22 +128,10 @@ export const StorageProvider = ({ children }) => {
             saveToLocalStorage('slotFilters', tempFields.slotFilters);
         }
 
-        // handle getting a shared set from a url
-        let addedSharedSet = false;
+        // Shared links are previews. Saving them must be an explicit user action.
         const sharedSet = getSetFromUrlParams(urlParams);
         if (sharedSet) {
-            const exists = tempFields.savedSets.filter(x => x.id === sharedSet.id)[0];
-            if (!exists) {
-                tempFields.savedSets.push(sharedSet);
-                addedSharedSet = true;
-
-                saveToLocalStorage('savedSets', tempFields.savedSets);
-
-                const message = createSafeMessage(
-                    'Added new set to saved sets: ', sharedSet.name, '!', 'aqua'
-                );
-                window.snackbar.createSnackbar(message, { timeout: 3000 });
-            }
+            setSharedSetPreview(sharedSet);
             urlParams.delete("set");
             urlParams.delete("name");
             moddedSearch = true;
@@ -158,11 +158,6 @@ export const StorageProvider = ({ children }) => {
             );
         }
         setFields(tempFields);
-
-        if (addedSharedSet) {
-            setSwapTab(1);
-            setSetId(sharedSet.id);
-        }
     }, []);
 
     const updateField = (name, value) => {
@@ -288,7 +283,8 @@ export const StorageProvider = ({ children }) => {
         <StorageContext.Provider value={{
             fields, updateField, updateMultipleFields,
             pinArmor, excludeArmor, saveArmorSet, swapTab,
-            setSwapTab, setId, setSetId
+            setSwapTab, setId, setSetId, sharedSetPreview,
+            dismissSharedSetPreview: () => setSharedSetPreview(undefined)
         }}>
             {children}
         </StorageContext.Provider>

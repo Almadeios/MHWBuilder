@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { Checkbox, FormControlLabel } from '@mui/material';
 import { getConditionOptionsForSkills } from '../util/damageScoring';
 
 const DamageConditions = ({ conditions = {}, skills = {}, onChange }) => {
@@ -18,16 +17,22 @@ const DamageConditions = ({ conditions = {}, skills = {}, onChange }) => {
         onChange(nextConditions);
     };
 
-    return options.map(condition =>
-        <FormControlLabel
-            key={condition.id}
-            control={<Checkbox
-                checked={isChecked(condition.id)}
-                onChange={() => toggle(condition.id)}
-            />}
-            label={condition.displayLabel}
-        />
-    );
+    return <div className="damage-condition-list">
+        {options.map(condition => {
+            const active = isChecked(condition.id);
+            return <button
+                aria-pressed={active}
+                className={`damage-condition-chip${active ? ' damage-condition-chip--active' : ''}`}
+                key={condition.id}
+                onClick={() => toggle(condition.id)}
+                type="button">
+                <span aria-hidden="true" className="damage-condition-chip__state">
+                    {active ? '✓' : ''}
+                </span>
+                <span>{condition.displayLabel}</span>
+            </button>;
+        })}
+    </div>;
 };
 
 DamageConditions.propTypes = {

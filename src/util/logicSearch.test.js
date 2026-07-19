@@ -9,6 +9,8 @@ import {
   groupEquivalentArmorCandidates,
   mergeUniqueResultGroups,
   orderMitmSlotsByRestriction,
+  pruneBonusUnsupportedCandidateLists,
+  pruneDominatedCandidateList,
   searchAndSpeed,
   selectBonusDiscoveryWitnesses,
   sortTalismanCandidatesBySlotSavings
@@ -21,6 +23,7 @@ import ARMS from '../data/compact/arms.json';
 import WAIST from '../data/compact/waist.json';
 import LEGS from '../data/compact/legs.json';
 import DECORATIONS from '../data/compact/decoration.json';
+import { buildCandidateVerificationParams } from './bonusRecommendation';
 
 describe('search feasibility and custom decorations', () => {
   it('keeps different optional bonus paths separate during discovery', () => {
@@ -112,8 +115,9 @@ describe('search feasibility and custom decorations', () => {
     expect(directedResponse.results[0]?.setSkills?.["Ebony Odogaron's Power"])
       .toBeGreaterThanOrEqual(1);
     expect(directedResponse.profile.candidatePrepCacheHits).toBe(1);
-    expect(directedResponse.profile.searchFeasibilityCacheHits).toBe(1);
-    expect(directedResponse.profile.halfCacheHits).toBeGreaterThanOrEqual(2);
+    // Proof searches use a stricter feasibility-cache partition because their
+    // dominance rules intentionally differ from full result searches.
+    expect(directedResponse.profile.searchFeasibilityCacheHits).toBeFalsy();
   }, 120000);
 
   it('orders each MITM half by its most restrictive armor slot', () => {
@@ -165,6 +169,76 @@ describe('search feasibility and custom decorations', () => {
     expect(grouped.membersByPiece.get(first[1]).map(([name]) => name)).toEqual([
       'First', 'Second'
     ]);
+  });
+
+  it('removes armor that cannot support an exact four-piece Set Bonus proof', () => {
+    const makePiece = setSkills => [
+      'head', {}, [], [], 10, [0, 0, 0, 0, 0], 'high', setSkills
+    ];
+    const contributor = slot => [`${slot} contributor`, makePiece(['Future Set'])];
+    const neutral = slot => [`${slot} neutral`, makePiece([])];
+    const candidates = {
+      head: [contributor('head'), neutral('head')],
+      chest: [contributor('chest')],
+      arms: [contributor('arms')],
+      waist: [contributor('waist')],
+      legs: [neutral('legs')]
+    };
+    const profile = { filteredCandidateCount: 6 };
+
+    const pruned = pruneBonusUnsupportedCandidateLists(
+      candidates, { 'Future Set': 2 }, {}, '', '', profile
+    );
+
+    expect(pruned.head.map(([name]) => name)).toEqual(['head contributor']);
+    expect(profile.bonusUnsupportedCandidateCount).toBe(1);
+    expect(profile.filteredCandidateCount).toBe(5);
+  });
+
+  it('keeps exact two-piece and manual +1 Set Bonus support paths', () => {
+    const makePiece = setSkills => [
+      'head', {}, [], [], 10, [0, 0, 0, 0, 0], 'high', setSkills
+    ];
+    const contributor = slot => [`${slot} contributor`, makePiece(['Future Set'])];
+    const neutral = slot => [`${slot} neutral`, makePiece([])];
+    const candidates = {
+      head: [neutral('head')],
+      chest: [contributor('chest')],
+      arms: [contributor('arms')],
+      waist: [contributor('waist')],
+      legs: [neutral('legs')]
+    };
+
+    expect(pruneBonusUnsupportedCandidateLists(
+      candidates, { 'Future Set': 1 }
+    ).head).toHaveLength(1);
+    expect(pruneBonusUnsupportedCandidateLists(
+      candidates, { 'Future Set': 2 }, {}, 'Future Set'
+    ).head).toHaveLength(1);
+  });
+
+  it('uses feasibility-only dominance without changing normal result diversity', () => {
+    const makePiece = ({ skills, slots, defense, sets }) => [
+      'head', skills, [], slots, defense, [0, 0, 0, 0, 0], 'high', sets
+    ];
+    const superior = ['Proof piece', makePiece({
+      skills: { Agitator: 2, Botanist: 1 }, slots: [3], defense: 10, sets: ['Future Set']
+    })];
+    const displayAlternative = ['Display piece', makePiece({
+      skills: { Agitator: 1 }, slots: [2], defense: 100,
+      sets: ['Future Set', 'Unrelated Set']
+    })];
+
+    expect(pruneDominatedCandidateList(
+      [superior, displayAlternative], { Agitator: 5 }
+    )).toHaveLength(2);
+    expect(pruneDominatedCandidateList(
+      [superior, displayAlternative], { Agitator: 5 }, null, {
+        feasibilityOnly: true,
+        relevantSetNames: ['Future Set'],
+        relevantGroupNames: []
+      }
+    ).map(([name]) => name)).toEqual(['Proof piece']);
   });
 
   it('rejects competing decoration deficits while allowing a dual-skill jewel', () => {
@@ -503,6 +577,39 @@ describe('search feasibility and custom decorations', () => {
     expect(partialBatches[1].length).toBeLessThanOrEqual(50);
   }, 120000);
 
+  it('proves an unrequested Set Bonus through the same exact path as a manual search', async() => {
+    const baseParams = {
+      skills: {
+        'Critical Boost': 5,
+        'Offensive Guard': 3,
+        "Master's Touch": 1,
+        'Maximum Might': 3,
+        'Weakness Exploit': 5,
+        Agitator: 5,
+        Burst: 1,
+        'Adrenaline Rush': 1,
+        'Evade Window': 2,
+        Antivirus: 3
+      },
+      setSkills: { "Gore Magala's Tyranny": 1 },
+      groupSkills: { "Lord's Soul": 1 },
+      weaponSlots: [3, 3, 3],
+      groupSkillBonus: "Lord's Soul",
+      setSkillBonus: "Gore Magala's Tyranny"
+    };
+    const params = buildCandidateVerificationParams(baseParams, {
+      skillName: "Jin Dahaad's Revolt",
+      sourceType: 'discover-set-bonus'
+    }, 1, 16000);
+    const response = await searchAndSpeed(params);
+
+    expect(response.profile.timedOut).toBe(false);
+    expect(response.results.length).toBeGreaterThan(0);
+    expect(response.results[0].setSkills).toEqual(expect.objectContaining({
+      "Jin Dahaad's Revolt": 1
+    }));
+  }, 30000);
+
   it('finds the reported ranged build with the R7 Rapid Fire Up and Burst charm', async() => {
     const charmName = 'Reported R7 Rapid Burst Charm';
     const skills = {
@@ -562,6 +669,7 @@ describe('search feasibility and custom decorations', () => {
 
     expect(response.results).toHaveLength(1);
     expect(response.results[0].armorNames).toContain(charmName);
+    expect(response.results[0].setSkillBonus).toBe("Gore Magala's Tyranny");
+    expect(response.results[0].groupSkillBonus).toBe("Lord's Soul");
   }, 20000);
-
 });

@@ -11,8 +11,10 @@ npm ci
 npm run dev
 ```
 
-Use `npm test` for the full test suite, `npm run benchmark` for the optimizer benchmarks,
-and `npm run build` to create the deployable site in `dist/`.
+Use `npm test` for the unit and component suite, `npm run test:e2e` for the browser suite,
+`npm run benchmark` for the optimizer benchmarks, and `npm run build` to create the
+deployable site in `dist/`. Install the E2E browser once with
+`npx playwright install chromium`.
 
 You can find it here: [MHWilds Set Search](https://cecilbowen.github.io/mhwilds-set-search/).
 
@@ -30,12 +32,3 @@ I made this open source for a reason!  I'm no god of figuring out the best speed
 
  - `CTRL + clicking` the "Search" button on the search tab will copy a
    share-able search URL to the clipboard
- - Holding `CTRL` with an armor set expanded will reveal a "Search Wiki"
-   button that, when clicked, opens a new tab of the mhwilds wiki sim
-   with the same skills
- - Holding `SHIFT` while on the Saved Sets page with an armor set expanded
-   will add a 🔎 icon next to the "Set as Search Target" button.  If you
-   click it while this is shown, it will instead add the skills as a
-   search target that you used to find that armor set (eg. the set may
-   have many skills on it, but you may have found it by only searching
-   some of the skills)

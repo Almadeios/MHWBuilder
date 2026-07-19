@@ -1,5 +1,6 @@
 import {
-  createBonusExplorationCacheKey, createBonusProgress, summarizeBonusWorkerStats
+  createBonusExplorationCacheKey, createBonusProgress, expirePendingBonusCandidates,
+  summarizeBonusWorkerStats
 } from './bonusExplorerState';
 
 describe('bonus explorer state helpers', () => {
@@ -29,10 +30,48 @@ describe('bonus explorer state helpers', () => {
   it('aggregates worker progress consistently', () => {
     expect(summarizeBonusWorkerStats({
       workers: [{ completed: 2, total: 3 }, { completed: 4, total: 7 }],
-      found: 3, timedOut: 1, initial: 20, feasible: 10
+      found: 3, timedOut: 1, initial: 20, feasible: 10,
+      budgetMs: 25000,
+      candidates: new Map([
+        ['set:one', { skillName: 'One', status: 'proven' }],
+        ['set:two', { skillName: 'Two', status: 'impossible' }],
+        ['set:three', {
+          skillName: 'Three', status: 'unresolved', reason: 'exploration-budget'
+        }]
+      ])
     }, 'partial')).toEqual({
       completed: 6, total: 10, found: 3, timedOut: 1,
-      initial: 20, feasible: 10, status: 'partial'
+      initial: 20, feasible: 10, proven: 1, localProven: 0, impossible: 1, unresolved: 1,
+      budgetExhausted: 1, budgetMs: 25000,
+      mode: 'fast',
+      candidates: [
+        { skillName: 'One', status: 'proven' },
+        { skillName: 'Three', status: 'unresolved', reason: 'exploration-budget' },
+        { skillName: 'Two', status: 'impossible' }
+      ],
+      status: 'partial'
+    });
+  });
+
+  it('marks only queued or verifying candidates unresolved at the hard deadline', () => {
+    const stats = {
+      timedOut: 0,
+      candidates: new Map([
+        ['queued', { skillName: 'Queued', status: 'queued' }],
+        ['verifying', { skillName: 'Verifying', status: 'verifying', level: 1 }],
+        ['proven', { skillName: 'Proven', status: 'proven', level: 1 }]
+      ])
+    };
+
+    expect(expirePendingBonusCandidates(stats)).toBe(2);
+    expect(stats.candidates.get('queued')).toEqual(expect.objectContaining({
+      status: 'unresolved', reason: 'exploration-budget'
+    }));
+    expect(stats.candidates.get('verifying')).toEqual(expect.objectContaining({
+      status: 'proven', maxUnresolved: true, reason: 'exploration-budget'
+    }));
+    expect(stats.candidates.get('proven')).toEqual({
+      skillName: 'Proven', status: 'proven', level: 1
     });
   });
 });

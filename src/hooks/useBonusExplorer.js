@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEBUG } from '../util/constants';
 import {
-  createBonusExplorationCacheKey, createBonusProgress, summarizeBonusWorkerStats
+  BONUS_EXPLORATION_WALL_BUDGET_MS, createBonusExplorationCacheKey, createBonusProgress,
+  expirePendingBonusCandidates, summarizeBonusWorkerStats
 } from '../util/bonusExplorerState';
 
-const WORKER_COUNT = 3;
+const FAST_WORKER_COUNT = 3;
+const getWorkerCount = params => {
+  if (!params.recommendationResume) { return FAST_WORKER_COUNT; }
+  const availableCores = Number(globalThis.navigator?.hardwareConcurrency || FAST_WORKER_COUNT);
+  return Math.max(FAST_WORKER_COUNT, Math.min(6, availableCores));
+};
 const MAX_CACHE_ENTRIES = 10;
 const createWorker = () => new Worker(
   new URL('../workers/bonusExplorer.worker.js', import.meta.url),
@@ -20,9 +26,14 @@ export const useBonusExplorer = ({ onElapsed, onResult }) => {
   const statsRef = useRef(null);
   const cacheRef = useRef(new Map());
   const startedAtRef = useRef(0);
+  const deadlineTimerRef = useRef(null);
   callbacksRef.current = { onElapsed, onResult };
 
   const terminate = useCallback(() => {
+    if (deadlineTimerRef.current !== null) {
+      clearTimeout(deadlineTimerRef.current);
+      deadlineTimerRef.current = null;
+    }
     workersRef.current.forEach(worker => worker.terminate());
     workersRef.current = [];
   }, []);
@@ -58,17 +69,33 @@ export const useBonusExplorer = ({ onElapsed, onResult }) => {
       return true;
     }
 
+    const explorationBudgetMs = Math.max(
+      BONUS_EXPLORATION_WALL_BUDGET_MS,
+      Number(params.recommendationBudgetMs || 0)
+    );
     startedAtRef.current = performance.now();
     setIsExploring(true);
     setProgressPercent(0);
-    setProgress(createBonusProgress('running'));
+    setProgress({
+      ...createBonusProgress('running'),
+      budgetMs: explorationBudgetMs,
+      mode: params.recommendationResume ? 'exhaustive' : 'fast'
+    });
+    const priorCandidates = new Map((params.recommendationPriorCandidates || []).map(candidate => [
+      `${candidate.sourceType}:${candidate.skillName}`,
+      candidate
+    ]));
+    const workerCount = getWorkerCount(params);
     statsRef.current = {
-      workers: Array.from({ length: WORKER_COUNT }, () => ({ completed: 0, total: 0 })),
+      workers: Array.from({ length: workerCount }, () => ({ completed: 0, total: 0 })),
       done: 0,
       found: 0,
       timedOut: 0,
       initial: 0,
       feasible: 0,
+      budgetMs: explorationBudgetMs,
+      mode: params.recommendationResume ? 'exhaustive' : 'fast',
+      candidates: priorCandidates,
       resultMessages: [],
       cacheKey
     };
@@ -80,10 +107,14 @@ export const useBonusExplorer = ({ onElapsed, onResult }) => {
       if (message.type === 'result') {
         stats.resultMessages.push(message);
         callbacksRef.current.onResult?.(message);
+      } else if (message.type === 'candidate-status') {
+        stats.candidates.set(message.candidateId, message.candidate);
+        setProgress(summarizeBonusWorkerStats(stats));
       } else if (message.type === 'init') {
         stats.workers[message.workerIndex].total = message.assigned;
         stats.initial = message.initialCount;
         stats.feasible = message.feasibleCount;
+        stats.budgetMs = message.budgetMs || stats.budgetMs;
       } else if (message.type === 'progress') {
         stats.workers[message.workerIndex].completed = message.completed;
         stats.workers[message.workerIndex].total = message.total;
@@ -94,7 +125,7 @@ export const useBonusExplorer = ({ onElapsed, onResult }) => {
         setProgress(nextProgress);
       } else if (message.type === 'done') {
         stats.done++;
-        if (stats.done < WORKER_COUNT) { return; }
+        if (stats.done < workerCount) { return; }
         const elapsedSeconds = (performance.now() - startedAtRef.current) / 1000;
         const completedProgress = summarizeBonusWorkerStats(
           stats, stats.timedOut > 0 ? 'partial' : 'complete'
@@ -119,16 +150,29 @@ export const useBonusExplorer = ({ onElapsed, onResult }) => {
       }
     };
 
-    workersRef.current = Array.from({ length: WORKER_COUNT }, (_, workerIndex) => {
+    workersRef.current = Array.from({ length: workerCount }, (_, workerIndex) => {
       const worker = createWorker();
       worker.onmessage = handleMessage;
       worker.onerror = error => {
         console.error('Bonus exploration worker failed:', error);
         stop();
       };
-      worker.postMessage({ ...params, workerIndex, workerCount: WORKER_COUNT });
+      worker.postMessage({ ...params, workerIndex, workerCount });
       return worker;
     });
+    deadlineTimerRef.current = setTimeout(() => {
+      const stats = statsRef.current;
+      if (!stats) { return; }
+      expirePendingBonusCandidates(stats);
+      const elapsedSeconds = (performance.now() - startedAtRef.current) / 1000;
+      const expiredProgress = summarizeBonusWorkerStats(stats, 'partial');
+      setProgress(expiredProgress);
+      setProgressPercent(100);
+      callbacksRef.current.onElapsed?.(elapsedSeconds);
+      terminate();
+      statsRef.current = null;
+      setIsExploring(false);
+    }, explorationBudgetMs);
     return true;
   }, [stop, terminate]);
 

@@ -6,9 +6,10 @@ Run the dedicated benchmark suite with:
 npm run benchmark
 ```
 
-The command measures six paths: impossible input and its cached repeat, a small
+The command measures seven paths: impossible input and its cached repeat, a small
 search, a medium search, the same medium search served from cache, and a heavy search requesting
-a five-second optimizer budget. It also measures budget overrun, serialized
+a five-second optimizer budget. The final scenario measures an exact Set Bonus
+recommendation fallback using the same path as a manual search. It also measures budget overrun, serialized
 response size, and JSON serialize/parse time. Budget overrun remains visible so
 the cooperative deadline checks can be monitored as optimizer loops evolve.
 

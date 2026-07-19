@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import { generateTalismans } from '../util/talismanGenerator';
 import {
     armorNameFormat, armorSetToCalculatorJSON, copyTextToClipboard, formatSkillsDiff,
-    generateWikiString, getArmorDefenseFromName, getArmorDefenseFromNames,
+    getArmorDefenseFromName, getArmorDefenseFromNames,
     getArmorFromNames, getDecosFromNames,
-    getSetUrl,
     getSkillDiff, getSkillPopup, isGroupSkillName,
     isSetSkillName
 } from '../util/util';
@@ -25,9 +24,9 @@ import {
     filterConditionsForSkills, getConditionOptionsForSkills, recalculateResultDamage
 } from '../util/damageScoring';
 import DamageConditions from './DamageConditions';
-import OptimizerProfile from './OptimizerProfile';
 import ResultTable from './ResultTable';
 import SelectedBuildPanel from './SelectedBuildPanel';
+import ShareSetDialog, { buildSharedSetSummary } from './ShareSetDialog';
 export const iconCommon = `
     width: 24px;
     height: 24px;
@@ -67,6 +66,7 @@ const Results = ({
     const [selectedResult, setSelectedResult] = useState();
     const [rIndex, setRIndex] = useState(0);
     const [rArr, setRArr] = useState([]);
+    const [sharePreviewOpen, setSharePreviewOpen] = useState(false);
     const width = useWindowWidth();
     const isMobile = !fields.forceDesktop && width < 640;
     const liveResults = useMemo(() => results.map(result => recalculateResultDamage(
@@ -102,7 +102,9 @@ const Results = ({
     const saveSet = () => {
         const tempSets = saveArmorSet({
             ...selectedResult,
-            searchedSkills: fields.skills
+            searchedSkills: fields.skills,
+            setSkillBonus: selectedResult?.setSkillBonus || fields.setSkillBonus || '',
+            groupSkillBonus: selectedResult?.groupSkillBonus || fields.groupSkillBonus || ''
         });
         if (tempSets) {
             updateField('savedSets', tempSets);
@@ -237,17 +239,6 @@ const Results = ({
         if (!next) { return; }
         setRIndex(rIndex + amount);
         setSelectedResult(next);
-    };
-
-    const wikiSearch = () => {
-        if (!selectedResult) { return; }
-        const wiki = generateWikiString(
-            selectedResult.skills, selectedResult.setSkills, selectedResult.groupSkills,
-            fields.slotFilters
-        );
-
-        // god the wiki site is so shit without an adblock
-        window.open(`https://mhwilds.wiki-db.com/sim/#skills=${wiki}&fee=1`, "_blank");
     };
 
     const renderDecos = (decos, label = null) => {
@@ -576,7 +567,7 @@ const Results = ({
     const renderSelectedResult = () => {
         const hasSelectedResult = Boolean(selectedResult);
         const theName = (fields.savedSets || []).filter(x => x.id === selectedResult?.id)[0]?.name;
-        const mySetName = theName || "Unnamed Set";
+        const mySetName = theName || selectedResult?.name || "Unnamed Set";
         let details = null;
         let summary = null;
         let all = null;
@@ -586,6 +577,9 @@ const Results = ({
         let conditionControls = null;
         let freeSlots = null;
         let defenseTotal = null;
+        let sharedArmor = [];
+        let sharedDecos = [];
+        let sharedDefense = { base: 0, upgraded: 0 };
         if (selectedResult) {
             const requiredDecoNames = selectedResult.requiredDecoNames || selectedResult.decoNames || [];
             const autoDecoNames = selectedResult.autoDecoNames || [];
@@ -595,6 +589,9 @@ const Results = ({
                 requiredDecoNames, fields.showDecoSkillNames, customDecoMap
             );
             const autoDecos = getDecosFromNames(autoDecoNames, fields.showDecoSkillNames, customDecoMap);
+            sharedDecos = getDecosFromNames(
+                selectedResult.decoNames || requiredDecoNames, false, customDecoMap
+            );
             const armorNames = selectedResult.armorNames || [];
             const talismanName = armorNames[5];
             const talismanLookup = selectedResult.talismanData || {};
@@ -643,6 +640,8 @@ const Results = ({
                 ...resolvedTalismanData ? { [talismanName]: resolvedTalismanData } : {}
             });
             const defense = getArmorDefenseFromNames(armorNames);
+            sharedArmor = armor;
+            sharedDefense = defense;
 
             summary = autoDecos.length ?
                 <>
@@ -751,12 +750,10 @@ const Results = ({
         const isSaved = selectedResult &&
             (savedVar || []).filter(x => x.id === selectedResult.id)[0];
 
-        const queueUpSkills = useSearchedSkills => {
+        const queueOriginalSearch = () => {
             if (!selectedResult) { return; }
 
-            const mySkills = useSearchedSkills ? selectedResult.searchedSkills : {
-                ...selectedResult.skills, ...selectedResult.setSkills, ...selectedResult.groupSkills
-            };
+            const mySkills = selectedResult.searchedSkills || {};
 
             if (!isEmpty(mySkills)) {
                 updateField('skills', mySkills);
@@ -766,12 +763,20 @@ const Results = ({
             }
         };
 
-        const shareSet = () => {
-            if (!selectedResult) { return; }
-
-            const url = getSetUrl(selectedResult.armorNames, selectedResult.decoNames, selectedResult?.name);
-            copyTextToClipboard(url, () => {
-                window.snackbar.createSnackbar(`Copied armor set ${selectedResult?.name || ""} url to clipboard!`, {
+        const copyBuildSummary = () => {
+            const summaryText = buildSharedSetSummary({
+                armor: sharedArmor,
+                decorations: sharedDecos,
+                defense: sharedDefense,
+                result: {
+                    ...selectedResult,
+                    name: mySetName,
+                    setSkillBonus: selectedResult.setSkillBonus || fields.setSkillBonus || '',
+                    groupSkillBonus: selectedResult.groupSkillBonus || fields.groupSkillBonus || ''
+                }
+            });
+            copyTextToClipboard(summaryText, () => {
+                window.snackbar.createSnackbar(`Copied ${mySetName} build summary to clipboard!`, {
                     timeout: 3000
                 });
             });
@@ -788,7 +793,8 @@ const Results = ({
             });
         };
 
-        return <SelectedBuildPanel
+        return <>
+        <SelectedBuildPanel
             allSkills={all}
             canGoNext={Boolean(rArr[rIndex + 1])}
             canGoPrevious={Boolean(rArr[rIndex - 1])}
@@ -797,18 +803,18 @@ const Results = ({
             extraSkills={extraSkillsDiv}
             freeSlots={freeSlots}
             groupSkills={groupSkills}
+            hasOriginalSearch={!isEmpty(selectedResult?.searchedSkills || {})}
             hasSelection={hasSelectedResult}
             isSaved={Boolean(isSaved)}
             name={mySetName}
-            onClose={() => setSelectedResult(undefined)}
+            onClose={() => { setSharePreviewOpen(false); setSelectedResult(undefined); }}
             onExport={exportToCalculator}
             onNext={() => cycleSelectedResult(1)}
             onPrevious={() => cycleSelectedResult(-1)}
-            onQueueSkills={queueUpSkills}
+            onQueueOriginalSearch={queueOriginalSearch}
             onRename={updateSetName}
             onSave={saveSet}
-            onShare={shareSet}
-            onWikiSearch={wikiSearch}
+            onShare={() => setSharePreviewOpen(true)}
             resultCount={results.length}
             save={save}
             setEffects={setEffects}
@@ -818,7 +824,22 @@ const Results = ({
             summary={summary}
         >
             {details}
-        </SelectedBuildPanel>;
+        </SelectedBuildPanel>
+        <ShareSetDialog
+            armor={sharedArmor}
+            decorations={sharedDecos}
+            defense={sharedDefense}
+            onClose={() => setSharePreviewOpen(false)}
+            onCopySummary={copyBuildSummary}
+            open={sharePreviewOpen}
+            result={{
+                ...selectedResult,
+                name: mySetName,
+                setSkillBonus: selectedResult?.setSkillBonus || fields.setSkillBonus || '',
+                groupSkillBonus: selectedResult?.groupSkillBonus || fields.groupSkillBonus || ''
+            }}
+        />
+        </>;
     };
     elapsedSeconds = elapsedSeconds ?? -1;
     const skillsList = Object.entries(fields.skills || {}).map(([k, v]) => [`${k} Lv. ${v}`]);
@@ -863,7 +884,6 @@ const Results = ({
             {shouldNotify && <span className="warn">Some armor is pinned/blacklisted - </span>}
             {!isEmpty(fields.slotFilters) && <span className="notice">Deco filters active - </span>}
             {searchList ? displayStr : displayStrEmpty}
-            <OptimizerProfile profile={optimizerProfile} />
             {optimizerProfile?.seed && <div className="notice">
                 Search was guided by {optimizerProfile.seed} because it produced valid results faster.
                 {' '}Add it from Extra Skills if you want to make that bonus an explicit requirement.

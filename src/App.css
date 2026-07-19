@@ -705,10 +705,173 @@ input[type=number] {
   color: #9ee8f0;
 }
 
+.conditions-panel.MuiAccordion-root {
+  margin: 12px 0 0;
+  overflow: hidden;
+  border: 1px solid rgba(126, 153, 163, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(31, 39, 40, 0.96), rgba(27, 34, 35, 0.96));
+  color: #d9e4e7;
+  box-shadow: none;
+}
+
+.conditions-panel.MuiAccordion-root::before {
+  display: none;
+}
+
+.conditions-panel.MuiAccordion-root.Mui-expanded {
+  margin: 12px 0 0;
+}
+
+.conditions-panel__summary.MuiAccordionSummary-root,
+.conditions-panel__summary.MuiAccordionSummary-root.Mui-expanded {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.conditions-panel__summary .MuiAccordionSummary-content,
+.conditions-panel__summary .MuiAccordionSummary-content.Mui-expanded {
+  margin: 8px 0;
+}
+
+.conditions-panel__summary .MuiAccordionSummary-expandIconWrapper {
+  color: #8fa8b2;
+}
+
+.conditions-panel__heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 9px;
+  font-weight: 700;
+}
+
+.conditions-panel__count {
+  padding: 1px 7px;
+  border: 1px solid rgba(85, 214, 139, 0.42);
+  border-radius: 999px;
+  background: rgba(85, 214, 139, 0.1);
+  color: #8ce7b2;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.conditions-panel__hint {
+  color: #82979f;
+  font-size: 0.76rem;
+  font-weight: 400;
+}
+
+.conditions-panel__details.MuiAccordionDetails-root {
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(126, 153, 163, 0.2);
+}
+
+.damage-condition-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.damage-condition-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px 4px 6px;
+  border: 1px solid rgba(127, 153, 163, 0.36);
+  border-radius: 999px;
+  background: rgba(10, 15, 16, 0.3);
+  color: #aebdc3;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.damage-condition-chip:hover {
+  border-color: rgba(142, 194, 205, 0.72);
+  color: #d8e5e8;
+}
+
+.damage-condition-chip--active {
+  border-color: rgba(85, 214, 139, 0.68);
+  background: rgba(48, 134, 91, 0.2);
+  color: #c6f3d8;
+}
+
+.damage-condition-chip__state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid rgba(127, 153, 163, 0.5);
+  border-radius: 50%;
+  color: #13221a;
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.damage-condition-chip--active .damage-condition-chip__state {
+  border-color: #68d99a;
+  background: #68d99a;
+}
+
+.damage-condition-chip:focus-visible {
+  outline: 2px solid #8db9ff;
+  outline-offset: 2px;
+}
+
+.recommendation-audit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 12px;
+  color: #cbd7d0;
+}
+
+.recommendation-audit--running {
+  color: #9ee8f0;
+}
+
+.recommendation-audit--paused {
+  color: #e6c29c;
+}
+
+.recommendation-audit--complete {
+  color: #a9cbb5;
+}
+
+.recommendation-audit__continue.MuiButton-root {
+  min-width: 0;
+  padding: 2px 12px;
+  border-color: rgba(158, 232, 240, 0.6);
+  color: #b8f1f4;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.recommendation-audit__continue.MuiButton-root:hover {
+  border-color: #9ee8f0;
+  background: rgba(74, 144, 156, 0.16);
+}
+
 @media (max-width: 700px) {
   .bonus-recommendation-prompt {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .conditions-panel__hint {
+    display: none;
+  }
+
+  .damage-condition-chip {
+    font-size: 0.78rem;
   }
 }
 
@@ -725,12 +888,35 @@ input[type=number] {
   cursor: pointer;
 }
 
-.tab-root {
+.app-navigation {
   position: fixed;
   top: 0;
   background-color: white;
   width: 100%;
   z-index: 5;
+  display: flex;
+  align-items: center;
+}
+.tab-root {
+  min-width: 0;
+  flex: 1;
+}
+.help-button {
+  flex: 0 0 auto;
+  margin-right: 8px !important;
+}
+.help-section {
+  padding: 12px 0;
+}
+.help-section:first-child {
+  padding-top: 0;
+}
+.help-section:last-child {
+  padding-bottom: 0;
+}
+.help-section ul {
+  margin-bottom: 0;
+  padding-left: 22px;
 }
 .tab-panel {
   margin-top: 2em;
@@ -1013,8 +1199,17 @@ body {
     color: #8db9ff !important;
   }
 
-  .tab-root {
+  .app-navigation {
     background-color: var(--dark-mode-bkg-color);
+  }
+
+  .help-button {
+    min-width: 44px;
+    font-size: 0;
+  }
+
+  .help-button .MuiButton-startIcon {
+    margin: 0;
   }
 
   .MuiButton-contained.MuiButton-colorPrimary, .MuiButton-contained.MuiButton-colorInfo {

@@ -1,7 +1,35 @@
-export const getUnsearchedSetBonusLevels = (currentLevel, maxLevel) => {
+export const getUnsearchedBonusLevels = (currentLevel, maxLevel) => {
   const current = Math.max(0, Number(currentLevel) || 0);
   const max = Math.max(current, Number(maxLevel) || 0);
   return Array.from({ length: max - current }, (_, index) => max - index);
+};
+
+export const getUnsearchedSetBonusLevels = getUnsearchedBonusLevels;
+
+export const getFastBonusProofLevels = (currentLevel, maxLevel) => {
+  const current = Math.max(0, Number(currentLevel) || 0);
+  const max = Math.max(current, Number(maxLevel) || 0);
+  if (current >= max) { return []; }
+  const next = current + 1;
+  return [next, ...getUnsearchedBonusLevels(next, max)];
+};
+
+export const isBonusWitnessImprovement = (candidate, witnessLevel) =>
+  Number(witnessLevel || 0) > Math.max(
+    Number(candidate?.currentLevel || 0),
+    Number(candidate?.resumeLevel || 0)
+  );
+
+const PRIORITY_GROUP_SKILLS = new Set(["Lord's Soul"]);
+
+export const getBonusCandidatePriority = candidate => {
+  if (candidate?.sourceType?.endsWith('group-bonus') &&
+    PRIORITY_GROUP_SKILLS.has(candidate.skillName)) {
+    return 3;
+  }
+  if (candidate?.sourceType?.endsWith('set-bonus')) { return 2; }
+  if (candidate?.sourceType?.endsWith('group-bonus')) { return 1; }
+  return 0;
 };
 
 const getRequestedBonusNames = (selectedBonuses, selectorBonus) => Array.from(new Set([
@@ -67,8 +95,46 @@ export const getNewBonusDiscoveryCandidates = (params, setSkillDb, groupSkillDb)
   ];
 };
 
+export const getBonusRecommendationCandidates = (params, setSkillDb, groupSkillDb) => [
+  ...getRequestedBonusUpgradeCandidates(params, setSkillDb, groupSkillDb),
+  ...getNewBonusDiscoveryCandidates(params, setSkillDb, groupSkillDb)
+];
+
 export const partitionRecommendationCandidates = (candidates, workerIndex, workerCount) => {
   const count = Math.max(1, Number(workerCount) || 1);
   const index = Math.max(0, Number(workerIndex) || 0) % count;
   return (candidates || []).filter((_, candidateIndex) => candidateIndex % count === index);
 };
+
+export const buildCandidateVerificationParams = (params, candidate, level, maxSearchMs) => {
+  const skills = { ...params.skills };
+  const setSkills = { ...params.setSkills };
+  const groupSkills = { ...params.groupSkills };
+  if (candidate.sourceType.endsWith('set-bonus')) {
+    setSkills[candidate.skillName] = level;
+  } else if (candidate.sourceType.endsWith('group-bonus')) {
+    groupSkills[candidate.skillName] = level;
+  } else {
+    throw new Error('Deep recommendation verification only accepts Set Bonuses or Group Skills.');
+  }
+
+  return {
+    ...params,
+    skills,
+    setSkills,
+    groupSkills,
+    bonusDiscovery: false,
+    bonusDiscoverySetNames: [],
+    bonusDiscoveryGroupNames: [],
+    bonusDiscoveryTargetType: '',
+    bonusDiscoveryTargetName: '',
+    bonusDiscoveryTargetLevel: 0,
+    priorResults: [],
+    limit: 1,
+    findOne: true,
+    maxSearchMs
+  };
+};
+
+export const getBoundedRecommendationSearchMs = (deadlineAt, requestedMs, now = performance.now()) =>
+  Math.max(0, Math.min(requestedMs, deadlineAt - now));

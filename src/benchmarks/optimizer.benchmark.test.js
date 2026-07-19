@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { Buffer } from 'buffer';
 import { searchAndSpeed } from '../util/logic';
+import { buildCandidateVerificationParams } from '../util/bonusRecommendation';
 
 const benchmarkEnabled = process.env.RUN_OPTIMIZER_BENCHMARKS === 'true';
 const benchmarkDescribe = benchmarkEnabled ? describe : describe.skip;
@@ -48,6 +49,29 @@ const HEAVY_SEARCH = {
   maxSearchMs: 5000
 };
 
+const BONUS_FALLBACK_SEARCH = buildCandidateVerificationParams({
+  skills: {
+    'Critical Boost': 5,
+    'Offensive Guard': 3,
+    "Master's Touch": 1,
+    'Maximum Might': 3,
+    'Weakness Exploit': 5,
+    Agitator: 5,
+    Burst: 1,
+    'Adrenaline Rush': 1,
+    'Evade Window': 2,
+    Antivirus: 3
+  },
+  setSkills: { "Gore Magala's Tyranny": 1 },
+  groupSkills: { "Lord's Soul": 1 },
+  weaponSlots: [3, 3, 3],
+  groupSkillBonus: "Lord's Soul",
+  setSkillBonus: "Gore Magala's Tyranny"
+}, {
+  skillName: "Jin Dahaad's Revolt",
+  sourceType: 'discover-set-bonus'
+}, 1, 8000);
+
 const serializeResponse = (response, samples = 3) => {
   const startedAt = performance.now();
   let serialized = '';
@@ -84,6 +108,10 @@ const runScenario = async(label, params) => {
     candidateListReuseHits: Number(profile.candidateListReuseHits || 0),
     candidatePrepCacheHits: Number(profile.candidatePrepCacheHits || 0),
     feasibilityCacheHits: Number(profile.searchFeasibilityCacheHits || 0),
+    inputCandidates: Number(profile.inputCandidateCount || 0),
+    filteredCandidates: Number(profile.filteredCandidateCount || 0),
+    dominatedCandidates: Number(profile.dominatedCandidateCount || 0),
+    bonusPrunedCandidates: Number(profile.bonusUnsupportedCandidateCount || 0),
     impossible: Boolean(profile.impossible),
     slowestStage: slowestStage[0],
     slowestStageMs: Number(slowestStage[1] || 0),
@@ -105,6 +133,9 @@ const printable = measurement => ({
   'Deco checks': measurement.decoChecks.toLocaleString('en-US'),
   Cache: measurement.cacheHit ? 'hit' : 'miss',
   'List reuse': measurement.candidateListReuseHits,
+  Candidates: `${measurement.filteredCandidates}/${measurement.inputCandidates}`,
+  'Dominated pieces': measurement.dominatedCandidates,
+  'Bonus-pruned pieces': measurement.bonusPrunedCandidates,
   'Payload KB': (measurement.serializedBytes / 1024).toFixed(1),
   'Serialize ms': measurement.serializationMs.toFixed(2)
 });
@@ -120,6 +151,7 @@ benchmarkDescribe('optimizer benchmarks', () => {
     measurements.push(await runScenario('medium', MEDIUM_SEARCH));
     measurements.push(await runScenario('medium-cache', MEDIUM_SEARCH));
     measurements.push(await runScenario('heavy', HEAVY_SEARCH));
+    measurements.push(await runScenario('bonus-fallback', BONUS_FALLBACK_SEARCH));
 
     expect(measurements.find(item => item.label === 'impossible')).toMatchObject({
       impossible: true, nodes: 0, results: 0
@@ -129,6 +161,7 @@ benchmarkDescribe('optimizer benchmarks', () => {
     expect(measurements.find(item => item.label === 'medium').results).toBeGreaterThan(0);
     expect(measurements.find(item => item.label === 'medium-cache').cacheHit).toBe(true);
     expect(measurements.find(item => item.label === 'heavy').results).toBeGreaterThan(0);
+    expect(measurements.find(item => item.label === 'bonus-fallback').results).toBeGreaterThan(0);
     expect(measurements.every(item => item.serializedBytes > 0)).toBe(true);
 
     console.log('\nOptimizer benchmark results');

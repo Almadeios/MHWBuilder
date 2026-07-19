@@ -42,10 +42,15 @@ export const buildBonusFeasibilityIndex = (armorData, params, candidates) => {
     const reachablePoints = ARMOR_TYPES.reduce((total, type) => total + (
       allowedByType[type].some(piece => (piece?.[dataIndex] || []).includes(candidate.skillName)) ? 1 : 0
     ), 0);
+    const contributorPieceCount = ARMOR_TYPES.reduce((total, type) => total +
+      allowedByType[type].filter(piece =>
+        (piece?.[dataIndex] || []).includes(candidate.skillName)
+      ).length, 0);
     return {
       ...candidate,
       requiredPoints,
       reachablePoints,
+      contributorPieceCount,
       feasibleByArmorCount: reachablePoints >= requiredPoints
     };
   });

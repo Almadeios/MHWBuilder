@@ -48,6 +48,14 @@ jobs:
         env:
           CI: "true"
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: npm run test:e2e
+        env:
+          CI: "true"
+
       - name: Create deployment version
         run: printf '{"version":"%s"}\n' "$GITHUB_SHA" > public/version.json
 
