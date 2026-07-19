@@ -825,6 +825,14 @@ input[type=number] {
   outline-offset: 2px;
 }
 
+.saved-set-name-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 130px;
+  gap: 8px;
+}
+
 .recommendation-audit {
   display: flex;
   align-items: center;

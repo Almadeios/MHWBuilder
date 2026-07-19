@@ -106,6 +106,24 @@ describe('search presentation components', () => {
     expect(screen.getByText('Raw: 100.0')).toBeInTheDocument();
   });
 
+  it('deletes a legacy saved set directly without trying to open it', () => {
+    const onDeleteSavedSet = vi.fn();
+    const onSelect = vi.fn();
+    const legacyResult = {
+      id: 'legacy-set', name: 'Qugaoed', armorNames: ['head', 'chest', 'arms', 'waist', 'legs'],
+      damageProfile: { expected_dps: 0, raw_dps: 0, element_dps: 0, final_affinity: 0 }
+    };
+    render(<ResultTable isMobile={false} onDeleteSavedSet={onDeleteSavedSet}
+      onSelect={onSelect} optimizationGoal="efficient"
+      renderCompactTalisman={() => null} renderDefense={() => <span>0</span>}
+      renderSlots={() => <span>Slots</span>} results={[legacyResult]} save
+      savedSets={[legacyResult]} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete saved set Qugaoed' }));
+    expect(onDeleteSavedSet).toHaveBeenCalledWith('legacy-set');
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it('routes actions from the extracted selected-build panel', () => {
     const save = vi.fn();
     const close = vi.fn();

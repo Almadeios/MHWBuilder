@@ -131,6 +131,13 @@ const Results = ({
         setSelectedResult(tempSelectedResult);
     };
 
+    const deleteSavedSet = resultId => {
+        updateField('savedSets', (fields.savedSets || []).filter(result => result.id !== resultId));
+        if (selectedResult?.id === resultId) {
+            setSelectedResult(undefined);
+        }
+    };
+
     const renderDefense = result => {
         const defense = getArmorDefenseFromNames(result.armorNames);
 
@@ -141,9 +148,10 @@ const Results = ({
 
     const renderSlots = result => {
         // const numFours = result.freeSlots.filter(x => x === 4);
-        const numThrees = result.freeSlots.filter(x => x === 3).length;
-        const numTwos = result.freeSlots.filter(x => x === 2).length;
-        const numOnes = result.freeSlots.filter(x => x === 1).length;
+        const resultFreeSlots = result.freeSlots || [];
+        const numThrees = resultFreeSlots.filter(x => x === 3).length;
+        const numTwos = resultFreeSlots.filter(x => x === 2).length;
+        const numOnes = resultFreeSlots.filter(x => x === 1).length;
         const zeroStyle = { opacity: 0.4, filter: 'blur(0.5px)' };
 
         return <div style={{ display: 'inline-flex', gap: '7px' }} key={result.id}>
@@ -669,7 +677,7 @@ const Results = ({
             </div>;
 
             const breakdown = selectedResult?.damageProfile?.breakdown;
-            const activeSetSkills = Object.entries(selectedResult.setSkills)
+            const activeSetSkills = Object.entries(selectedResult.setSkills || {})
                 .map(([skillName, level]) => {
                     const points = selectedResult.setSkillPoints?.[skillName] ??
                         getMinimumSetPointsForLevel(skillName, level);
@@ -708,7 +716,7 @@ const Results = ({
             }
 
             all = <div className="all-skills">
-                {Object.entries(selectedResult.skills).map(x => {
+                {Object.entries(selectedResult.skills || {}).map(x => {
                     return { name: x[0], level: x[1] };
                 }).map((sk, j, arr) => renderSkill(sk, j, arr, fields.skills, true))}
             </div>;
@@ -728,7 +736,7 @@ const Results = ({
             if (groupExist) {
                 groupSkills = <div className="set-skills">
                     <span className="set-label">Group Skills:</span>
-                    {Object.entries(selectedResult.groupSkills).map(x => {
+                    {Object.entries(selectedResult.groupSkills || {}).map(x => {
                         return { name: x[0], level: x[1] };
                     }).map(renderSkill)}
                 </div>;
@@ -902,6 +910,7 @@ const Results = ({
         </div>}
         <ResultTable
             isMobile={isMobile}
+            onDeleteSavedSet={deleteSavedSet}
             onSelect={(result, index, visibleResults) => {
                 if (!result) {
                     setSelectedResult(undefined);

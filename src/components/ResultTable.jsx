@@ -9,7 +9,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
+import IconButton from '@mui/material/IconButton';
 import { styled } from '@mui/material/styles';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ArmorSvgWrapper from './ArmorSvgWrapper';
 import TablePaginationActions from './TablePaginationActions';
 import { armorNameFormat, paginate } from '../util/util';
@@ -57,7 +59,7 @@ const goalLabel = goal => {
 };
 
 const ResultTable = ({
-    isMobile, onSelect, optimizationGoal, renderCompactTalisman, renderDefense,
+    isMobile, onDeleteSavedSet, onSelect, optimizationGoal, renderCompactTalisman, renderDefense,
     renderSlots, results, save, savedSets = [], selectedResultId
 }) => {
     const [page, setPage] = useState(0);
@@ -90,7 +92,19 @@ const ResultTable = ({
                     toggle();
                 }
             }}>
-            {save && <StyledTableCell align="left">{name}</StyledTableCell>}
+            {save && <StyledTableCell align="left">
+                <div className="saved-set-name-cell">
+                    <span>{name}</span>
+                    <IconButton aria-label={`Delete saved set ${name}`} color="error" size="small"
+                        title={`Delete ${name}`}
+                        onClick={event => {
+                            event.stopPropagation();
+                            onDeleteSavedSet(result.id);
+                        }}>
+                        <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                </div>
+            </StyledTableCell>}
             <StyledTableCell align="left">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {renderSlots(result)}
@@ -150,6 +164,7 @@ const ResultTable = ({
 
 ResultTable.propTypes = {
     isMobile: PropTypes.bool.isRequired,
+    onDeleteSavedSet: PropTypes.func,
     onSelect: PropTypes.func.isRequired,
     optimizationGoal: PropTypes.string,
     renderCompactTalisman: PropTypes.func.isRequired,
