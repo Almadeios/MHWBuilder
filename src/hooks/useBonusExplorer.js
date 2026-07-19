@@ -8,7 +8,7 @@ import {
 const FAST_WORKER_COUNT = 3;
 const getWorkerCount = params => {
   if (!params.recommendationResume) { return FAST_WORKER_COUNT; }
-  const availableCores = Number(globalThis.navigator?.hardwareConcurrency || FAST_WORKER_COUNT);
+  const availableCores = Number(navigator.hardwareConcurrency || FAST_WORKER_COUNT);
   return Math.max(FAST_WORKER_COUNT, Math.min(6, availableCores));
 };
 const MAX_CACHE_ENTRIES = 10;
