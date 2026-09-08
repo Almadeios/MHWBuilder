@@ -385,8 +385,9 @@ describe('search feasibility and custom decorations', () => {
     expect(second.profile.halfCacheStatesReused).toBeGreaterThan(0);
   });
 
-  it('projects cached MITM halves from higher targets to lower targets', async() => {
+  it.each([true, false])('only projects unpruned halves across skill targets (disabled=%s)', async disableSkillPruning => {
     const parameters = {
+      disableSkillPruning,
       mandatoryArmor: [
         'Arkvulcan Helm Gamma',
         'Gogmazios Mail Beta',
@@ -414,7 +415,11 @@ describe('search feasibility and custom decorations', () => {
 
     expect(higher.results).toHaveLength(1);
     expect(lower.results).toHaveLength(1);
-    expect(lower.profile.halfProjectionCacheHits).toBeGreaterThanOrEqual(1);
+    if (disableSkillPruning) {
+      expect(lower.profile.halfProjectionCacheHits).toBeGreaterThanOrEqual(1);
+    } else {
+      expect(lower.profile.halfProjectionCacheHits || 0).toBe(0);
+    }
     expect(lower.profile.halfCacheMisses).toBeGreaterThanOrEqual(1);
   });
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Checkbox, FormControlLabel, MenuItem, TextField, Typography } from "@mui/material";
 import SKILLS from "../data/compact/skills.json";
 import RULES from "../data/talisman-generator/rules.json";
-import { generateTalismans, hasTalismanGeneratorRules } from "../util/talismanGenerator";
+import { hasTalismanGeneratorRules } from "../util/talismanGenerator";
 import { useStorage } from "../hooks/StorageContext";
 import {
   getCustomTalismanKey,
@@ -240,59 +240,6 @@ const renderSlotSummary = (armorSlots = [], weaponSlots = []) => {
   );
 };
 
-const getRarityValue = name => {
-  if (name.startsWith('Golden Age Charm')) { return 8; }
-  const match = name.match(/RARE\[(\d+)\]/);
-  return match ? Number(match[1]) : 0;
-};
-
-const getRarityLabel = name => {
-  const rarity = getRarityValue(name);
-  return rarity ? `R${rarity}` : 'Charm';
-};
-
-const getGeneratedCharmKey = charm => {
-  const talismanData = charm[1];
-  const skills = talismanData[1] || {};
-  const armorSlots = talismanData[3] || [];
-  const weaponSlots = talismanData[8] || [];
-  const skillKey = Object.entries(skills)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, level]) => `${name}:${level}`)
-    .join("|");
-
-  return `${skillKey}::a${armorSlots.join(",")}::w${weaponSlots.join(",")}`;
-};
-
-const getGeneratedCharmScore = ([name, talismanData], targetSkills = {}) => {
-  const skills = talismanData[1] || {};
-  const armorSlots = talismanData[3] || [];
-  const weaponSlots = talismanData[8] || [];
-  const targetScore = Object.entries(skills).reduce((total, [skillName, level]) => {
-    return total + Math.min(level, targetSkills[skillName] || 0) * 10;
-  }, 0);
-
-  return getRarityValue(name) * 100 + targetScore + weaponSlots.length * 3 + armorSlots.length;
-};
-
-const dedupeGeneratedCharms = (charms, targetSkills = {}) => {
-  const seen = new Set();
-  return charms
-    .filter(charm => {
-      const key = getGeneratedCharmKey(charm);
-      if (seen.has(key)) { return false; }
-      seen.add(key);
-      return true;
-    })
-    .sort((a, b) => getGeneratedCharmScore(b, targetSkills) - getGeneratedCharmScore(a, targetSkills));
-};
-
-const formatTalismanSkills = skills => {
-  return Object.entries(skills || {})
-    .map(([name, level]) => `${name} ${level}`)
-    .join(' / ');
-};
-
 const getMaxAllowedLevelForSkill = (skill, selectedSkills) => {
   const compatible = getCompatibleTemplates(selectedSkills);
   let maxLevel = 1;
@@ -314,13 +261,6 @@ const CharmCreator = () => {
 
   const customTalismans = fields.customTalismans || [];
   const useOnlyOwnedTalismans = fields.useOnlyOwnedTalismans || false;
-  const generatedFromSearch = hasTalismanGeneratorRules() && Object.keys(fields.skills || {}).length ?
-    Object.entries(generateTalismans(fields.skills)) :
-    [];
-  const allGeneratedCharms = dedupeGeneratedCharms(generatedFromSearch, fields.skills || {});
-  const generatedTruncated = allGeneratedCharms.length > 20;
-  const generatedCharms = allGeneratedCharms.slice(0, 20);
-
   const normalizedSkillRows = form.skillRows.map(row => {
     if (!row.name) { return row; }
     const maxLevel = getMaxAllowedLevelForSkill(row.name, form.skillRows.map(r => r.name).filter(Boolean));
@@ -532,47 +472,17 @@ const CharmCreator = () => {
     updateField('customTalismans', customTalismans.filter(talisman => talisman.id !== id));
   };
 
-  const addGeneratedTalisman = (name, talismanData) => {
-    const slots = talismanData[3] || [];
-    const weaponSlots = talismanData[8] || [];
-    const skills = talismanData[1] || {};
-    const newTalisman = {
-      id: `${Date.now()}-${customTalismans.length}`,
-      name: String(name).slice(0, MAX_TALISMAN_NAME_LENGTH),
-      skills,
-      slots,
-      weaponSlots
-    };
-
-    if (customTalismans.length >= MAX_CUSTOM_TALISMANS) {
-      window.snackbar?.createSnackbar(`You can save up to ${MAX_CUSTOM_TALISMANS} custom talismans.`, {
-        timeout: 5000
-      });
-      return;
-    }
-    if (customTalismans.some(talisman =>
-      getCustomTalismanKey(talisman) === getCustomTalismanKey(newTalisman))) {
-      window.snackbar?.createSnackbar('That talisman is already saved.', { timeout: 4000 });
-      return;
-    }
-
-    if (updateField('customTalismans', [...customTalismans, newTalisman])) {
-      window.snackbar?.createSnackbar(`Added ${name} to custom talismans`, { timeout: 3000 });
-    }
-  };
-
   return (
     <div className="charm-creator">
-      <Typography sx={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '0.75em' }}>
-        Charm Creator
-      </Typography>
-      <Typography sx={{ marginBottom: '1em' }}>
-        Create and manage custom talismans here. Saved charms are available in Search.
-      </Typography>
-      <Typography sx={{ marginBottom: '1em', color: '#9fb2a4', fontSize: '0.95em' }}>
-        Manual charms are validated against the talisman templates. Suggestions are based on your current Search skills.
-      </Typography>
-      <div style={{ display: 'grid', gap: '1em', maxWidth: '760px' }}>
+      <header className="search-intro">
+        <h1>Charm Creator</h1>
+        <p>Add your talismans and manage the charms available to your builds.</p>
+      </header>
+      <div className="charm-workspace">
+      <section className="search-section charm-form" aria-labelledby="create-charm-heading">
+        <div className="search-section-heading"><h2 id="create-charm-heading">Create a charm</h2></div>
+        <p className="search-section-description">Choose up to three skills and decoration slots.
+          Combinations are checked against the talisman templates.</p>
         <TextField
           size="small"
           label="Talisman Name"
@@ -592,7 +502,7 @@ const CharmCreator = () => {
           return (
             <div
               key={`skill-row-${index}`}
-              style={{ display: 'flex', gap: '0.75em', flexWrap: 'wrap', opacity: isSkillRowDisabled ? 0.5 : 1 }}
+              className="charm-skill-row"
             >
               <TextField
                 select
@@ -609,7 +519,7 @@ const CharmCreator = () => {
               <TextField
                 select
                 size="small"
-                label="Level"
+                label={`Skill ${index + 1} level`}
                 disabled={!row.name || isSkillRowDisabled}
                 value={row.level}
                 onChange={ev => updateSkillRow(index, 'level', Number(ev.target.value))}
@@ -623,7 +533,7 @@ const CharmCreator = () => {
           );
         })}
 
-        <div style={{ display: 'flex', gap: '0.75em', flexWrap: 'wrap' }}>
+        <div className="charm-slot-row">
           <TextField
             select
             size="small"
@@ -652,69 +562,13 @@ const CharmCreator = () => {
         {hasManualSelection && !validateCustomTalisman() && <Typography sx={{ color: 'error.main', fontSize: '0.9em' }}>
           Current selection does not match any legal talisman template.
         </Typography>}
-        {generatedCharms.length > 0 &&
-          <div style={{
-            padding: '0.75em',
-            border: '1px solid rgba(128, 214, 224, 0.18)',
-            borderRadius: '8px',
-            background: 'rgba(0,0,0,0.08)'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              gap: '1em',
-              marginBottom: '0.5em'
-            }}>
-              <Typography sx={{ fontWeight: 'bold' }}>
-                Suggested Legal Charms
-              </Typography>
-              <Typography sx={{ fontSize: '0.82em', color: '#9fb2a4' }}>
-                {generatedCharms.length} shown
-              </Typography>
-            </div>
-            <div style={{ maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25em' }}>
-            {generatedCharms.map(([name, talismanData]) =>
-              <div key={name} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '0.75em',
-                padding: '0.55em 0',
-                borderBottom: '1px solid rgba(128, 214, 224, 0.12)'
-              }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5em', flexWrap: 'wrap' }}>
-                    <span style={{
-                      border: '1px solid rgba(150, 190, 255, 0.35)',
-                      borderRadius: '4px',
-                      color: '#b7d7ff',
-                      fontSize: '0.78em',
-                      fontWeight: 700,
-                      padding: '1px 5px'
-                    }}>
-                      {getRarityLabel(name)}
-                    </span>
-                    <span style={{ fontWeight: 'bold', fontSize: '0.95em', color: '#bfe1ff' }}>
-                      {formatTalismanSkills(talismanData[1] || {})}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.85em', color: '#9fb2a4' }}>
-                    {renderSlotSummary(talismanData[3] || [], talismanData[8] || [])}
-                  </div>
-                </div>
-                <Button size="small" variant="outlined" onClick={() => addGeneratedTalisman(name, talismanData)}>
-                  Add
-                </Button>
-              </div>
-            )}
-            </div>
-            {generatedTruncated && <Typography sx={{ marginTop: '0.5em', fontSize: '0.85em', color: '#9fb2a4' }}>
-              Showing 20 of {allGeneratedCharms.length} unique suggestions. Add or narrow Search skills to reduce this list.
-            </Typography>}
-          </div>
-        }
-
+      </section>
+      <section className="search-section charm-library" aria-labelledby="saved-charms-heading">
+        <div className="search-section-heading">
+          <h2 id="saved-charms-heading">Saved charms</h2>
+          <span className="search-selection-count">{customTalismans.length} saved</span>
+        </div>
+        <p className="search-section-description">Your custom talismans are available in Search.</p>
         <FormControlLabel
           control={<Checkbox checked={useOnlyOwnedTalismans} />}
           onChange={ev => updateField('useOnlyOwnedTalismans', ev.target.checked)}
@@ -722,26 +576,18 @@ const CharmCreator = () => {
         />
 
         <div>
-          <Typography sx={{ fontWeight: 'bold', marginTop: '1.25em' }}>
-            Saved Custom Talismans
-          </Typography>
-          {customTalismans.length === 0 && <Typography>No custom talismans yet.</Typography>}
+
+          {customTalismans.length === 0 && <p className="charm-empty-state">
+            No charms saved yet. Create your first charm using the form.
+          </p>}
           {customTalismans.map(talisman =>
-            <div key={talisman.id} style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '0.75em',
-              border: '1px solid rgba(0,0,0,0.12)',
-              borderRadius: '8px',
-              marginTop: '0.5em'
-            }}>
+            <div key={talisman.id} className="saved-charm-card">
               <div>
                 <div style={{ fontWeight: 'bold' }}>{talisman.name}</div>
-                <div style={{ fontSize: '0.95em', color: '#555' }}>
+                <div className="saved-charm-skills">
                   {Object.entries(talisman.skills).map(([name, level]) => `${name} ${level}`).join(' / ')}
                 </div>
-                <div style={{ fontSize: '0.85em', color: '#777' }}>
+                <div className="saved-charm-slots">
                   {renderSlotSummary(talisman.slots || [], talisman.weaponSlots || [])}
                 </div>
               </div>
@@ -751,6 +597,7 @@ const CharmCreator = () => {
             </div>
           )}
         </div>
+      </section>
       </div>
     </div>
   );

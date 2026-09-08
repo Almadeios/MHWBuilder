@@ -107,7 +107,7 @@ export const buildSharedSetSummary = ({ armor = [], decorations = [], defense, r
   const damage = result?.damageProfile;
   if (damage) {
     lines.push([
-      `DPS: ${formatNumber(damage.expected_dps)}`,
+      `Damage score: ${formatNumber(damage.expected_dps)}`,
       `Raw: ${formatNumber(damage.raw_dps)}`,
       `Element: ${formatNumber(damage.element_dps)}`,
       `Affinity: ${formatNumber(damage.final_affinity)}%`
@@ -361,7 +361,7 @@ const ShareSetDialog = ({ armor, decorations, defense, note, onClose,
           <section className="share-set-card">
             <h3>Damage</h3>
             {damage ? <div className="share-set-stat-grid">
-              <span>DPS<strong>{formatNumber(damage.expected_dps)}</strong></span>
+              <span>Damage score<strong>{formatNumber(damage.expected_dps)}</strong></span>
               <span>Raw<strong>{formatNumber(damage.raw_dps)}</strong></span>
               <span>Element<strong>{formatNumber(damage.element_dps)}</strong></span>
               <span>Affinity<strong>{formatNumber(damage.final_affinity)}%</strong></span>

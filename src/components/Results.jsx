@@ -1,3 +1,4 @@
+import { charmDisplayName } from '../util/charmDisplayName';
 import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { generateTalismans } from '../util/talismanGenerator';
@@ -183,15 +184,6 @@ const Results = ({
         updateField('savedSets', updatedSets);
     };
 
-    const getCompactTalismanName = name => {
-        if (!name) { return ''; }
-        if (name.startsWith('Golden Age Charm')) {
-            return 'Golden Age Charm';
-        }
-
-        return armorNameFormat(name);
-    };
-
     const getTalismanDataForResult = result => {
         const talismanName = result?.armorNames?.[5];
         if (!talismanName) { return null; }
@@ -227,10 +219,7 @@ const Results = ({
             .map(([skillName, level]) => `${skillName} ${level}`);
         if (result.talismanFlex) { skillTextParts.push('Flex'); }
         const skillText = skillTextParts.join(' / ');
-        const rarityPrefix = talismanName?.match(/^RARE\[\d+\]/)?.[0];
-        const compactName = result.talismanFlex ?
-            `${rarityPrefix ? `${rarityPrefix} ` : ''}Flexible Charm` :
-            getCompactTalismanName(talismanName);
+        const compactName = charmDisplayName(talismanName, Boolean(result.talismanFlex));
 
         return <div style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
             <div style={{ fontWeight: 700 }}>{compactName}</div>
@@ -503,13 +492,20 @@ const Results = ({
                 maxWidth: '1180px'
             }}>
                 <div style={{ display: 'flex', gap: '1em', flexWrap: 'wrap', color: '#b8e7ff' }}>
-                    <span>DPS {formatFixed(result.damageProfile.expected_dps)}</span>
+                    <span>Damage score {formatFixed(result.damageProfile.expected_dps)}</span>
                     <span>Raw {formatFixed(result.damageProfile.raw_dps)}</span>
                     <span>Element {formatFixed(result.damageProfile.element_dps)}</span>
                     {result.damageProfile.proc_dps > 0 &&
                         <span>Procs {formatFixed(result.damageProfile.proc_dps)}</span>}
                     <span>Affinity {breakdown.affinity.final ?? 'N/A'}%</span>
                 </div>
+                <div className="damage-score-note">
+                    A comparison score using your weapon stats and active conditions.
+                    It does not include attack timing or monster hitzones.
+                </div>
+                <details className="damage-breakdown">
+                    <summary>Damage breakdown</summary>
+                    <div className="damage-breakdown-content">
                 {renderBreakdownLine('Raw', rawFormula, rawFinal)}
                 {renderContributionLine('Raw boosts', breakdown.raw.skillContributions, formatRawContribution, 5)}
                 {renderBreakdownLine(
@@ -528,6 +524,8 @@ const Results = ({
                     `${breakdown.affinity.base}% + ${activeAffinityTotal}% = ${breakdown.affinity.final}%`
                 )}
                 {renderContributionLine('Affinity boosts', activeAffinityContributions, formatAffinityContribution, 4)}
+                    </div>
+                </details>
                 {breakdown.unmodeledSkills?.length ?
                     renderBreakdownLine('Unmodeled', breakdown.unmodeledSkills.join(', ')) :
                     null}
@@ -558,7 +556,8 @@ const Results = ({
                         onClick={excludeFunc} /> : <ExcludeIcon className={cls || 'blacklist-icon'}
                             title="Exclude" onClick={excludeFunc} />}
                     <ArmorSvgWrapper type={type} rarity={armor.rarity} />
-                    <span className="armor-name">{armorNameFormat(armor.name)}</span>
+                    <span className="armor-name">{type === 'talisman' ?
+                        charmDisplayName(armor.name, Boolean(result.talismanFlex)) : armorNameFormat(armor.name)}</span>
                     {type !== "talisman" && !isMobile && <div className="def-holder">
                         <img className="armor-def-img" src={`images/defense-up.png`} />
                         <div className="def-value">{defense?.upgraded || 0}</div>
@@ -888,7 +887,13 @@ const Results = ({
 
     return <div className="results">
         {renderSelectedResult()}
-        {elapsedSeconds >= 0 && <div style={{ marginBottom: '0.5em' }}>
+        <section className="results-list-section" aria-label={save ? 'Saved armor sets' : 'Armor set results'}>
+            <div className="search-section-heading results-list-heading">
+                <h2>{save ? 'Saved armor sets' : 'Armor set results'}</h2>
+                <span className="search-selection-count">{results.length} builds</span>
+            </div>
+            <p className="search-section-description">Select a build to inspect its equipment, skills, and free slots.</p>
+        {elapsedSeconds >= 0 && <div className="results-search-summary">
             {shouldNotify && <span className="warn">Some armor is pinned/blacklisted - </span>}
             {!isEmpty(fields.slotFilters) && <span className="notice">Deco filters active - </span>}
             {searchList ? displayStr : displayStrEmpty}
@@ -929,6 +934,7 @@ const Results = ({
             savedSets={fields.savedSets || []}
             selectedResultId={selectedResult?.id}
         />
+        </section>
     </div>;
 };
 

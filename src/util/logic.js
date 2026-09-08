@@ -1,3 +1,6 @@
+import { createSkillCapacity, pieceSkillCapacity, remainingSkillCapacity, canReachRequiredSkills } from './skillReachability';
+import { createBonusCapacity, remainingBonusCapacity, canReachRequiredBonuses } from './bonusReachability';
+import { compareBuildValue, partialBuildValue, socketCapacity } from './buildValue';
 import TALISMANS from "../data/compact/talisman.json";
 import DECO_INVENTORY from "../data/user/deco-inventory.json";
 import DECORATIONS from "../data/compact/decoration.json";
@@ -26,6 +29,7 @@ import { generateTalismans } from "./talismanGenerator";
 import { buildDamageProfile, ELEMENT_SKILL_TABLES, rankBuildsByDamage } from "./damageScoring";
 import { solveDecorationsIndexed } from './decorationSolver';
 import { createDeadlineToken } from './deadlineToken';
+import { reserveSlots } from './slotReservation';
 
 const INTERNAL_BLACKMAP = Object.fromEntries(INTERNAL_BLACKLIST.map(x => [x, true]));
 
@@ -95,10 +99,16 @@ export const buildSearchCacheKey = parameters => {
     const params = parameters || {};
     const normalizedParams = {
         version: SEARCH_CACHE_VERSION,
+        disableSkillPruning: params.disableSkillPruning !== false,
+        disableMatchingCache: Boolean(params.disableMatchingCache),
         skills: normalizeQueryMap(params.skills),
         setSkills: normalizeQueryMap(params.setSkills),
         groupSkills: normalizeQueryMap(params.groupSkills),
         slotFilters: normalizeQueryMap(params.slotFilters),
+        recommendationSlots: {
+            armor: normalizeList(params.recommendationSlots?.armor),
+            weapon: normalizeList(params.recommendationSlots?.weapon)
+        },
         weaponSlots: normalizeList(params.weaponSlots),
         weaponBaseRaw: params.weaponBaseRaw || 0,
         weaponBaseAffinity: params.weaponBaseAffinity || 0,
@@ -136,6 +146,7 @@ export const buildSearchCacheKey = parameters => {
 
 const buildSearchGearCacheKey = params => buildSearchCacheKey({
     ...params,
+    recommendationSlots: {}, // Reserved slots affect placement, not candidate preparation.
     limit: 0,
     findOne: false,
     maxSearchMs: 0,
@@ -943,7 +954,11 @@ export const sortTalismanCandidatesBySlotSavings = (entries, desiredSkills) => {
         if (savingsCompare !== 0) { return savingsCompare; }
         const coverageCompare = targetCoverage(b[1]) - targetCoverage(a[1]);
         if (coverageCompare !== 0) { return coverageCompare; }
-        return a[0].localeCompare(b[0]);
+        const socketsCompare = compareBuildValue(
+            [...socketCapacity(a[1]?.[8]), ...socketCapacity(a[1]?.[3])],
+            [...socketCapacity(b[1]?.[8]), ...socketCapacity(b[1]?.[3])]
+        );
+        return socketsCompare || a[0].localeCompare(b[0]);
     });
 };
 
@@ -1726,7 +1741,13 @@ const getMitmHalfCacheKeys = (slotsToBuild, candidateLists, vectorSchema) => {
         vectorSchema.preserveBonusDiversity,
         [...vectorSchema.discoverySetNames].sort(),
         [...vectorSchema.discoveryGroupNames].sort(),
-        candidateSignature
+        candidateSignature,
+        // Pruned halves depend on opposite-half support and exact bonus targets.
+        // Including these also prevents projecting a pruned half to weaker targets.
+        vectorSchema.skillCapacity || null,
+        vectorSchema.skillCapacity ? vectorSchema.skillTargets : null,
+        vectorSchema.bonusCapacity || null,
+        vectorSchema.bonusCapacity ? [vectorSchema.setTargets, vectorSchema.groupTargets] : null
     ]);
     const targetKey = JSON.stringify([
         vectorSchema.skillTargets,
@@ -1782,7 +1803,7 @@ const projectMitmHalfStates = (states, vectorSchema) => {
 };
 
 export const canDecorationSlotsCoverTotalDeficit = (
-    skills, armorSlots, weaponSlots, desiredSkills, decos
+    skills, armorSlots, weaponSlots, desiredSkills, decos, cacheSlotCapacity = true
 ) => {
     const missingSkills = Object.fromEntries(Object.entries(desiredSkills)
         .map(([skillName, targetLevel]) => [
@@ -1793,7 +1814,8 @@ export const canDecorationSlotsCoverTotalDeficit = (
     const totalMissing = Object.values(missingSkills).reduce((total, level) => total + level, 0);
     if (!totalMissing) { return true; }
 
-    const getSlotCapacity = (slotType, slotSize, skillNames) => Object.values(decos || {}).reduce(
+    const decorationEntries = Object.values(decos || {});
+    const getSlotCapacity = (slotType, slotSize, skillNames) => decorationEntries.reduce(
         (best, [decoType, decoSkills, decoSize]) => {
             if (decoType !== slotType || decoSize > slotSize) { return best; }
             const usefulPoints = skillNames.reduce((total, skillName) =>
@@ -1805,10 +1827,17 @@ export const canDecorationSlotsCoverTotalDeficit = (
     );
     const canCoverSkillSubset = skillNames => {
         const required = skillNames.reduce((total, skillName) => total + missingSkills[skillName], 0);
+        const capacities = new Map();
+        const capacityFor = (type, size) => {
+            if (!cacheSlotCapacity) { return getSlotCapacity(type, size, skillNames); }
+            const key = `${type}:${size}`;
+            if (!capacities.has(key)) { capacities.set(key, getSlotCapacity(type, size, skillNames)); }
+            return capacities.get(key);
+        };
         const maximumCapacity = armorSlots.reduce(
-            (total, slotSize) => total + getSlotCapacity('armor', slotSize, skillNames), 0
+            (total, slotSize) => total + capacityFor('armor', slotSize), 0
         ) + weaponSlots.reduce(
-            (total, slotSize) => total + getSlotCapacity('weapon', slotSize, skillNames), 0
+            (total, slotSize) => total + capacityFor('weapon', slotSize), 0
         );
         return maximumCapacity >= required;
     };
@@ -1822,7 +1851,7 @@ export const canDecorationSlotsCoverTotalDeficit = (
     return true;
 };
 
-const canMitmReachDesiredSkills = (skills, armorSlots, weaponSlots, desiredSkills, decos) => {
+const canMitmReachDesiredSkills = (skills, armorSlots, weaponSlots, desiredSkills, decos, cacheSlotCapacity = true) => {
     const eachSkillReachable = Object.entries(desiredSkills).every(([skillName, targetLevel]) => {
         const missingLevel = targetLevel - (skills[skillName] || 0);
         if (missingLevel <= 0) { return true; }
@@ -1843,7 +1872,7 @@ const canMitmReachDesiredSkills = (skills, armorSlots, weaponSlots, desiredSkill
         return bestArmorPotential + bestWeaponPotential >= missingLevel;
     });
     return eachSkillReachable && canDecorationSlotsCoverTotalDeficit(
-        skills, armorSlots, weaponSlots, desiredSkills, decos
+        skills, armorSlots, weaponSlots, desiredSkills, decos, cacheSlotCapacity
     );
 };
 
@@ -1853,7 +1882,7 @@ const getMitmFeasibilityKey = (skills, armorSlots, weaponSlots, desiredSkills) =
     weaponSlots: getMitmSlotKey(weaponSlots)
 });
 
-const buildMitmHalf = async(
+export const buildMitmHalf = async(
     slotsToBuild, candidateLists, vectorSchema, cancelToken, profile
 ) => {
     let states = [{
@@ -1869,13 +1898,41 @@ const buildMitmHalf = async(
         preserveBonusDiversity: vectorSchema.preserveBonusDiversity
     }];
 
+    const skillCapacity = vectorSchema.skillCapacity;
+    const pieceCapacity = skillCapacity ? new Map(Object.values(candidateLists).flat().map(([, piece]) =>
+        [piece, pieceSkillCapacity(piece, skillCapacity)])) : null;
+    if (skillCapacity) { states[0].skillPotential = skillCapacity.targets.map(() => 0); }
+    const assignedSlots = [];
     for (const slot of slotsToBuild) {
+        assignedSlots.push(slot);
+        const remaining = vectorSchema.bonusCapacity ?
+            remainingBonusCapacity(vectorSchema.bonusCapacity, assignedSlots, vectorSchema) : null;
+        const remainingSkills = skillCapacity ? remainingSkillCapacity(skillCapacity, assignedSlots) : null;
         const nextByKey = new Map();
         let operations = 0;
         let generatedStates = 0;
         for (const state of states) {
             for (const [name, piece] of candidateLists[slot]) {
                 if (name !== 'None' && state.names.has(name)) { continue; }
+                operations++;
+                if (operations % 64 === 0 && cancelToken?.current) { return []; }
+                const addition = pieceCapacity?.get(piece);
+                if (remainingSkills && !canReachRequiredSkills(
+                    state.skillPotential, addition, remainingSkills, skillCapacity.targets
+                )) {
+                    profile.skillReachabilityPruned = (profile.skillReachabilityPruned || 0) + 1;
+                    continue;
+                }
+                const setVector = addNamesToMitmVector(
+                    state.setVector, _x.setSkills(piece), vectorSchema.setIndex, vectorSchema.setTargets
+                );
+                const groupVector = addNamesToMitmVector(
+                    state.groupVector, _x.groupSkills(piece), vectorSchema.groupIndex, vectorSchema.groupTargets
+                );
+                if (remaining && !canReachRequiredBonuses(setVector, groupVector, remaining, vectorSchema)) {
+                    profile.bonusReachabilityPruned = (profile.bonusReachabilityPruned || 0) + 1;
+                    continue;
+                }
                 const next = {
                     pieces: { ...state.pieces, [slot]: [name, piece] },
                     names: new Set(state.names),
@@ -1883,14 +1940,8 @@ const buildMitmHalf = async(
                         state.skillVector, _x.skills(piece),
                         vectorSchema.skillIndex, vectorSchema.skillTargets
                     ),
-                    setVector: addNamesToMitmVector(
-                        state.setVector, _x.setSkills(piece),
-                        vectorSchema.setIndex, vectorSchema.setTargets
-                    ),
-                    groupVector: addNamesToMitmVector(
-                        state.groupVector, _x.groupSkills(piece),
-                        vectorSchema.groupIndex, vectorSchema.groupTargets
-                    ),
+                    setVector,
+                    groupVector,
                     slots: state.slots.concat(_x.slots(piece) || []),
                     weaponSlots: state.weaponSlots.concat(
                         slot === 'talisman' ? _x.weaponSlots(piece) : []
@@ -1905,13 +1956,14 @@ const buildMitmHalf = async(
                         ) : {},
                     preserveBonusDiversity: vectorSchema.preserveBonusDiversity
                 };
+                if (skillCapacity) {
+                    next.skillPotential = state.skillPotential.map((value, index) => value + addition[index]);
+                }
                 if (name !== 'None') { next.names.add(name); }
                 const key = getMitmStateKey(next);
                 if (!nextByKey.has(key)) { nextByKey.set(key, next); }
                 profile.nodes++;
                 generatedStates++;
-                operations++;
-                if (operations % 64 === 0 && cancelToken?.current) { return []; }
                 if (operations % 1000 === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
                     if (cancelToken?.current) { return []; }
@@ -2066,17 +2118,42 @@ const rollCombosMeetInMiddle = async(
     const vectorSchema = createMitmVectorSchema(
         desiredSkills, requiredSetPoints, requiredGroupPoints, discoveryBonuses
     );
+    if (vectorSchema.setTargets.length || vectorSchema.groupTargets.length) {
+        vectorSchema.bonusCapacity = createBonusCapacity(candidateLists, vectorSchema);
+    }
+    if (!gear.disableSkillPruning && vectorSchema.skillNames.length) {
+        vectorSchema.skillCapacity = createSkillCapacity(
+            candidateLists, vectorSchema.skillNames, currentDecorations, gear.weaponSlots || [], vectorSchema.skillTargets
+        );
+    }
     profile.leftSlotOrder = leftSlotOrder;
     profile.rightSlotOrder = rightSlotOrder;
+    const halfBuildStarted = performance.now();
     const leftStates = await getOrBuildMitmHalf(
         leftSlotOrder, candidateLists, vectorSchema, cancelToken, profile
     );
     const rightStates = await getOrBuildMitmHalf(
         rightSlotOrder, candidateLists, vectorSchema, cancelToken, profile
     );
+    profile.halfBuildMs = performance.now() - halfBuildStarted;
     profile.leftStates = leftStates.length;
     profile.rightStates = rightStates.length;
-    leftStates.sort((a, b) => getMitmCoverageScore(b) - getMitmCoverageScore(a));
+    const useBuildValueOrdering = !gear.bonusDiscovery && !findOne;
+    const replacementCosts = useBuildValueOrdering ?
+        vectorSchema.skillNames.map(getDecorationReplacementCost) : [];
+    const stateValues = new Map((useBuildValueOrdering ? [...leftStates, ...rightStates] : []).map(state => [
+        state, partialBuildValue(state, vectorSchema, replacementCosts)
+    ]));
+    const compareStates = (a, b) => {
+        if (!useBuildValueOrdering) {
+            // Existence proofs need a fast witness, not a high-value build.
+            return getMitmCoverageScore(b) - getMitmCoverageScore(a);
+        }
+        return compareBuildValue(stateValues.get(a), stateValues.get(b));
+    };
+    profile.valueOrdering = useBuildValueOrdering ?
+        'required-bonuses-decoration-savings-socket-capacity' : 'feasibility-coverage';
+    leftStates.sort(compareStates);
     const rightBuckets = new Map();
     rightStates.forEach(state => {
         const key = getMitmBonusKey(state);
@@ -2090,7 +2167,7 @@ const rollCombosMeetInMiddle = async(
     });
     const orderedRightBuckets = [...rightBuckets.values()];
     orderedRightBuckets.forEach(bucket => {
-        bucket.states.sort((a, b) => getMitmCoverageScore(b) - getMitmCoverageScore(a));
+        bucket.states.sort(compareStates);
         if (gear.bonusDiscovery) {
             bucket.discoveryStates = new Map(discoveryTargets.map(target => {
                 const byMinimum = Array.from({ length: target.threshold + 1 }, (_, needed) =>
@@ -2126,12 +2203,14 @@ const rollCombosMeetInMiddle = async(
     profile.rightBonusBuckets = orderedRightBuckets.length;
     const results = [];
     const decorationStateCache = new Map();
+    const skillBoundCache = new Map();
     let infeasibleFrontier = [];
     const emittedPartialThresholds = new Set();
     let checked = 0;
     let traversed = 0;
     for (const left of leftStates) {
         for (const bucket of orderedRightBuckets) {
+            profile.bonusBucketChecks = (profile.bonusBucketChecks || 0) + 1;
             const setsSatisfied = vectorSchema.setTargets.every(
                 (points, index) => left.setVector[index] + bucket.setVector[index] >= points
             );
@@ -2151,6 +2230,7 @@ const rollCombosMeetInMiddle = async(
                 getDiscoveryRightStates(left, bucket) : bucket.states;
             for (const right of candidateRightStates) {
                 traversed++;
+                profile.pairChecks = (profile.pairChecks || 0) + 1;
                 if (traversed % 64 === 0 && cancelToken?.current) { return results; }
                 if (gear.bonusDiscovery && traversed % 5000 === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
@@ -2166,16 +2246,30 @@ const rollCombosMeetInMiddle = async(
                 const combinedWeaponSlots = [].concat(
                     gear.weaponSlots || [], left.weaponSlots, right.weaponSlots
                 );
-                if (!canMitmReachDesiredSkills(
-                    combinedSkills, combinedArmorSlots, combinedWeaponSlots, desiredSkills, gear.decos
-                )) {
+                const feasibilityKey = getMitmFeasibilityKey(
+                    combinedSkills, combinedArmorSlots, combinedWeaponSlots, desiredSkills
+                );
+                let reachable = skillBoundCache.get(feasibilityKey);
+                if (reachable === undefined) {
+                    const boundStarted = performance.now();
+                    reachable = canMitmReachDesiredSkills(
+                        combinedSkills, combinedArmorSlots, combinedWeaponSlots, desiredSkills, gear.decos,
+                        !gear.disableMatchingCache
+                    );
+                    profile.skillBoundMs = (profile.skillBoundMs || 0) + performance.now() - boundStarted;
+                    profile.skillBoundChecks = (profile.skillBoundChecks || 0) + 1;
+                    if (!gear.disableMatchingCache) {
+                        if (skillBoundCache.size >= 10000) { skillBoundCache.clear(); }
+                        skillBoundCache.set(feasibilityKey, reachable);
+                    }
+                } else {
+                    profile.skillBoundCacheHits = (profile.skillBoundCacheHits || 0) + 1;
+                }
+                if (!reachable) {
                     profile.pruned++;
                     profile.skillBoundPruned = (profile.skillBoundPruned || 0) + 1;
                     continue;
                 }
-                const feasibilityKey = getMitmFeasibilityKey(
-                    combinedSkills, combinedArmorSlots, combinedWeaponSlots, desiredSkills
-                );
                 if (decorationStateCache.has(feasibilityKey) && !decorationStateCache.get(feasibilityKey)) {
                     profile.pruned++;
                     profile.feasibilityCacheHits = (profile.feasibilityCacheHits || 0) + 1;
@@ -2226,7 +2320,9 @@ const rollCombosMeetInMiddle = async(
                 } else {
                     if (cancelToken?.current) { return results; }
                     profile.decorationSolverCalls = (profile.decorationSolverCalls || 0) + 1;
+                    const solverStarted = performance.now();
                     result = test(fullSet, gear.decos, desiredSkills, gear);
+                    profile.decorationSolverMs = (profile.decorationSolverMs || 0) + performance.now() - solverStarted;
                     if (!result) {
                         infeasibleFrontier = addToMitmInfeasibleFrontier(
                             infeasibleFrontier, dominanceState
@@ -2320,6 +2416,11 @@ const rollCombosMeetInMiddle = async(
 };
 
 export const test = (armorSet, decos, desiredSkills, params = {}) => {
+    const armorReservation = params.recommendationSlots?.armor?.length ?
+        reserveSlots(armorSet.slots, params.recommendationSlots.armor) : { available: armorSet.slots, reserved: [] };
+    const weaponReservation = params.recommendationSlots?.weapon?.length ?
+        reserveSlots(armorSet.weaponSlots, params.recommendationSlots.weapon) : { available: armorSet.weaponSlots, reserved: [] };
+    if (!armorReservation || !weaponReservation) { return null; }
     const have = {};
     const need = {};
     let done = true;
@@ -2348,7 +2449,7 @@ export const test = (armorSet, decos, desiredSkills, params = {}) => {
     }
 
     const decosUsed = getDecosToFulfillSkills(
-        decos, desiredSkills, armorSet.slots, armorSet.weaponSlots, armorSet.skills, params
+        decos, desiredSkills, armorReservation.available, weaponReservation.available, armorSet.skills, params
     );
 
     if (decosUsed) {
@@ -2367,8 +2468,8 @@ export const test = (armorSet, decos, desiredSkills, params = {}) => {
             setSkills: armorSet.setSkills,
             groupSkills: armorSet.groupSkills,
             talismanData: armorSet.talismanData,
-            freeSlots: decosUsed.freeSlots,
-            freeWeaponSlots: decosUsed.freeWeaponSlots,
+            freeSlots: decosUsed.freeSlots.concat(armorReservation.reserved),
+            freeWeaponSlots: decosUsed.freeWeaponSlots.concat(weaponReservation.reserved),
             // defense: armorSet.defense
         };
     }
@@ -2803,6 +2904,9 @@ export const search = async parameters => {
     // defense, resistances, and unrelated bonuses cannot affect feasibility, so
     // they must not prevent otherwise exact dominance pruning.
     gear.feasibilityOnly = Boolean(params.findOne);
+    gear.disableSkillPruning = params.disableSkillPruning;
+    gear.disableMatchingCache = params.disableMatchingCache;
+    gear.recommendationSlots = params.recommendationSlots;
     gear.relevantSetNames = Object.keys(params.setSkills || {}).concat(
         params.bonusDiscoveryTargetType === 'set' && params.bonusDiscoveryTargetName ?
             [params.bonusDiscoveryTargetName] : []

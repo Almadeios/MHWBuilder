@@ -202,6 +202,6 @@ describe('search presentation components', () => {
     expect(copySummary).toHaveBeenCalledTimes(1);
 
     expect(buildSharedSetSummary({ armor, decorations, defense: { base: 100, upgraded: 150 }, result }))
-      .toContain('DPS: 300.0 | Raw: 250.0 | Element: 50.0 | Affinity: 20.0%');
+      .toContain('Damage score: 300.0 | Raw: 250.0 | Element: 50.0 | Affinity: 20.0%');
   });
 });

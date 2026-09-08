@@ -56,7 +56,7 @@ const WeaponSearchControls = ({ fields, updateField }) => {
     updateField(field, Number.isFinite(parsed) ? parsed : '');
   };
 
-  return <>
+  return <div className="weapon-controls-grid">
     <TextField
       select
       size="small"
@@ -73,9 +73,9 @@ const WeaponSearchControls = ({ fields, updateField }) => {
         return <MenuItem key={value} value={value}>{value}</MenuItem>;
       })}
     </TextField>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'flex-end' }}>
+    <>
       <TextField select size="small" label="Weapon Type" value={fields.weaponType || 'other'}
-        onChange={event => updateField('weaponType', event.target.value)} sx={{ minWidth: '125px' }}
+        onChange={event => updateField('weaponType', event.target.value)} className="weapon-type-control"
         title="Used for Burst raw and element values">
         {WEAPON_TYPE_OPTIONS.map(option =>
           <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
@@ -99,12 +99,12 @@ const WeaponSearchControls = ({ fields, updateField }) => {
         title="Current sharpness color">
         {SHARPNESS_OPTIONS.map(option => <MenuItem key={option} value={option}>{option}</MenuItem>)}
       </TextField>
-    </div>
+    </>
     <BonusSelect label="Group Skill +1" options={GROUP_SKILLS} value={fields.groupSkillBonus}
       onChange={value => updateField('groupSkillBonus', value)} />
     <BonusSelect label="Set Bonus +1" options={SET_SKILLS} value={fields.setSkillBonus}
       onChange={value => updateField('setSkillBonus', value)} />
-  </>;
+  </div>;
 };
 
 WeaponSearchControls.propTypes = {

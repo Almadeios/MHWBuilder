@@ -34,6 +34,7 @@ import DamageConditions from './DamageConditions';
 import WeaponSearchControls from './WeaponSearchControls';
 import { SearchOutcome, SearchProgress } from './SearchStatus';
 import RecommendationAudit from './RecommendationAudit';
+import { useNormalRecommendations } from '../hooks/useNormalRecommendations';
 
 const DEFAULT_BONUS_PROOF_BUDGET_MS = 60000;
 const DEFAULT_BONUS_PATH_BUDGET_MS = 15000;
@@ -66,6 +67,16 @@ const Search = () => {
     const bonusExplorationParamsRef = useRef(null);
     const bonusResumeAttemptRef = useRef(0);
     const [bonusRoutes, setBonusRoutes] = useState([]);
+    const normalRecommendations = useNormalRecommendations();
+    const resetNormalRecommendations = normalRecommendations.reset;
+    const normalQueryKey = JSON.stringify([fields.skills, fields.slotFilters, fields.weaponSlots,
+        fields.weaponType, fields.weaponElementType, fields.setSkillBonus, fields.groupSkillBonus,
+        fields.customTalismans, fields.useOnlyOwnedTalismans, fields.mandatoryArmor,
+        fields.blacklistedArmor, fields.blacklistedArmorTypes, fields.decoInventory, fields.customDecorations]);
+    useEffect(() => {
+        resetNormalRecommendations();
+        setShowMore(false);
+    }, [normalQueryKey, resetNormalRecommendations]);
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [showConditions, setShowConditions] = useState(false);
@@ -122,6 +133,7 @@ const Search = () => {
     });
 
     const prepareSearch = ({ resetElapsed = true } = {}) => {
+        normalRecommendations.reset();
         resetBonusExploration();
         setBonusRoutes([]);
         if (resetElapsed) {
@@ -671,6 +683,11 @@ const Search = () => {
         getMoreSkills();
         setBonusRoutes([]);
         exploreBonusPaths();
+        normalRecommendations.start(getSearchParameters({
+            ...fields, skills: getNormalSkillTargets(fields.skills),
+            setSkills: getSetSkillTargets(fields.skills), groupSkills: getGroupSkillTargets(fields.skills),
+            decoMods: fields.decoInventory, priorResults: results
+        }));
     };
 
     const addSkill = (skillName, level) => {
@@ -906,9 +923,23 @@ const Search = () => {
             weapon: Object.fromEntries(Object.entries(freeSlotsByType.weapon).filter(([, amount]) => amount > 0))
         };
         const usedWeaponDecos = freeSlotsByType.usedWeaponDecos || {};
-        const freeWeaponSlotCount = Object.values(freeSlots.weapon).reduce((total, amount) => total + amount, 0);
+        const freeWeaponSlotCount = Math.max(0, ...results.map(result => (result.freeWeaponSlots || []).length));
+        let normalCheckMessage = 'Normal-skill check complete.';
+        if (normalRecommendations.remaining) {
+            normalCheckMessage = 'Quick recommendations are ready. A deeper search may find other skills or higher levels.';
+        }
+        if (normalRecommendations.status === 'running') {
+            normalCheckMessage = normalRecommendations.phase === 'deep' ?
+                'Checking additional build possibilities…' : 'Checking compatible jewels and charms…';
+        }
+        const combinedRecommendations = { ...moreResults };
+        Object.entries(normalRecommendations.recommendations).forEach(([name, info]) => {
+            if (info.level >= (combinedRecommendations[name]?.level || 0)) {
+                combinedRecommendations[name] = info;
+            }
+        });
         const filteredMoreResults = Object.fromEntries(
-            Object.entries(moreResults).filter(([skillName]) => {
+            Object.entries(combinedRecommendations).filter(([skillName]) => {
                 const elementSkill = ELEMENT_SKILL_TABLES[skillName];
                 return !elementSkill ||
                     (fields.weaponElementType || 'None') !== 'None' &&
@@ -1041,18 +1072,22 @@ const Search = () => {
             </div>;
         };
 
-        return <div className="more-results">
+        return <div className="more-results search-section">
+            <div className="search-section-heading"><h2>Build improvements</h2></div>
+            <p className="search-section-description">Choose an extra skill or bonus to add it to your search targets.</p>
             <div style={{ marginTop: '1em', marginBottom: '0.5em' }}>{displayStr}</div>
-            {hasMoreSlots && <div style={{ marginBottom: '0.65em' }}>
-                <div style={{ color: '#d2c4b8', fontWeight: 700, marginBottom: '0.25em' }}>Free slots:</div>
+            {hasMoreSlots && <div className="improvement-group">
+                <div style={{ color: '#d2c4b8', fontWeight: 700, marginBottom: '0.25em' }}>
+                    Free-slot options in returned builds:
+                </div>
                 {freeSlotsByType.totalWeaponSlots > 0 && <div style={{ color: '#d2c4b8', marginBottom: '0.4em' }}>
-                    Weapon slots, including charm weapon slots: {freeWeaponSlotCount}/{freeSlotsByType.totalWeaponSlots} free.
+                    Most free weapon slots in one returned build, including charm slots: {freeWeaponSlotCount}.
                 </div>}
                 {hasArmorSlots && !hasWeaponSlots && <div style={{ color: '#d2c4b8', marginBottom: '0.4em' }}>
-                    Only armor slots are open here. Attack Boost is a weapon jewel, so it needs open weapon slots.
+                    These returned builds have no open weapon slots. Other builds may still fit additional weapon skills.
                 </div>}
                 {!hasWeaponSlots && !isEmpty(usedWeaponDecos) && <div style={{ color: '#d2c4b8', marginBottom: '0.4em' }}>
-                    Weapon slots are already used by:{' '}
+                    Weapon decorations used across the returned builds:{' '}
                     {alphabeticalEntries(usedWeaponDecos).map(([decoName, amount], index, arr) => {
                         const suffix = index < arr.length - 1 ? ', ' : '';
                         return <span key={decoName} title={decoName}>
@@ -1069,17 +1104,20 @@ const Search = () => {
                     )}
                 </div>
             </div>}
-            {hasAddableSkills && <div>
+            {hasAddableSkills && <div className="improvement-group">
                 <div style={{ color: '#d2c4b8', fontWeight: 700, marginBottom: '0.25em' }}>
                     Skills that can be added:
                 </div>
+                <p className="search-section-description">
+                    Each option fits individually. The optimizer can change equipment and decorations to make room.
+                </p>
                 {!isEmpty(weaponSkillResults) && <div style={{ marginBottom: '0.45em' }}>
                     <div style={{ color: '#9ee8f0', fontWeight: 700, marginBottom: '0.2em' }}>Weapon-slot skills:</div>
                     <div className="more-skills" style={{ alignItems: 'flex-start' }}>
                         {alphabeticalEntries(weaponSkillResults).map(sk =>
                             renderMoreSkillBubble(
                                 sk,
-                                `A compatible weapon decoration can fit in an open slot. Click to add it to the search.`,
+                                `A compatible build can include this skill. Click to add it to the search.`,
                                 "#9ed9df"
                             )
                         )}
@@ -1091,17 +1129,24 @@ const Search = () => {
                         {alphabeticalEntries(armorSkillResults).map(sk =>
                             renderMoreSkillBubble(
                                 sk,
-                                `A compatible armor decoration can fit in an open slot. Click to add it to the search.`,
+                                `A compatible build can include this skill. Click to add it to the search.`,
                                 "#b4dff1"
                             )
                         )}
                     </div>
                 </div>}
             </div>}
+            {normalRecommendations.status !== 'idle' && <div className="improvement-group" role="status">
+                {normalCheckMessage}
+                {normalRecommendations.status === 'running' ?
+                    <Button onClick={normalRecommendations.stop}>Stop skill check</Button> :
+                    normalRecommendations.remaining > 0 &&
+                        <Button onClick={() => normalRecommendations.start(null, true)}>Check further improvements</Button>}
+            </div>}
             <RecommendationAudit elapsedSeconds={bonusElapsedSeconds}
                 isExploring={isExploringBonuses} onContinue={continueBonusExploration}
                 progress={improvementProgress} />
-            {hasBonusImprovements && <div style={{ marginTop: '1em' }}>
+            {hasBonusImprovements && <div className="improvement-group">
                 <div style={{ color: '#f0c49e', fontWeight: 700, marginBottom: '0.4em' }}>
                     Bonus improvements{improvementProgress.status === 'complete' ? ' — complete' : ''}:
                 </div>
@@ -1127,14 +1172,35 @@ const Search = () => {
 
 return (
         <div className="search">
-            {renderChosenSkills()}
+            <header className="search-intro">
+                <h1>Build your armor set</h1>
+                <p>Choose your skills and weapon setup to find builds with room for more.</p>
+            </header>
+            <section className="search-section" aria-labelledby="desired-skills-heading">
+                <div className="search-section-heading">
+                    <h2 id="desired-skills-heading">Desired skills</h2>
+                    <span className="search-selection-count">{Object.keys(fields.skills).length} selected</span>
+                </div>
+                <p className="search-section-description">Select skills below, then adjust their target levels.</p>
+                {renderChosenSkills()}
             <SkillsPicker addSkill={addSkill} addSlotFilter={addSlotFilter}
                 showGroupSkillNames={fields.showGroupSkillNames}
                 chosenSkillNames={Object.keys(fields.skills)} />
-            {renderConditionsPanel()}
-            <div className="button-holder" style={{ alignItems: 'flex-end' }}>
+            </section>
+            <section className="search-section" aria-labelledby="weapon-setup-heading">
+                <div className="search-section-heading">
+                    <h2 id="weapon-setup-heading">Weapon setup</h2>
+                </div>
+                <p className="search-section-description">
+                    Set your decoration slots and the weapon stats used for damage scoring.
+                </p>
                 <WeaponSearchControls fields={fields} updateField={updateField} />
-                <Button variant="contained" disabled={isGenerating} onClick={getResults}>Search</Button>
+            </section>
+            {renderConditionsPanel()}
+            <div className="search-actions">
+                <Button className="search-primary-action" variant="contained" size="large"
+                    disabled={isGenerating} onClick={getResults}>Search</Button>
+                <span className="search-action-hint">Find armor sets that meet your selected skills.</span>
                 <Button variant="text" size="small" onClick={reloadLatestVersion}>
                     Refresh App
                 </Button>

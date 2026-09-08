@@ -39,7 +39,11 @@ const SelectedBuildPanel = ({
         {resultCount > 0 ? 'Click on a set below to see details.' : pageMessage}
     </Typography>;
 
-    return <div style={{ marginBottom: '1em' }}>
+    return <div className="selected-build-section" style={{ marginBottom: '1em' }}>
+        {hasSelection && <div className="selected-build-heading search-section-heading">
+            <h2>{save ? name || 'Saved build' : 'Selected build'}</h2>
+            <span className="search-selection-count">{isSaved ? 'Saved' : 'Build details'}</span>
+        </div>}
         <Accordion expanded={hasSelection} elevation={hasSelection ? 2 : 0}
             className={`result-paper ${hasSelection ? 'full' : 'empty'}`}>
             <AccordionSummary expandIcon={null} aria-controls="panel1-content" id="panel1-header"

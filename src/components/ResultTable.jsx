@@ -55,7 +55,7 @@ const goalLabel = goal => {
     if (goal === 'highest_element') { return 'Element'; }
     if (goal === 'highest_affinity') { return 'Affinity'; }
     if (goal === 'balanced') { return 'Balanced'; }
-    return 'DPS';
+    return 'Damage score';
 };
 
 const ResultTable = ({
@@ -96,10 +96,10 @@ const ResultTable = ({
             <StyledTableCell align="left">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {renderSlots(result)}
-                    <div style={{ fontSize: '12px', color: '#3b6ea8', fontWeight: 600 }}>
+                    <div className="result-score">
                         {goalLabel(optimizationGoal)}: {score}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#4b5563' }}>
+                    <div className="result-secondary-stats">
                         Raw {raw} • Element {element} • Aff {affinity}%
                     </div>
                 </div>
@@ -129,13 +129,13 @@ const ResultTable = ({
     const slotImage = <img className="armor-img" src="images/slot4.png" alt="" />;
     const defenseImage = <img className="def-icon" src="images/defense.png" alt="" />;
 
-    return <Paper id="main1" className="table-paper">
+    return <Paper id="main1" className="table-paper build-results-table">
         <TableContainer sx={{ maxHeight: '69vh', overflowY: 'auto', width: '100%' }}>
             <Table size="small" stickyHeader>
                 <TableHead>
                     <StyledTableRow className="table-row">
                         {save && <StyledTableCell component="th" align="left">Name</StyledTableCell>}
-                        <StyledTableCell component="th" align="left">{slotImage} slots</StyledTableCell>
+                        <StyledTableCell component="th" align="left">{slotImage} Free slots & score</StyledTableCell>
                         {isMobile && <StyledTableCell component="th" align="left">
                             <span className="fspan">{defenseImage} Defense</span>
                         </StyledTableCell>}

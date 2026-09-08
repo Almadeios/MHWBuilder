@@ -13,7 +13,6 @@ import ArmorSvgWrapper from './ArmorSvgWrapper';
 import Remove from '@mui/icons-material/Remove';
 import { iconCommon } from './Results';
 import { styled } from '@mui/material/styles';
-import Divider from '@mui/material/Divider';
 import { getJsonFromType } from '../util/tools';
 import { useStorage } from '../hooks/StorageContext';
 import { _x } from '../util/armorAccessor';
@@ -112,8 +111,8 @@ const Settings = () => {
     };
 
     const renderList = (type, index) => {
-        const svgStyle = { width: '35px', height: '35px', transform: 'translateY(7px)', marginRight: '2px' };
         const hasPin = Boolean(fields.mandatoryArmor[index]);
+        const pinStatus = hasPin ? 'Pinned' : 'Any piece';
         const myBlacklist = fields.blacklistedArmor.filter(x => isArmorOfType(type, x));
         const hasBlacklist = myBlacklist.length > 0;
 
@@ -144,8 +143,12 @@ const Settings = () => {
         } : datalist[0];
 
         return <Paper key={type} className="blacklist-rows" elevation={2}>
+            <div className="settings-equipment-title">
+                <ArmorSvgWrapper type={type} style={{ width: '24px', height: '24px' }} />
+                <h3>{type}</h3>
+                <span>{fields.blacklistedArmorTypes.includes(type) ? 'Excluded' : pinStatus}</span>
+            </div>
             <div className="pinlist">
-                <ArmorSvgWrapper type={type} style={svgStyle} />
                 <div className="pinned">
                     <Autocomplete
                         id={`pinned-${type}`}
@@ -176,10 +179,15 @@ const Settings = () => {
     };
 
     return <div className="settings">
+        <header className="search-intro">
+            <h1>Settings</h1>
+            <p>Customize your workspace and control which equipment appears in your builds.</p>
+        </header>
         <div className="armor-settings">
-            <Typography sx={{ fontSize: '20px', fontWeight: 'bold' }}>
-                General Settings
-            </Typography>
+            <div className="settings-preferences-grid">
+            <section className="search-section" aria-labelledby="general-settings-heading">
+            <div className="search-section-heading"><h2 id="general-settings-heading">General preferences</h2></div>
+            <p className="search-section-description">Choose how names and layouts appear across the builder.</p>
             <div className="general-settings">
                 <FormControlLabel sx={{ marginLeft: '1em' }} control={<Switch checked={fields.showDecoSkillNames} />}
                     onChange={() => toggleShowDeco()}
@@ -193,11 +201,10 @@ const Settings = () => {
                     onChange={() => toggleForceDesktop()}
                     label={`Force desktop mode`} />
             </div>
-            <Divider component="div" />
-
-            <Typography sx={{ fontSize: '20px', fontWeight: 'bold' }}>
-                Armor Result Settings
-            </Typography>
+            </section>
+            <section className="search-section" aria-labelledby="result-settings-heading">
+            <div className="search-section-heading"><h2 id="result-settings-heading">Build display</h2></div>
+            <p className="search-section-description">Choose the details and export actions shown for your armor sets.</p>
             <div className="general-settings">
                 <FormControlLabel sx={{ marginLeft: '1em' }} control={<Switch checked={fields.showAll} />}
                     onChange={() => toggleShowAll()}
@@ -212,17 +219,17 @@ const Settings = () => {
                     label={`Show mhwilds-calculator export`} />
             </div>
 
-            <Divider component="div" />
-            <Typography sx={{ fontSize: '20px', fontWeight: 'bold' }}>
-                Pinned & Blacklisted Armor
-            </Typography>
-            {types.map(renderList)}
-            <Typography sx={{ fontSize: '16px', fontStyle: 'italic' }}>
-                A pinned armor piece tells the tool that it must include the armor piece in all its results.
-                A blacklisted armor piece will never be used to find results.
-            </Typography>
-
-            <Divider component="div" />
+            </section>
+            </div>
+            <section className="search-section" aria-labelledby="equipment-settings-heading">
+                <div className="search-section-heading">
+                    <h2 id="equipment-settings-heading">Pinned & excluded equipment</h2>
+                </div>
+                <p className="search-section-description">
+                    Pin a piece to require it in every result. Excluded pieces will not be used in searches.
+                </p>
+                <div className="settings-equipment-grid">{types.map(renderList)}</div>
+            </section>
             <Paper className="factory-reset-panel" elevation={0}>
                 <div>
                     <Typography className="factory-reset-panel__title">Factory Reset</Typography>
