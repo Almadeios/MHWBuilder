@@ -1,0 +1,549 @@
+MHW BUILDER CODEBASE GUIDE
+==========================
+
+Purpose
+-------
+This is a client-side Monster Hunter Wilds armor-set builder. It is a React
+single-page application. Game data is stored in JSON files and searches run in
+browser Web Workers, so the normal app does not need a server, database, login,
+or external API at runtime.
+
+The primary user flow is:
+
+  choose skills / weapon / constraints
+    -> Search component builds normalized parameters
+    -> search worker runs the optimizer
+    -> results return to React and are shown in a table
+    -> user can inspect, save, share, pin/exclude, or ask for recommendations
+
+The application also includes Decoration inventory, Charm Creator, Saved Sets,
+and Settings tabs.
+
+
+1. TOOLCHAIN AND EXTERNAL DEPENDENCIES
+--------------------------------------
+
+package.json defines the project as "mhwilds-set-search" and requires Node
+20.19+ or Node 22.12+.
+
+Runtime packages:
+  react / react-dom         React 19 UI and rendering.
+  @mui/material             Material UI controls, tables, dialogs, tabs, etc.
+  @mui/icons-material       Material icon components.
+  @emotion/react,
+  @emotion/styled           Styling dependency required by Material UI.
+  @fontsource/roboto        Local Roboto font files.
+  html-to-image             Exports a share-card image in ShareSetDialog.
+  use-debounce              Used where delayed UI input updates are useful.
+
+Development / verification packages:
+  vite / @vitejs/plugin-react        Development server and production bundle.
+  vitest / jsdom                      Unit and component tests.
+  @testing-library/*                  React component test helpers.
+  @playwright/test                    Browser-level tests.
+  eslint / eslint-plugin-react        Static checks.
+
+Useful commands:
+  npm run dev             Start Vite development server.
+  npm run build           Create the deployable dist/ output.
+  npm test                Run unit/component tests.
+  npm run test:e2e        Run Playwright browser tests.
+  npm run benchmark       Run the opt-in optimizer benchmark runner.
+  npm run lint            Lint src/, scripts/, e2e/, and configuration.
+
+Configuration:
+  vite.config.mjs         Vite config; base path is /MHWBuilder/. It separates
+                          data, React, MUI, and other vendor code into chunks.
+  playwright.config.mjs   Runs Chromium against Vite on port 4180 with base URL
+                          http://127.0.0.1:4180/MHWBuilder/.
+  .eslintrc*              JavaScript/React lint rules.
+
+
+2. TOP-LEVEL SOURCE MAP
+-----------------------
+
+src/index.jsx
+  Browser entry point. Loads global CSS and Roboto font weights, then mounts:
+    <StorageProvider><App /></StorageProvider>
+
+src/App.jsx
+  Top-level tab shell. Owns which tab is visible and renders:
+    Search              primary builder/search screen
+    SavedSets           saved result screen
+    DecoInventory       decoration ownership/custom decoration management
+    CharmCreator        custom charm management
+    Settings            display, pinning, blacklisting, reset settings
+  It also hosts HelpDialog, VersionUpdater, and shared-set import preview.
+
+src/App.css / src/index.css
+  Global theme, responsive layout, card, table, search, result, and tab styles.
+
+src/components/
+  React visual and interaction components. The most important ones are listed
+  in section 4 below.
+
+src/hooks/
+  Shared state and worker lifecycle hooks. See section 5.
+
+src/workers/
+  Browser worker entry points. See section 6.
+
+src/util/
+  Search algorithm, data normalization, scoring, decoration solver, caching,
+  recommendation logic, and smaller utilities. See section 7.
+
+src/data/
+  Static game data and user defaults. See section 8.
+
+src/svg/
+  Slot-specific armor SVG components used to show equipment icons.
+
+src/templates/
+  Data import/reference templates; not part of the normal browser search path.
+
+src/test/tests.js
+  Historical functional optimizer fixtures used by logic tests.
+
+e2e/
+  Playwright interaction and layout tests.
+
+src/benchmarks/ and benchmarks/
+  Opt-in timing tests and written optimizer analyses. Benchmark JSON output is
+  written under benchmark-results/ when enabled and is not source data.
+
+
+3. APPLICATION STATE AND PERSISTENCE
+------------------------------------
+
+File: src/hooks/StorageContext.jsx
+
+StorageProvider is the shared application state provider. It loads fields from
+localStorage when the application starts, persists updates back to localStorage,
+and exposes the useStorage() hook to components.
+
+Important persisted fields include:
+  skills                    Required normal, Set, and Group skills.
+  slotFilters               Required remaining armor sockets.
+  weaponSlots               Weapon decoration socket sizes.
+  weaponBaseRaw / Affinity  Weapon inputs for the comparison score.
+  weaponType / Element /    Weapon context used by scoring and skill filtering.
+  Element Value / Sharpness
+  conditions                Enabled conditional combat assumptions.
+  setSkillBonus /           Manual +1 selectors for set/group requirements.
+  groupSkillBonus
+  decoInventory             User-owned quantities per decoration.
+  customDecorations         User-created decorations.
+  customTalismans           User-created charms.
+  useOnlyOwnedTalismans     Excludes generated legal charms when true.
+  mandatoryArmor            Pinned item for each equipment position.
+  blacklistedArmor          Named excluded pieces.
+  blacklistedArmorTypes     Entire excluded equipment positions.
+  savedSets                 Saved results.
+  display settings          Group/deco labels, desktop mode, result details.
+
+StorageProvider also:
+  - accepts search-skill and slot-filter URL parameters;
+  - opens shared-set URLs as a preview rather than saving immediately;
+  - migrates older saved IDs and normalizes stored custom charms;
+  - keeps pinning and blacklisting mutually consistent;
+  - reports browser storage-full errors through the snackbar.
+
+Persistence boundary:
+  Browser localStorage is the only normal persistence layer. Clearing site data
+  clears locally-created charms, decorations, saved sets, settings, and history.
+  Factory reset is implemented by src/util/factoryReset.js.
+
+
+4. UI COMPONENTS AND THEIR RESPONSIBILITIES
+-------------------------------------------
+
+Search.jsx
+  The largest UI coordinator. It holds transient search/result state, builds
+  normalized search parameters, starts/cancels the search worker, renders the
+  selected skills and weapon controls, and coordinates recommendations.
+
+  It separates selected items into normal skills, Set Skills, and Group Skills.
+  It collects active damage conditions. Its "Search" button starts the main
+  worker. Ctrl+clicking the button copies a URL containing skill/slot filters.
+
+  Recommendation behavior:
+    - getMoreSkills() checks extras visible on returned builds and free sockets.
+    - useNormalRecommendations() performs a quick shared-slot/charm pass for
+      normal skills and exposes a deeper optional follow-up.
+    - useBonusExplorer() checks Set and Group Skill paths in separate workers.
+    - Individual recommendations are suggestions; a selected recommendation is
+      added to required search targets, then the user runs a new search.
+
+Results.jsx
+  Presents selected build details and the result list. It integrates pinning,
+  blacklisting, saving, sharing, condition display, damage breakdown, and the
+  desktop/mobile layout.
+
+ResultTable.jsx
+  Paginated result table. Displays the six equipment positions, talisman,
+  slots, score, and actions.
+
+SelectedBuildPanel.jsx
+  Detailed view for a selected result, including equipment, decorations, skills,
+  free slots, conditions, damage explanation, saving, target selection, and
+  sharing.
+
+SkillsPicker.jsx
+  Search/filter UI for all normal, Set, and Group Skills. Uses detailed skill
+  data for icons, names, and descriptions.
+
+WeaponSearchControls.jsx
+  Weapon slot, category, raw, affinity, element, element value, sharpness, and
+  manual set/group +1 selectors.
+
+DamageConditions.jsx
+  Shows only meaningful combat assumptions for selected skills and turns them
+  into condition flags for damageScoring.js.
+
+DecoInventory.jsx
+  Lists base and custom decorations, filters them, records owned quantity, and
+  creates custom decorations. Inventory affects decoration feasibility.
+
+CharmCreator.jsx
+  Creates custom charms and stores them in customTalismans. It now allows any
+  three different known skills, normal maximum levels, and any 0-3 socket layout
+  per armor/weapon category. Charms are normalized before use by the optimizer.
+
+Settings.jsx
+  Display settings, pinned/excluded armor per position, and factory reset.
+
+SavedSets.jsx
+  Reuses Results presentation to display locally saved builds.
+
+ShareSetDialog.jsx / SharedSetImportDialog.jsx
+  Create/display a shareable result summary, copy a URL, and optionally render
+  a share image. Shared URL imports show a preview first.
+
+SearchStatus.jsx / RecommendationAudit.jsx
+  Progress, cancellation, stale-version recovery, and recommendation progress
+  wording.
+
+ArmorSvgWrapper.jsx and src/svg/*
+  Map armor slot names to their visual SVG icon.
+
+
+5. HOOKS AND ASYNCHRONOUS UI FLOW
+---------------------------------
+
+useSearchWorker.js
+  Owns the primary worker. It creates a module worker through
+  workers/createSearchWorker.js, gives each request an ID, ignores stale
+  messages, receives partial results, reports final results/errors, and can
+  cancel the active request.
+
+useBonusExplorer.js
+  Starts several bonusExplorer workers. It tracks progress, time budgets,
+  cancellation, caching of a completed exploration, and the ability to continue
+  unresolved bonus checks.
+
+useNormalRecommendations.js
+  Starts normalRecommendations.worker.js. Its first run is a quick pass that
+  shares decoration placement and charm checks. A follow-up request can run
+  deeper slot-capacity and individual target searches. It tracks proven results
+  separately from unresolved work and terminates stale workers.
+
+useWindowWidth.js
+  Simple responsive-width hook used by result presentation.
+
+
+6. WEB WORKERS
+--------------
+
+All workers are module workers bundled by Vite. Their work stays off the UI
+thread, so React remains usable while searches run.
+
+workers/search.worker.js
+  Creates an OptimizerEngine and forwards "search" and "cancel" messages.
+
+util/optimizerEngine.js
+  Worker-side request state machine. It assigns a cancellation token, calls
+  searchAndSpeed(), serializes messages, streams partial result batches, and
+  ignores obsolete/superseded requests.
+
+workers/bonusExplorer.worker.js
+  Runs bounded searches for extra Set and Group Skills. It prioritizes feasible
+  candidates, reports proven/impossible/unresolved statuses, and supports
+  continued exploration.
+
+workers/normalRecommendations.worker.js
+  Runs the fast normal recommendation pass and, when requested, exact checks of
+  remaining candidates. It returns witness builds for proven recommendations.
+
+Worker data contract:
+  React sends plain serializable parameters.
+  Workers return plain serializable result/profile/progress messages.
+  Do not send functions, React state, or DOM objects across this boundary.
+
+
+7. SEARCH AND OPTIMIZER ARCHITECTURE
+------------------------------------
+
+Main entry points: src/util/logic.js
+  search(parameters)            Main optimizer function returning result rolls.
+  searchAndSpeed(parameters)    Normalizes parameters, runs search(), and adds
+                                 elapsed seconds/profile metadata.
+  buildSearchCacheKey()         Stable cache key for all result-affecting inputs.
+  configureSearchDecorations()  Combines base/custom decorations and inventory.
+  test()                        Tests a concrete armor set with decoration solver.
+
+High-level search pipeline:
+  1. Normalize input through getSearchParameters() in util/tools.js.
+  2. Configure base/custom decoration data and owned quantities.
+  3. Extend compatible prior results when a recommendation has a witness.
+  4. Prepare viable candidates for head, chest, arms, waist, legs, talisman.
+     Pins, exclusions, weapon slots, set/group points, custom charms, generated
+     charms, and elemental restrictions are applied here.
+  5. Run inexpensive feasibility checks before enumerating combinations.
+  6. Meet-in-the-middle (MITM) generation:
+       - split six positions into two halves;
+       - build partial states for each half;
+       - bucket/match compatible halves;
+       - call exact decoration feasibility only for promising pairs.
+  7. Deduplicate, apply requested free-slot filters, calculate score metadata,
+     rank, collapse equivalent flexible talisman results, and limit output.
+  8. Cache complete non-cancelled searches and return a profile.
+
+The optimizer does not simply list all combinations. It reduces the search space
+with several safe filters and ordering techniques:
+  bonusReachability.js
+    Optimistic Set/Group point capacity and joint-capacity checks. States that
+    cannot reach required bonus thresholds are removed early.
+
+  skillReachability.js
+    Experimental early normal-skill reachability pruning. It is disabled by
+    default because its checks did not improve overall benchmark time.
+
+  buildValue.js
+    Ordering value for partial states: completed/progressing bonus thresholds,
+    normal skill coverage, and socket capacity. It improves traversal order but
+    is not used as an unsafe proof to remove valid builds.
+
+  matching cache in logic.js
+    Memoizes repeated socket/skill feasibility questions when matching halves.
+
+  decorationSolver.js
+    Exact backtracking decoration placement. It considers armor vs weapon type,
+    size, skill contributions, finite inventory, and combined decorations. It
+    chooses the skill with fewest available options first and memoizes states.
+
+  deadlineToken.js
+    Cooperative deadline and cancellation checks. Normal searches have a
+    12-second default combination-search budget in logic.js. A timed-out search
+    can return partial results; absence of a result after a timeout is not proof
+    that no build exists.
+
+  talismanGenerator.js
+    Generates legal talisman candidates from rules.json only when generated
+    talismans are allowed. Custom charms are handled separately and may be more
+    permissive by design.
+
+  charmDisplayName.js
+    Turns generated charm labels into compact display names such as [R5] Charm
+    or [R7] Flexible Charm without changing underlying identifiers.
+
+  slotReservation.js
+    Reserves actual sockets for a recommendation-capacity query before solving
+    the rest of the decorations. This avoids claiming a socket that is also
+    needed for a required skill.
+
+  slotRecommendations.js / normalRecommendations.js
+    Quick normal recommendation analysis. It repacks decoration placements on
+    returned equipment, respects inventory and slot types, checks legal generated
+    charm substitutions where allowed, and shares work among many skills. A
+    deeper path is optional because global equipment searches are more expensive.
+
+  bonusRecommendation.js / bonusFeasibility.js /
+  bonusNeighborhood.js / bonusExplorerState.js
+    Candidate construction, cheap feasibility estimates, nearby armor witnesses,
+    worker scheduling, budget tracking, progress state, and continuation for
+    extra Set/Group Skills.
+
+  damageScoring.js
+    Builds a comparison score from weapon inputs, active skill effects, and
+    selected conditions. It is not a simulation of a hunt: it does not include
+    attack timings or monster hitzone behavior. UI correctly calls it "Damage
+    score" rather than claiming actual DPS.
+
+  tools.js / util.js / armorAccessor.js
+    General normalization, slot helpers, map merges, compact armor accessors,
+    skill descriptions/icons, URL utilities, and formatting helpers.
+
+  logic.reference.js
+    Reference/older search logic useful for comparison. Main production code
+    calls logic.js, not this file.
+
+Caches in logic.js are in-memory worker/module caches, not persisted storage:
+  searchCache                 Final completed result cache, capped at 50.
+  searchGearCache             Candidate preparation cache, capped at 8.
+  searchFeasibilityCache      Feasibility cache paired with gear cache.
+  mitmHalfCache               Partial half-state cache with size/state caps.
+  decorationReplacementCost   Reused decoration value calculation cache.
+
+Any new parameter that changes candidates, constraints, score, decoration
+placement, or result identity must be added to buildSearchCacheKey(). Missing a
+key entry can produce incorrect cached results.
+
+
+8. DATA MODEL AND JSON DATA
+---------------------------
+
+Compact data is used in the hot optimizer path:
+  data/compact/head.json, chest.json, arms.json, waist.json, legs.json
+  data/compact/talisman.json
+  data/compact/decoration.json
+  data/compact/skills.json
+  data/compact/set-skills.json, group-skills.json
+
+Compact equipment records are positional arrays for file size and speed. Do not
+interpret fields directly in most code. Use util/armorAccessor.js (_x) or the
+existing helpers in logic.js instead.
+
+Detailed data is used for UI labels, descriptions, icons, and display:
+  data/detailed/skills.json
+  data/detailed/set-skills.json, group-skills.json
+  data/detailed/<equipment slot>.json
+  data/detailed/weapons/*.json
+
+Other important data:
+  data/user/deco-inventory.json        Default owned decoration counts.
+  data/talisman-generator/rules.json   Legal generated charm template rules.
+  data/ids/*.json                      Stable IDs for URL/import/export mapping.
+  data/internal-blacklist.json         Items removed from normal search data.
+  data/conditions.json                 Condition metadata.
+  data/manual/*                        Overrides/manual data corrections.
+
+Custom objects:
+  Custom decoration:
+    { name, type: 'armor'|'weapon', size, skills: { [name]: level }, amount }
+
+  Custom talisman:
+    { id, name, skills: { [name]: level }, slots: [3,2,1], weaponSlots: [3,2,1] }
+
+customTalismans.js normalizes stored charms:
+  - maximum 100 saved charms;
+  - name length capped at 60;
+  - up to 3 socket entries per category;
+  - known skills only, normal positive levels, capped at 7;
+  - duplicate rolls removed using skills + slots, independent of display name.
+
+
+9. RECOMMENDATIONS: WHAT IS AND IS NOT PROVEN
+----------------------------------------------
+
+Returned-build extras:
+  Fast immediate options from a returned build's spare sockets. They are useful
+  but only describe that particular existing build.
+
+Quick normal recommendations:
+  Analyze returned concrete equipment/charm variants, repack decorations, and
+  use permitted legal generated charm replacements. They offer skills with a
+  concrete witness, but are sampled/bounded; omitted skills are not proven
+  impossible.
+
+Deeper normal recommendation check:
+  Performs capacity and individual searches to explore more possibilities. It
+  is explicitly optional because it can be slow on large requirements.
+
+Bonus recommendations:
+  Explore additional Set/Group Skills in bonusExplorer workers. Completion means
+  that scheduled checks finished. It must be read together with unresolved/
+  budget messaging; a timed-out candidate is not an impossible candidate.
+
+User interface rule:
+  Recommendation chips add a new target; they do not silently alter armor. The
+  next explicit search is the authority for selecting a new build.
+
+
+10. TESTING AND BENCHMARKS
+--------------------------
+
+Unit/component tests live beside source files as *.test.js or *.test.jsx.
+They cover:
+  - optimizer correctness and cache keys;
+  - decoration solver placement/inventory;
+  - generated/custom charms;
+  - deadline/cancellation state;
+  - bonus and normal recommendation behavior;
+  - settings, result presentation, sharing, and worker hooks.
+
+Playwright tests in e2e/ cover:
+  search worker behavior and shared imports;
+  desktop/mobile search layout;
+  decoration inventory;
+  charm creation and persistence;
+  settings layout;
+  Handicraft normal recommendation regression.
+
+Benchmarks are opt-in to avoid slowing npm test:
+  src/benchmarks/optimizer.benchmark.test.js
+  src/benchmarks/requestedSearches.benchmark.test.js
+  src/benchmarks/sharedSlots.benchmark.test.js
+  scripts/run-optimizer-benchmarks.js
+
+The written analyses in benchmarks/ explain observed optimizer tradeoffs:
+  matching-analysis.md
+  skill-pruning-analysis.md
+  shared-slot-analysis.md
+
+
+11. SAFE CHANGE GUIDE
+--------------------
+
+UI-only change:
+  Usually edit a component plus App.css and a focused component/E2E test.
+
+New stored setting:
+  Add a DEFAULTS entry in StorageContext.jsx, render/control it in the relevant
+  component, and include it in any search parameter/cache key if it changes
+  results.
+
+New search constraint:
+  Add it to getSearchParameters() in tools.js; apply it during candidate
+  preparation or exact test; include it in buildSearchCacheKey(); add tests for
+  cache separation and a valid/invalid search.
+
+New decoration behavior:
+  Update both the UI inventory path and exact solver behavior. Check armor vs
+  weapon type, socket size, finite quantity, custom decorations, and elemental
+  attack restrictions.
+
+New recommendation behavior:
+  Preserve the distinction between:
+    proven by a concrete witness,
+    checked but absent,
+    unresolved due to cancellation/budget,
+    not yet explored.
+  Avoid turning a sampled quick result into a global impossibility claim.
+
+New charm behavior:
+  Keep creator UI, customTalismans.js normalization, logic.js compact conversion,
+  Search parameter cache keys, and generated-charm behavior conceptually
+  separate. Custom charms are user data; generated charms are legal candidates
+  derived from rules.json.
+
+Performance work:
+  Profile first. Use the opt-in benchmarks and preserve result identity/correct
+  target checks. An optimization that removes states is only safe if its bound
+  cannot remove a valid result.
+
+
+12. CURRENT LIMITATIONS / USEFUL CAUTIONS
+-----------------------------------------
+
+  - Searches are bounded by a time budget and may return partial results.
+  - Damage score is a comparison estimate, not actual hunt DPS.
+  - Custom charms are intentionally permissive and can describe combinations
+    that do not exist in the base game's legal charm pool.
+  - Recommendation quick passes are useful witnesses, not exhaustive proofs of
+    every possible extra skill.
+  - Compact array data is easy to break if edited manually; prefer accessor and
+    data-template conventions.
+  - The production build currently warns that the game-data chunk exceeds the
+    default 500 kB warning threshold. It still builds successfully.
+
+END OF GUIDE
