@@ -1,5 +1,8 @@
+/* eslint-disable no-process-env */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const base = process.env.NETLIFY === 'true' ? '/' : '/MHWBuilder/';
 
 const chunkForModule = id => {
     if (id.includes('/src/data/')) { return 'game-data'; }
@@ -13,8 +16,8 @@ const chunkForModule = id => {
     return 'vendor';
 };
 
-export default defineConfig({
-    base: '/MHWBuilder/',
+export default defineConfig(({ mode }) => ({
+    base: mode === 'desktop' ? './' : base,
     plugins: [react({ include: /\.[jt]sx?$/ })],
     build: {
         outDir: 'dist',
@@ -40,4 +43,4 @@ export default defineConfig({
         setupFiles: './src/setupTests.js',
         css: true
     }
-});
+}));

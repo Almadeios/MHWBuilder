@@ -16,6 +16,41 @@ Use `npm test` for the unit and component suite, `npm run test:e2e` for the brow
 deployable site in `dist/`. Install the E2E browser once with
 `npx playwright install chromium`.
 
+## Windows desktop build
+
+The existing React app can also be packaged as a Windows desktop app with Electron.
+
+```sh
+npm run desktop:build
+```
+
+This creates an installable build in `release/`. The installer is the update-capable
+format. To create a runnable folder without installing, use:
+
+```sh
+npm run desktop:portable
+```
+
+Automatic updates are wired to check once when the installed app starts, but remain
+disabled until the installer is published as a GitHub Release. Releases are built by
+`.github/workflows/desktop-release.yml` when a `v*` tag is pushed. The updater uses
+the public `Almadeios/MHWBuilder-Desktop` repository and does not run background or
+scheduled checks.
+
+To publish the first desktop release:
+
+```sh
+git add .
+git commit -m "Add desktop release workflow"
+git push desktop main
+git tag v0.1.0
+git push desktop v0.1.0
+```
+
+The GitHub Action then uploads the installer, `latest.yml`, and blockmap to the
+repository's Releases page. Future releases require increasing the version in
+`package.json`, creating a new `v*` tag, and pushing that tag.
+
 You can find it here: [MHWilds Set Search](https://cecilbowen.github.io/mhwilds-set-search/).
 
 Originally, I wrote this in python to help sort out the logic and flow of how it was going to work.  I regretted that decision when it came time to "port" it over to JavaScript for static web hosting; not because either language is difficult, but because I despise writing the same code twice.  So that is why there is a (slightly outdated) python version of the tool that you can find in ./misc/stats.py.

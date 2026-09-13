@@ -15,6 +15,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
+    "electron-updater": "^6.8.9",
     "html-to-image": "^1.11.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -24,6 +25,9 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
+    "desktop:build": "vite build --mode desktop && electron-builder --win nsis",
+    "desktop:portable": "vite build --mode desktop && electron-builder --win dir",
+    "desktop:dev": "vite --mode desktop",
     "benchmark": "node scripts/run-optimizer-benchmarks.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -35,10 +39,42 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@vitejs/plugin-react": "^6.0.3",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^8.57.1",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
     "eslint-plugin-react": "^7.37.5",
     "jsdom": "^29.1.1",
     "vite": "^8.1.5",
     "vitest": "^4.1.10"
+  },
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.mhwilds.builder",
+    "productName": "MHW Builder",
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "MHW-Builder-Setup-${version}.${ext}",
+    "publish": {
+      "provider": "github",
+      "owner": "Almadeios",
+      "repo": "MHWBuilder-Desktop",
+      "releaseType": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    }
   }
 }
