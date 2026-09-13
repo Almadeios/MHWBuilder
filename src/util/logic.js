@@ -84,6 +84,17 @@ const normalizeList = value => {
     return [...value || []].slice().sort().join(",");
 };
 
+const normalizePriorResults = value => (value || [])
+    .map(result => ({
+        id: result?.id || '',
+        armorNames: normalizeList(result?.armorNames),
+        decoNames: normalizeList(result?.decoNames),
+        requiredDecoNames: normalizeList(result?.requiredDecoNames),
+        freeSlots: normalizeList(result?.freeSlots),
+        freeWeaponSlots: normalizeList(result?.freeWeaponSlots)
+    }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+
 const normalizeCustomTalismans = value => {
     return (value || [])
         .map(talisman => ({
@@ -126,6 +137,7 @@ export const buildSearchCacheKey = parameters => {
         customTalismans: JSON.stringify(normalizeCustomTalismans(params.customTalismans)),
         customDecorations: JSON.stringify(normalizeCustomDecorations(params.customDecorations)),
         useOnlyOwnedTalismans: Boolean(params.useOnlyOwnedTalismans),
+        priorResults: JSON.stringify(normalizePriorResults(params.priorResults)),
         dontUseDecos: Boolean(params.dontUseDecos),
         decoMods: normalizeQueryMap(params.decoMods),
         limit: params.limit ?? 20,
@@ -152,7 +164,8 @@ const buildSearchGearCacheKey = params => buildSearchCacheKey({
     maxSearchMs: 0,
     bonusDiscoveryTargetType: '',
     bonusDiscoveryTargetName: '',
-    bonusDiscoveryTargetLevel: 0
+    bonusDiscoveryTargetLevel: 0,
+    priorResults: []
 });
 
 const cacheSearchGear = (key, gear) => {

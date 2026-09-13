@@ -465,6 +465,21 @@ describe('search feasibility and custom decorations', () => {
     expect(buildSearchCacheKey(params)).not.toBe(buildSearchCacheKey({ ...params, customDecorations: [] }));
   });
 
+  it('keeps recommendation witness results separate in the search cache', () => {
+    const params = { skills: { Earplugs: 2 }, limit: 1, findOne: true };
+    const witness = {
+      id: 'witness-1',
+      armorNames: ['head', 'chest', 'arms', 'waist', 'legs', 'talisman'],
+      decoNames: ['Earplug Jewel'],
+      freeSlots: [1],
+      freeWeaponSlots: []
+    };
+
+    expect(buildSearchCacheKey(params)).not.toBe(
+      buildSearchCacheKey({ ...params, priorResults: [witness] })
+    );
+  });
+
   it('extends a proven result through consecutive recommended armor skills', () => {
     const baseSkills = {
       'Maximum Might': 3,

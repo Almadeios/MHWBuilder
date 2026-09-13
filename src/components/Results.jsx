@@ -865,6 +865,8 @@ const Results = ({
     const resultCountText = results.length.toLocaleString('en', { useGrouping: true });
     const timedOutWithoutResults = optimizerProfile?.timedOut && results.length === 0;
     const impossibleWithoutResults = optimizerProfile?.impossible && results.length === 0;
+    const resultCountLabel = timedOutWithoutResults ? 'not proven' :
+        impossibleWithoutResults ? 'impossible' : 'builds';
     let resultStatusText = `${resultCountText} hits in ${elapsedSeconds.toFixed(2)} seconds`;
     if (optimizerProfile?.partial) {
         resultStatusText = `${resultCountText} hits so far in ${elapsedSeconds.toFixed(2)} seconds`;
@@ -890,7 +892,9 @@ const Results = ({
         <section className="results-list-section" aria-label={save ? 'Saved armor sets' : 'Armor set results'}>
             <div className="search-section-heading results-list-heading">
                 <h2>{save ? 'Saved armor sets' : 'Armor set results'}</h2>
-                <span className="search-selection-count">{results.length} builds</span>
+                <span className={`search-selection-count ${timedOutWithoutResults ? 'search-count-warning' : ''}`}>
+                    {timedOutWithoutResults ? '0 not proven' : `${results.length} ${resultCountLabel}`}
+                </span>
             </div>
             <p className="search-section-description">Select a build to inspect its equipment, skills, and free slots.</p>
         {elapsedSeconds >= 0 && <div className="results-search-summary">
