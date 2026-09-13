@@ -1,3 +1,7 @@
+import packageJson from '../../package.json';
+
+export const APP_VERSION = packageJson.version;
+
 export const shouldReloadForVersion = (currentVersion, publishedVersion, attemptedVersion) => {
   return Boolean(
     currentVersion &&

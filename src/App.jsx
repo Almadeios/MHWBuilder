@@ -16,6 +16,7 @@ import Settings from "./components/Settings";
 import { useStorage } from "./hooks/StorageContext";
 import VersionUpdater from "./components/VersionUpdater";
 import SharedSetImportDialog from './components/SharedSetImportDialog';
+import { APP_VERSION } from './util/appVersion';
 // import { compareArmor } from "./util/kiranico";
 
 const App = () => {
@@ -73,7 +74,13 @@ const App = () => {
           <span className="workspace-brand-mark"><span /><span /><span /></span>
           <span><strong>MHW Builder</strong><small>Monster Hunter Wilds</small></span>
         </div>
-        <div className="workspace-status"><span /> Build planner</div>
+        <div className="workspace-status">
+          <span className="workspace-status-dot" />
+          <span className="workspace-status-copy">
+            Build planner
+            <small>v{APP_VERSION}</small>
+          </span>
+        </div>
       </header>
       <SharedSetImportDialog onClose={dismissSharedSetPreview} result={sharedSetPreview} />
       <CustomTabPanel value={tab} index={0}><Search /></CustomTabPanel>

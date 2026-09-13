@@ -1863,7 +1863,9 @@ html::-webkit-scrollbar-thumb:hover { background: #73808a; }
   .workspace-brand-mark span:nth-child(2) { width: 2px; height: 22px; }
   .workspace-brand-mark span:nth-child(3) { width: 7px; height: 7px; border-radius: 50%; }
   .workspace-status { display: flex; align-items: center; gap: 8px; color: #77838c; font-size: 12px; }
-  .workspace-status span { width: 7px; height: 7px; border-radius: 50%; background: #35c577; box-shadow: 0 0 0 4px rgba(53,197,119,.12); }
+  .workspace-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #35c577; box-shadow: 0 0 0 4px rgba(53,197,119,.12); }
+  .workspace-status-copy { display: grid; gap: 2px; text-align: right; }
+  .workspace-status-copy small { color: #59656d; font-size: 10px; }
 
   .tab-panel { margin-left: 62px; padding-top: 86px; }
   .tab-panel > .MuiBox-root { max-width: 1540px; padding: 42px 56px 54px !important; }
