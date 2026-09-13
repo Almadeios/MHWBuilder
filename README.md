@@ -67,3 +67,7 @@ I made this open source for a reason!  I'm no god of figuring out the best speed
 
  - `CTRL + clicking` the "Search" button on the search tab will copy a
    share-able search URL to the clipboard
+
+
+
+powershell -ExecutionPolicy Bypass -File .\scripts\release-desktop.ps1

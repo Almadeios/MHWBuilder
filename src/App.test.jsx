@@ -25,17 +25,11 @@ test('renders the main navigation and search tab', () => {
   expect(screen.getByText('Armor Set Search')).toBeInTheDocument();
 });
 
-test('opens discoverable builder help from the navigation', async() => {
+test('does not render the removed builder help control', () => {
   render(<StorageProvider><App /></StorageProvider>);
 
-  fireEvent.click(screen.getByRole('button', { name: 'Open builder help' }));
-
-  expect(screen.getByRole('dialog', { name: 'Builder Help' })).toBeInTheDocument();
-  expect(screen.getByText('Skills, Set Bonuses, and Group Skills')).toBeInTheDocument();
-  expect(screen.getByText(/Charms can provide regular skills/)).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  expect(screen.queryByRole('button', { name: 'Open builder help' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog', { name: 'Builder Help' })).not.toBeInTheDocument();
 });
 
 test('previews a shared URL without automatically saving it or changing tabs', async() => {
