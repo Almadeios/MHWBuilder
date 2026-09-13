@@ -12,6 +12,7 @@ import Minimize from '@mui/icons-material/CloseFullscreen';
 import { styled } from '@mui/material/styles';
 import { IconButton } from '@mui/material';
 import INTERNAL_BLACKLIST from '../data/internal-blacklist.json';
+import { useWindowWidth } from '../hooks/useWindowWidth';
 
 const ImageIcon = styled(Image)`
     width: 24px;
@@ -52,14 +53,13 @@ const ICON_GROUP_LABELS = {
     group: 'Group Skills',
     misc: 'Other'
 };
-const GROUP_COLUMN_COUNT = 2;
-
 const getIconRank = icon => {
     const rank = ICON_GROUP_ORDER.indexOf(icon);
     return rank === -1 ? ICON_GROUP_ORDER.length : rank;
 };
 
 const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkillNames }) => {
+    const windowWidth = useWindowWidth();
     const [searchText, setSearchText] = useState('');
     const [foundSkillNames, setFoundSkillNames] = useState([]);
     const [allSkills, setAllSkills] = useState([]);
@@ -181,8 +181,25 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
 
         const sortedGroups = Object.entries(groupedSkills)
             .sort(([a], [b]) => getIconRank(a) - getIconRank(b) || a.localeCompare(b))
-            .map(([groupName, groupSkills]) => {
-                return <div key={groupName} className="skill-picker-group">
+            .map(([groupName, groupSkills]) => ({
+                groupName,
+                groupSkills,
+                weight: groupSkills.length + 2
+            }));
+
+        const columnCount = windowWidth <= 1100 ? 2 : 3;
+        const columns = Array.from({ length: columnCount }, () => ({ weight: 0, groups: [] }));
+        sortedGroups
+            .sort((a, b) => b.weight - a.weight)
+            .forEach(group => {
+                const target = columns.reduce((shortest, column) =>
+                    column.weight < shortest.weight ? column : shortest);
+                target.groups.push(group);
+                target.weight += group.weight;
+            });
+
+        const renderGroup = ({ groupName, groupSkills }) => {
+            return <div key={groupName} className="skill-picker-group">
                     <div className="skill-picker-group-title">
                         {showIcons && groupName !== 'misc' && <img
                             className="skills-search-bubble-icon"
@@ -195,18 +212,16 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
                         {groupSkills.map(renderSkill)}
                     </div>
                 </div>;
-            });
+        };
 
-        const columns = Array.from({ length: GROUP_COLUMN_COUNT }, () => []);
-        sortedGroups.forEach((group, index) => {
-            columns[index % GROUP_COLUMN_COUNT].push(group);
-        });
-        columns[0].push(renderSlotFilters(true));
+        const shortestColumn = columns.reduce((shortest, column) =>
+            column.weight < shortest.weight ? column : shortest);
+        shortestColumn.groups.push({ custom: true });
 
         return <div className="skill-picker-group-columns">
-            {columns.map((columnGroups, index) => {
+            {columns.map((column, index) => {
                 return <div className="skill-picker-group-column" key={`skill-group-column-${index}`}>
-                    {columnGroups}
+                    {column.groups.map(group => group.custom ? renderSlotFilters(true) : renderGroup(group))}
                 </div>;
             })}
         </div>;
@@ -234,7 +249,7 @@ const SkillsPicker = ({ addSkill, addSlotFilter, showGroupSkillNames, chosenSkil
         </button>;
     };
 
-    return <div className="skills-picker">
+    return <div className={`skills-picker ${expanded ? 'skills-picker--expanded' : ''}`}>
         <div style={{ display: "flex", gap: '8px' }}>
             <TextField id="skill-name-search" label="Search Skills" variant="outlined" size="small"
                 className="skills-search-textfield" autoFocus

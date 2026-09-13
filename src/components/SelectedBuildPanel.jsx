@@ -34,7 +34,7 @@ const SelectedBuildPanel = ({
 
     const pageMessage = save ? 'Your saved sets will appear below.' :
         "Add skills above and tap 'Search' to get armor sets.";
-    const emptySummary = <Typography sx={{ marginLeft: '-1em', fontSize: '20px',
+    const emptySummary = <Typography sx={{ fontSize: '20px',
         fontWeight: 'bold', cursor: 'default' }}>
         {resultCount > 0 ? 'Click on a set below to see details.' : pageMessage}
     </Typography>;

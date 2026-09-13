@@ -11,11 +11,19 @@ const createWindow = () => {
         minWidth: 1024,
         minHeight: 700,
         icon: path.join(__dirname, 'assets', 'mhw-builder.ico'),
+        titleBarStyle: 'hidden',
+        titleBarOverlay: {
+            color: '#1b2025',
+            symbolColor: '#d6dce1',
+            height: 32,
+        },
         webPreferences: {
             contextIsolation: true,
             nodeIntegration: false,
         },
     });
+
+    mainWindow.setMenuBarVisibility(false);
 
     if (app.isPackaged) {
         mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));

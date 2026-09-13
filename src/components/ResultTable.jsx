@@ -107,7 +107,7 @@ const ResultTable = ({
             {isMobile && <StyledTableCell align="left" scope="row">{renderDefense(result)}</StyledTableCell>}
             {!isMobile && result.armorNames.slice(0, 5).map((armor, armorIndex) =>
                 <StyledTableCell key={`${result.id}-${armorIndex}`} align="left" scope={armorIndex ? undefined : 'row'}>
-                    {armorNameFormat(armor)}
+                    <span className="result-armor-name">{armorNameFormat(armor)}</span>
                 </StyledTableCell>
             )}
             {!isMobile && <StyledTableCell align="left">{renderCompactTalisman(result)}</StyledTableCell>}
