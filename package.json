@@ -1,6 +1,6 @@
 {
   "name": "mhwilds-set-search",
-  "version": "0.1.4",
+  "version": "0.1.3",
   "private": true,
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
@@ -26,6 +26,7 @@
     "dev": "vite",
     "build": "vite build",
     "desktop:build": "vite build --mode desktop && electron-builder --win nsis",
+    "desktop:ci-build": "vite build --mode desktop && electron-builder --win nsis --publish never",
     "desktop:portable": "vite build --mode desktop && electron-builder --win dir",
     "desktop:dev": "vite --mode desktop",
     "benchmark": "node scripts/run-optimizer-benchmarks.js",

@@ -26,7 +26,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and publish Windows installer
-        run: npm run desktop:build -- --publish always
+      - name: Build Windows installer
+        run: npm run desktop:ci-build
+
+      - name: Publish all release files together
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/MHW-Builder-Setup-*.exe
+            release/MHW-Builder-Setup-*.exe.blockmap
+            release/latest.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

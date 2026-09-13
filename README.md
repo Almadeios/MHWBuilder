@@ -71,3 +71,13 @@ I made this open source for a reason!  I'm no god of figuring out the best speed
 
 
 powershell -ExecutionPolicy Bypass -File .\scripts\release-desktop.ps1
+
+Then
+
+git push desktop main
+git push desktop v0.1.#
+
+
+npx vite --host 127.0.0.1 --port 5173
+
+npx electron . 
