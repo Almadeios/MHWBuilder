@@ -10,6 +10,7 @@ const createWindow = () => {
         height: 1000,
         minWidth: 1024,
         minHeight: 700,
+        icon: path.join(__dirname, 'assets', 'mhw-builder.ico'),
         webPreferences: {
             contextIsolation: true,
             nodeIntegration: false,

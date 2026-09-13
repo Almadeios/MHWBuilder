@@ -1,6 +1,6 @@
 {
   "name": "mhwilds-set-search",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
@@ -66,7 +66,9 @@
       "electron/**/*",
       "package.json"
     ],
+    "icon": "electron/assets/mhw-builder.ico",
     "win": {
+      "icon": "electron/assets/mhw-builder.ico",
       "target": "nsis"
     },
     "nsis": {
